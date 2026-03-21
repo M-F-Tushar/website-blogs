@@ -15,7 +15,7 @@ import {
 import {
   normalizeText,
   optionalText,
-  safeJsonParse,
+  parseJsonObject,
   toBoolean,
 } from "@/lib/utils";
 
@@ -55,6 +55,7 @@ export async function saveSiteSettingsAction(formData: FormData) {
     metaTitle: optionalText(formData.get("metaTitle")),
     metaDescription: optionalText(formData.get("metaDescription")),
     canonicalUrl: optionalText(formData.get("canonicalUrl")),
+    defaultOgImageAssetId: optionalText(formData.get("defaultOgImageAssetId")),
   });
 
   const supabase = createServiceRoleClient();
@@ -74,6 +75,7 @@ export async function saveSiteSettingsAction(formData: FormData) {
       meta_title: payload.metaTitle,
       meta_description: payload.metaDescription,
       canonical_url: payload.canonicalUrl,
+      default_og_image_asset_id: payload.defaultOgImageAssetId,
     },
     { onConflict: "site_key" },
   );
@@ -211,7 +213,11 @@ export async function savePageSectionAction(formData: FormData) {
     sortOrder: Number(formData.get("sortOrder") ?? 0),
     isVisible: toBoolean(formData.get("isVisible")),
     featured: toBoolean(formData.get("featured")),
-    settingsJson: safeJsonParse(optionalText(formData.get("settingsJson")) ?? "{}"),
+    imageAssetId: optionalText(formData.get("imageAssetId")),
+    settingsJson: parseJsonObject(
+      optionalText(formData.get("settingsJson")) ?? "{}",
+      "Settings JSON",
+    ),
   });
 
   const supabase = createServiceRoleClient();
@@ -238,6 +244,7 @@ export async function savePageSectionAction(formData: FormData) {
           sort_order: payload.sortOrder,
           is_visible: payload.isVisible,
           featured: payload.featured,
+          image_asset_id: payload.imageAssetId,
           settings_json: payload.settingsJson,
         })
         .eq("id", payload.id)
@@ -251,6 +258,7 @@ export async function savePageSectionAction(formData: FormData) {
         sort_order: payload.sortOrder,
         is_visible: payload.isVisible,
         featured: payload.featured,
+        image_asset_id: payload.imageAssetId,
         settings_json: payload.settingsJson,
       });
 

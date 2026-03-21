@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { Markdown } from "@/components/site/markdown";
 import { getAcademicEntryBySlug } from "@/lib/content/queries";
-import { buildMetadata } from "@/lib/content/seo";
+import { buildSiteMetadata } from "@/lib/content/seo";
 import { formatDisplayDate } from "@/lib/utils";
 
 interface AcademicDetailPageProps {
@@ -14,14 +14,14 @@ export async function generateMetadata({ params }: AcademicDetailPageProps) {
   const entry = await getAcademicEntryBySlug(slug);
 
   if (!entry) {
-    return buildMetadata({
+    return buildSiteMetadata({
       title: "Academic entry not found",
       description: "The requested academic entry could not be found.",
       path: `/academic/${slug}`,
     });
   }
 
-  return buildMetadata({
+  return buildSiteMetadata({
     title: entry.metaTitle ?? entry.title,
     description: entry.metaDescription ?? entry.summary ?? entry.title,
     path: `/academic/${entry.slug}`,

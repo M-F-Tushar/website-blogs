@@ -74,6 +74,28 @@ export function safeJsonParse(value: string | null | undefined) {
   }
 }
 
+export function parseJsonObject(value: string | null | undefined, fieldName = "JSON") {
+  if (!value) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      throw new Error(`${fieldName} must be a JSON object.`);
+    }
+
+    return parsed as Record<string, unknown>;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("must be a JSON object")) {
+      throw error;
+    }
+
+    throw new Error(`${fieldName} must be valid JSON.`);
+  }
+}
+
 export function stripMarkdown(markdown: string) {
   return markdown
     .replace(/```[\s\S]*?```/g, " ")

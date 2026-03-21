@@ -30,6 +30,7 @@ export const siteSettingsSchema = z.object({
   metaTitle: z.string().trim().nullable(),
   metaDescription: z.string().trim().nullable(),
   canonicalUrl: nullableUrlSchema.nullable(),
+  defaultOgImageAssetId: z.string().uuid().nullable(),
 });
 
 export const navigationItemSchema = z.object({
@@ -79,6 +80,7 @@ export const pageSectionSchema = z.object({
   sortOrder: z.coerce.number().int().min(0),
   isVisible: z.boolean(),
   featured: z.boolean(),
+  imageAssetId: z.string().uuid().nullable(),
   settingsJson: z.record(z.string(), z.unknown()).default({}),
 });
 

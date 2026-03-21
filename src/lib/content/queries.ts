@@ -20,6 +20,7 @@ import type {
   RecommendationRow,
 } from "@/lib/content/query-mappers";
 import { createPublicServerClient } from "@/lib/supabase/server";
+import { getSupabaseStoragePublicUrl } from "@/lib/utils";
 import type {
   NavigationItem,
   PageKey,
@@ -42,6 +43,12 @@ interface SiteSettingsRow {
   meta_title: string | null;
   meta_description: string | null;
   canonical_url: string | null;
+  default_og_image_asset_id: string | null;
+  default_og_image?: {
+    bucket_name?: string | null;
+    object_path?: string | null;
+    alt_text?: string | null;
+  } | null;
 }
 
 interface NavigationItemRow {
@@ -77,6 +84,12 @@ interface PageSectionRow {
   sort_order: number;
   is_visible: boolean;
   featured: boolean;
+  image_asset_id: string | null;
+  image?: {
+    bucket_name?: string | null;
+    object_path?: string | null;
+    alt_text?: string | null;
+  } | null;
   settings_json: Record<string, unknown> | null;
 }
 
@@ -88,7 +101,9 @@ const fetchSiteSettings = cache(async (): Promise<SiteSettings> => {
 
   const { data, error } = await supabase
     .from("site_settings")
-    .select("*")
+    .select(
+      "*, default_og_image:media_assets!site_settings_default_og_image_asset_id_fkey(bucket_name, object_path, alt_text)",
+    )
     .eq("site_key", "primary")
     .maybeSingle();
 
@@ -112,9 +127,18 @@ const fetchSiteSettings = cache(async (): Promise<SiteSettings> => {
     metaTitle: row.meta_title,
     metaDescription: row.meta_description,
     canonicalUrl: row.canonical_url,
-    ogImageUrl: null,
+    defaultOgImageAssetId: row.default_og_image_asset_id,
+    ogImageUrl:
+      row.default_og_image?.bucket_name && row.default_og_image.object_path
+        ? getSupabaseStoragePublicUrl(
+            row.default_og_image.bucket_name,
+            row.default_og_image.object_path,
+          )
+        : null,
   };
 });
+
+export const getSiteSettings = fetchSiteSettings;
 
 const fetchNavigation = cache(
   async (location?: NavigationItem["location"]): Promise<NavigationItem[]> => {
@@ -195,7 +219,9 @@ const fetchPageSections = cache(async (pageKey: PageKey): Promise<PageSection[]>
 
   const { data, error } = await supabase
     .from("page_sections")
-    .select("*, pages!inner(page_key)")
+    .select(
+      "*, image:media_assets!page_sections_image_asset_id_fkey(bucket_name, object_path, alt_text), pages!inner(page_key)",
+    )
     .eq("is_visible", true)
     .eq("pages.page_key", pageKey)
     .order("sort_order", { ascending: true });
@@ -218,7 +244,14 @@ const fetchPageSections = cache(async (pageKey: PageKey): Promise<PageSection[]>
     sortOrder: section.sort_order,
     isVisible: section.is_visible,
     featured: section.featured,
-    imageUrl: null,
+    imageAssetId: section.image_asset_id,
+    imageUrl:
+      section.image?.bucket_name && section.image.object_path
+        ? getSupabaseStoragePublicUrl(
+            section.image.bucket_name,
+            section.image.object_path,
+          )
+        : null,
     settings: section.settings_json ?? {},
   }));
 });

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { getSiteSettings } from "@/lib/content/queries";
 import { absoluteUrl } from "@/lib/utils";
 
 interface MetadataInput {
@@ -37,4 +38,13 @@ export function buildMetadata({
       images: image ? [image] : undefined,
     },
   };
+}
+
+export async function buildSiteMetadata(input: MetadataInput): Promise<Metadata> {
+  const siteSettings = await getSiteSettings();
+
+  return buildMetadata({
+    ...input,
+    image: input.image ?? siteSettings.ogImageUrl ?? null,
+  });
 }

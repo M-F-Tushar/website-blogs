@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { Markdown } from "@/components/site/markdown";
 import { getRecommendationBySlug } from "@/lib/content/queries";
-import { buildMetadata } from "@/lib/content/seo";
+import { buildSiteMetadata } from "@/lib/content/seo";
 
 interface RecommendationDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -15,14 +15,14 @@ export async function generateMetadata({
   const item = await getRecommendationBySlug(slug);
 
   if (!item) {
-    return buildMetadata({
+    return buildSiteMetadata({
       title: "Recommendation not found",
       description: "The requested recommendation could not be found.",
       path: `/recommendations/${slug}`,
     });
   }
 
-  return buildMetadata({
+  return buildSiteMetadata({
     title: item.metaTitle ?? item.title,
     description: item.metaDescription ?? item.summary ?? item.title,
     path: `/recommendations/${item.slug}`,

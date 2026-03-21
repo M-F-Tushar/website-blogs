@@ -26,6 +26,7 @@ export const fallbackSiteSettings: SiteSettings = {
     "A technical identity platform for blogging, academic notes, recommendations, and learning progress in AI, ML, LLM, and MLOps.",
   canonicalUrl: null,
   ogImageUrl: null,
+  defaultOgImageAssetId: null,
 };
 
 export const fallbackNavigation: NavigationItem[] = [
@@ -105,7 +106,7 @@ export const fallbackPages: PageRecord[] = [
     status: "published",
     isVisible: true,
     metaTitle: "About | Arian's Lab Notes",
-    metaDescription: "Who I am, what I study, and where I’m headed in AI/ML.",
+    metaDescription: "Who I am, what I study, and where I'm headed in AI/ML.",
     canonicalUrl: null,
   },
   {
@@ -162,14 +163,15 @@ export const fallbackPageSections: PageSection[] = [
     sectionKey: "hero",
     sectionType: "hero",
     heading:
-      "I’m a CSE student building toward AI, machine learning, LLM systems, and dependable engineering practice.",
+      "I'm a CSE student building toward AI, machine learning, LLM systems, and dependable engineering practice.",
     subheading:
-      "This platform documents what I’m learning, what I’m building, and how my technical direction evolves over time.",
+      "This platform documents what I'm learning, what I'm building, and how my technical direction evolves over time.",
     bodyMarkdown:
       "I care about research depth, practical systems thinking, and honest progress. The goal is not to look finished. The goal is to become difficult to ignore through consistency and real work.",
     sortOrder: 10,
     isVisible: true,
     featured: true,
+    imageAssetId: null,
     imageUrl: null,
     settings: {},
   },
@@ -186,6 +188,7 @@ export const fallbackPageSections: PageSection[] = [
     sortOrder: 20,
     isVisible: true,
     featured: false,
+    imageAssetId: null,
     imageUrl: null,
     settings: {},
   },
@@ -198,10 +201,11 @@ export const fallbackPageSections: PageSection[] = [
     heading: "Current learning roadmap",
     subheading: "Depth first, then leverage.",
     bodyMarkdown:
-      "I’m building from CS fundamentals toward practical AI systems. That means strengthening statistics, ML workflows, LLM application design, and the deployment discipline needed to move from notebooks to reliable products.",
+      "I'm building from CS fundamentals toward practical AI systems. That means strengthening statistics, ML workflows, LLM application design, and the deployment discipline needed to move from notebooks to reliable products.",
     sortOrder: 10,
     isVisible: true,
     featured: false,
+    imageAssetId: null,
     imageUrl: null,
     settings: {},
   },
@@ -215,7 +219,7 @@ export const fallbackPosts: PostSummary[] = [
     excerpt:
       "A note on replacing fragmented resource consumption with a structured research and build workflow.",
     bodyMarkdown:
-      "I’m learning to treat technical growth as a system. That means choosing themes, keeping notes, building small proofs, and revisiting ideas until they compound.",
+      "I'm learning to treat technical growth as a system. That means choosing themes, keeping notes, building small proofs, and revisiting ideas until they compound.",
     status: "published",
     featured: true,
     publishedAt: "2026-03-18T08:00:00.000Z",
@@ -229,12 +233,12 @@ export const fallbackPosts: PostSummary[] = [
   },
   {
     id: "post-2",
-    title: "What I’m looking for in an LLM project worth building",
+    title: "What I'm looking for in an LLM project worth building",
     slug: "what-makes-an-llm-project-worth-building",
     excerpt:
       "A practical filter for choosing projects that build durable skill rather than shallow novelty.",
     bodyMarkdown:
-      "I want projects that force decisions around data, retrieval quality, evaluation, and deployment tradeoffs. That’s where real learning starts.",
+      "I want projects that force decisions around data, retrieval quality, evaluation, and deployment tradeoffs. That's where real learning starts.",
     status: "published",
     featured: false,
     publishedAt: "2026-03-12T08:00:00.000Z",
@@ -256,7 +260,7 @@ export const fallbackAcademicEntries: AcademicEntry[] = [
     summary:
       "A lightweight process for reading papers with better retention and clearer downstream experiments.",
     bodyMarkdown:
-      "I’m structuring paper reading around four passes: context, core mechanism, assumptions, and implementation ideas. The goal is to turn reading into experiments and writing.",
+      "I'm structuring paper reading around four passes: context, core mechanism, assumptions, and implementation ideas. The goal is to turn reading into experiments and writing.",
     entryType: "paper_note",
     status: "published",
     featured: true,
@@ -285,7 +289,8 @@ export const fallbackRecommendations: Recommendation[] = [
     audience: "Students moving from fundamentals into hands-on ML practice.",
     useCase: "Building intuition while implementing end-to-end workflows.",
     level: "intermediate",
-    externalUrl: "https://www.oreilly.com/library/view/hands-on-machine-learning/9781098125967/",
+    externalUrl:
+      "https://www.oreilly.com/library/view/hands-on-machine-learning/9781098125967/",
     status: "published",
     featured: true,
     category: "books",

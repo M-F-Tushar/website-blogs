@@ -35,6 +35,12 @@ interface SiteSettingsRow {
   meta_title: string | null;
   meta_description: string | null;
   canonical_url: string | null;
+  default_og_image_asset_id: string | null;
+  default_og_image?: {
+    bucket_name?: string | null;
+    object_path?: string | null;
+    alt_text?: string | null;
+  } | null;
 }
 
 interface NavigationItemRow {
@@ -70,6 +76,12 @@ interface PageSectionRow {
   sort_order: number;
   is_visible: boolean;
   featured: boolean;
+  image_asset_id: string | null;
+  image?: {
+    bucket_name?: string | null;
+    object_path?: string | null;
+    alt_text?: string | null;
+  } | null;
   settings_json: Record<string, unknown> | null;
 }
 
@@ -126,7 +138,9 @@ export const getAdminSiteSettings = cache(async (): Promise<SiteSettings | null>
   const supabase = createServiceRoleClient();
   const { data } = await supabase
     .from("site_settings")
-    .select("*")
+    .select(
+      "*, default_og_image:media_assets!site_settings_default_og_image_asset_id_fkey(bucket_name, object_path, alt_text)",
+    )
     .eq("site_key", "primary")
     .maybeSingle();
 
@@ -150,7 +164,14 @@ export const getAdminSiteSettings = cache(async (): Promise<SiteSettings | null>
     metaTitle: row.meta_title,
     metaDescription: row.meta_description,
     canonicalUrl: row.canonical_url,
-    ogImageUrl: null,
+    defaultOgImageAssetId: row.default_og_image_asset_id,
+    ogImageUrl:
+      row.default_og_image?.bucket_name && row.default_og_image.object_path
+        ? getSupabaseStoragePublicUrl(
+            row.default_og_image.bucket_name,
+            row.default_og_image.object_path,
+          )
+        : null,
   };
 });
 
@@ -195,7 +216,9 @@ export const getAdminPageSections = cache(
     const supabase = createServiceRoleClient();
     const { data } = await supabase
       .from("page_sections")
-      .select("*, pages!inner(page_key)")
+      .select(
+        "*, image:media_assets!page_sections_image_asset_id_fkey(bucket_name, object_path, alt_text), pages!inner(page_key)",
+      )
       .eq("pages.page_key", pageKey)
       .order("sort_order", { ascending: true });
 
@@ -211,7 +234,14 @@ export const getAdminPageSections = cache(
       sortOrder: section.sort_order,
       isVisible: section.is_visible,
       featured: section.featured,
-      imageUrl: null,
+      imageAssetId: section.image_asset_id,
+      imageUrl:
+        section.image?.bucket_name && section.image.object_path
+          ? getSupabaseStoragePublicUrl(
+              section.image.bucket_name,
+              section.image.object_path,
+            )
+          : null,
       settings: section.settings_json ?? {},
     }));
   },

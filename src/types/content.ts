@@ -51,6 +51,7 @@ export interface SiteSettings extends SeoFields {
   linkedinUrl: string | null;
   xUrl: string | null;
   resumeUrl: string | null;
+  defaultOgImageAssetId?: string | null;
 }
 
 export interface NavigationItem {
@@ -84,6 +85,7 @@ export interface PageSection {
   sortOrder: number;
   isVisible: boolean;
   featured: boolean;
+  imageAssetId?: string | null;
   imageUrl: string | null;
   settings: Record<string, unknown>;
 }

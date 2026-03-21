@@ -10,9 +10,9 @@ export default async function PublicLayout({
   const { siteSettings, navigationItems } = await getSiteChromeData();
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen overflow-x-clip">
       <SiteHeader siteSettings={siteSettings} navigationItems={navigationItems} />
-      <main>{children}</main>
+      <main className="relative z-10">{children}</main>
       <SiteFooter siteSettings={siteSettings} navigationItems={navigationItems} />
     </div>
   );

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
+
+import { getSiteSettings } from "@/lib/content/queries";
 import "./globals.css";
 
 const displayFont = Space_Grotesk({
@@ -22,17 +24,36 @@ const monoFont = IBM_Plex_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  ),
-  title: {
-    default: "Arian's Lab Notes",
-    template: "%s | Arian's Lab Notes",
-  },
-  description:
-    "A production-grade digital identity platform documenting the path from CSE student to AI, ML, LLM, and MLOps professional.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const siteSettings = await getSiteSettings();
+  const siteName = siteSettings.metaTitle || siteSettings.siteName;
+  const description = siteSettings.metaDescription || siteSettings.siteDescription;
+
+  return {
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+    ),
+    title: {
+      default: siteName,
+      template: `%s | ${siteSettings.siteName}`,
+    },
+    description,
+    openGraph: {
+      title: siteName,
+      description,
+      type: "website",
+      images: siteSettings.ogImageUrl
+        ? [{ url: siteSettings.ogImageUrl, alt: siteSettings.siteName }]
+        : undefined,
+    },
+    twitter: {
+      card: siteSettings.ogImageUrl ? "summary_large_image" : "summary",
+      title: siteName,
+      description,
+      images: siteSettings.ogImageUrl ? [siteSettings.ogImageUrl] : undefined,
+    },
+  };
+}
 
 export default function RootLayout({
   children,

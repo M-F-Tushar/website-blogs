@@ -6,11 +6,15 @@ import {
   AdminInput,
   AdminPageIntro,
   AdminPanel,
+  AdminSelect,
   AdminTextarea,
   StatusPill,
   SubmitButton,
 } from "@/components/admin/primitives";
-import { getAdminPageSections } from "@/lib/content/admin-queries";
+import {
+  getAdminMediaAssets,
+  getAdminPageSections,
+} from "@/lib/content/admin-queries";
 import {
   deletePageSectionAction,
   savePageSectionAction,
@@ -20,12 +24,35 @@ interface AdminAboutPageManagerProps {
   searchParams: Promise<{ edit?: string }>;
 }
 
+const ABOUT_SECTION_TYPES = [
+  {
+    value: "identity",
+    label: "Identity",
+  },
+  {
+    value: "timeline",
+    label: "Timeline",
+  },
+  {
+    value: "principles",
+    label: "Principles",
+  },
+  {
+    value: "supporting",
+    label: "Supporting",
+  },
+] as const;
+
 export default async function AdminAboutPageManager({
   searchParams,
 }: AdminAboutPageManagerProps) {
-  const sections = await getAdminPageSections("about");
+  const [sections, assets] = await Promise.all([
+    getAdminPageSections("about"),
+    getAdminMediaAssets(),
+  ]);
   const { edit } = await searchParams;
   const selectedSection = sections.find((section) => section.id === edit) ?? null;
+  const publicAssets = assets.filter((asset) => Boolean(asset.publicUrl));
 
   return (
     <div className="space-y-8">
@@ -65,7 +92,7 @@ export default async function AdminAboutPageManager({
                   <div>
                     <p className="font-medium text-foreground">{section.heading}</p>
                     <p className="mt-1 text-sm text-muted">
-                      {section.sectionKey} · order {section.sortOrder}
+                      {section.sectionKey} - order {section.sortOrder}
                     </p>
                   </div>
                   <StatusPill tone={section.isVisible ? "success" : "warning"}>
@@ -93,12 +120,21 @@ export default async function AdminAboutPageManager({
                   required
                 />
               </AdminField>
-              <AdminField label="Section type">
-                <AdminInput
+              <AdminField
+                label="Section type"
+                hint="Use the fixed About layout types so the public page stays aligned with admin content."
+              >
+                <AdminSelect
                   name="sectionType"
-                  defaultValue={selectedSection?.sectionType ?? ""}
+                  defaultValue={selectedSection?.sectionType ?? "identity"}
                   required
-                />
+                >
+                  {ABOUT_SECTION_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </AdminSelect>
               </AdminField>
             </div>
 
@@ -127,6 +163,23 @@ export default async function AdminAboutPageManager({
               />
             </AdminField>
 
+            <AdminField
+              label="Portrait or section image"
+              hint="Choose a public media asset. Identity is used for the main portrait; timeline can act as a fallback."
+            >
+              <AdminSelect
+                name="imageAssetId"
+                defaultValue={selectedSection?.imageAssetId ?? ""}
+              >
+                <option value="">No image selected</option>
+                {publicAssets.map((asset) => (
+                  <option key={asset.id} value={asset.id}>
+                    {asset.label ?? asset.objectPath}
+                  </option>
+                ))}
+              </AdminSelect>
+            </AdminField>
+
             <div className="grid gap-5 md:grid-cols-2">
               <AdminField label="Sort order">
                 <AdminInput
@@ -135,7 +188,10 @@ export default async function AdminAboutPageManager({
                   defaultValue={String(selectedSection?.sortOrder ?? 10)}
                 />
               </AdminField>
-              <AdminField label="Settings JSON">
+              <AdminField
+                label="Settings JSON"
+                hint='For identity: {"signals":["AI engineering trajectory"],"metrics":[{"label":"Base","value":"CSE and software systems"}]}. For timeline: {"timelineItems":[{"phase":"01","status":"Foundation","title":"Computer science grounding","description":"Core engineering habits, systems thinking, and implementation discipline.","tags":["CSE","systems"],"align":"left"}]}.'
+              >
                 <AdminTextarea
                   name="settingsJson"
                   rows={5}
