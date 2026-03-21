@@ -1,0 +1,40 @@
+.next
+node_modules
+out
+dist
+coverage
+
+# local env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.keys
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# next / typescript
+*.tsbuildinfo
+
+# tooling
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+.vercel
+
+# supabase
+supabase/.branches
+supabase/.temp
+
+# local bootstrap scaffolding
+bootstrap-app-temp
+
+# agent and editor state
+.claude/
+.claude/settings.local.json

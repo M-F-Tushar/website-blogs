@@ -1,0 +1,112 @@
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function formatDisplayDate(value: string | null | undefined) {
+  if (!value) {
+    return "Draft";
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+  }).format(new Date(value));
+}
+
+export function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+export function normalizeText(value: FormDataEntryValue | string | null | undefined) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim();
+}
+
+export function optionalText(value: FormDataEntryValue | string | null | undefined) {
+  const normalized = normalizeText(value);
+  return normalized.length > 0 ? normalized : null;
+}
+
+export function toBoolean(value: FormDataEntryValue | string | null | undefined) {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  return value === "true" || value === "on" || value === "1";
+}
+
+export function parseDelimitedList(value: FormDataEntryValue | string | null | undefined) {
+  if (typeof value !== "string") {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+export function safeJsonParse(value: string | null | undefined) {
+  if (!value) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function stripMarkdown(markdown: string) {
+  return markdown
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)]\([^)]*\)/g, "$1")
+    .replace(/[#>*_-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function excerptFromMarkdown(markdown: string, length = 180) {
+  const plainText = stripMarkdown(markdown);
+  if (plainText.length <= length) {
+    return plainText;
+  }
+
+  return `${plainText.slice(0, length).trim()}...`;
+}
+
+export function getSiteUrl() {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}
+
+export function absoluteUrl(path = "/") {
+  return new URL(path, getSiteUrl()).toString();
+}
+
+export function getSupabaseStoragePublicUrl(bucketName: string, objectPath: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) {
+    return null;
+  }
+
+  return `${supabaseUrl}/storage/v1/object/public/${bucketName}/${objectPath}`;
+}
