@@ -5,6 +5,7 @@ import { getSiteUrl } from "@/lib/utils";
 
 export default function robots(): MetadataRoute.Robots {
   const siteUrl = getSiteUrl();
+  const origin = new URL(siteUrl).origin;
   const isProduction = getAppRuntimeStage() === "production";
 
   if (!isProduction) {
@@ -22,7 +23,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: "/admin/",
     },
-    sitemap: `${siteUrl}/sitemap.xml`,
-    host: siteUrl,
+    sitemap: new URL("/sitemap.xml", siteUrl).toString(),
+    host: origin,
   };
 }

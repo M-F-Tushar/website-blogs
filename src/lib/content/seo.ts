@@ -9,6 +9,7 @@ interface MetadataInput {
   path?: string;
   image?: string | null;
   canonicalUrl?: string | null;
+  absoluteTitle?: boolean;
 }
 
 function normalizeConfiguredCanonical(
@@ -70,11 +71,12 @@ export function buildMetadata({
   path = "/",
   image,
   canonicalUrl,
+  absoluteTitle = false,
 }: MetadataInput): Metadata {
   const resolvedCanonicalUrl = resolveCanonicalUrl(path, canonicalUrl);
 
   return {
-    title,
+    title: absoluteTitle ? { absolute: title } : title,
     description,
     alternates: {
       canonical: resolvedCanonicalUrl,
@@ -103,11 +105,17 @@ export async function buildSiteMetadata(input: MetadataInput): Promise<Metadata>
     input.canonicalUrl,
     siteSettings.canonicalUrl,
   );
+  const normalizedSiteName = siteSettings.siteName.trim().toLowerCase();
+  const normalizedTitle = input.title.trim().toLowerCase();
+  const absoluteTitle =
+    input.absoluteTitle ??
+    (normalizedSiteName.length > 0 && normalizedTitle.includes(normalizedSiteName));
 
   return buildMetadata({
     ...input,
     path,
     image: input.image ?? siteSettings.ogImageUrl ?? null,
     canonicalUrl: resolvedCanonicalUrl,
+    absoluteTitle,
   });
 }
