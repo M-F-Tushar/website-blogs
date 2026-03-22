@@ -364,7 +364,7 @@ export async function AboutPageContent({
                 "Academic depth, practical implementation, and production discipline are being layered together as one long-term trajectory."}
             </p>
             <Markdown
-              className="mt-8 [&_blockquote]:text-slate-300 [&_li]:text-slate-200 [&_p]:text-slate-200"
+              className="markdown-inverse mt-8"
               content={
                 timelineSection?.bodyMarkdown ??
                 "The path is moving from core CS habits toward model-building, LLM systems, and eventually production-grade AI delivery."

@@ -208,7 +208,7 @@ export async function HomePageContent({
               </div>
             </div>
             <Markdown
-              className="mt-5 [&_blockquote]:text-slate-300 [&_li]:text-slate-200 [&_p]:text-slate-200"
+              className="markdown-inverse mt-5"
               content={
                 heroSection?.bodyMarkdown ??
                 "This is a long-horizon platform for technical credibility, public thinking, and visible growth."
@@ -451,7 +451,7 @@ export async function HomePageContent({
                   "If you care about AI, ML, systems, or serious learning, let us talk."}
               </h2>
               <Markdown
-                className="mt-5 max-w-2xl [&_p]:text-lg [&_p]:leading-8 [&_p]:text-slate-300"
+                className="markdown-inverse mt-5 max-w-2xl [&_p]:text-lg [&_p]:leading-8"
                 content={
                   connectSection?.bodyMarkdown ??
                   "I am building this platform as a public record of growth. If there is a research idea, project, or conversation worth having, reach out."

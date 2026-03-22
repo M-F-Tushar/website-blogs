@@ -384,6 +384,36 @@ a {
   padding-left: 1rem;
 }
 
+.markdown-body.markdown-inverse p,
+.markdown-body.markdown-inverse li {
+  color: rgba(235, 244, 252, 0.88);
+}
+
+.markdown-body.markdown-inverse strong,
+.markdown-body.markdown-inverse h2,
+.markdown-body.markdown-inverse h3,
+.markdown-body.markdown-inverse h4 {
+  color: #f8fbff;
+}
+
+.markdown-body.markdown-inverse a {
+  color: #9fe9ff;
+}
+
+.markdown-body.markdown-inverse blockquote {
+  border-left-color: rgba(141, 227, 255, 0.4);
+  color: rgba(207, 227, 243, 0.84);
+}
+
+.markdown-body.markdown-inverse code {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5fbff;
+}
+
+.markdown-body.markdown-inverse hr {
+  border-top-color: rgba(141, 227, 255, 0.18);
+}
+
 .markdown-body code {
   background: rgba(9, 21, 33, 0.06);
   border-radius: 0.45rem;
