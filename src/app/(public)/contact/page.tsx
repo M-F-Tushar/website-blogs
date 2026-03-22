@@ -16,6 +16,21 @@ import {
 } from "@/lib/content/page-routing";
 import { stripMarkdown } from "@/lib/utils";
 
+function formatContactLinkTitle(href: string, fallback: string) {
+  try {
+    const url = new URL(href);
+    const path = url.pathname.replace(/\/$/, "");
+
+    if (!path || path === "/") {
+      return url.hostname.replace(/^www\./, "");
+    }
+
+    return `${url.hostname.replace(/^www\./, "")}${path}`;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function generateMetadata() {
   return buildTopLevelPageMetadata("contact", {
     title: "Contact",
@@ -39,12 +54,64 @@ export async function ContactPageContent({
   const detailSections = sections.filter(
     (section) => section.id !== heroSection?.id && section.id !== formSection?.id,
   );
+  const detailSectionKeys = new Set(
+    detailSections.map((section) => section.sectionKey.trim().toLowerCase()),
+  );
   const contactTracks =
     getSectionSettingStringArray(heroSection, "tracks").length > 0
       ? getSectionSettingStringArray(heroSection, "tracks")
       : ["Research conversations", "AI/ML collaboration", "Systems and tooling"];
+  const autoSocialCards = [
+    {
+      key: "github",
+      eyebrow: "GitHub",
+      title: siteSettings.githubUrl
+        ? formatContactLinkTitle(siteSettings.githubUrl, "GitHub profile")
+        : null,
+      description:
+        "Browse code, experiments, and project history in a public engineering context.",
+      href: siteSettings.githubUrl,
+    },
+    {
+      key: "linkedin",
+      eyebrow: "LinkedIn",
+      title: siteSettings.linkedinUrl
+        ? formatContactLinkTitle(siteSettings.linkedinUrl, "LinkedIn profile")
+        : null,
+      description:
+        "Best for professional context, background, and long-term career connection.",
+      href: siteSettings.linkedinUrl,
+    },
+    {
+      key: "x",
+      eyebrow: "X",
+      title: siteSettings.xUrl
+        ? formatContactLinkTitle(siteSettings.xUrl, "X profile")
+        : null,
+      description:
+        "A lighter-weight channel for public thoughts, links, and quick updates.",
+      href: siteSettings.xUrl,
+    },
+    {
+      key: "resume",
+      eyebrow: "Resume",
+      title: siteSettings.resumeUrl ? "View resume" : null,
+      description:
+        "Open the current resume when a concise overview is more useful than a message thread.",
+      href: siteSettings.resumeUrl,
+    },
+  ].filter(
+    (card): card is {
+      key: string;
+      eyebrow: string;
+      title: string;
+      description: string;
+      href: string;
+    } => Boolean(card.href && card.title) && !detailSectionKeys.has(card.key),
+  );
   const fallbackCards = [
     {
+      key: "email",
       eyebrow: "Email",
       title: siteSettings.contactEmail,
       description:
@@ -54,6 +121,7 @@ export async function ContactPageContent({
     ...(siteSettings.locationLabel
       ? [
           {
+            key: "location",
             eyebrow: "Location",
             title: siteSettings.locationLabel,
             description:
@@ -63,6 +131,7 @@ export async function ContactPageContent({
         ]
       : []),
     {
+      key: "response-mode",
       eyebrow: "Response mode",
       title: "Clear context helps the fastest reply",
       description:
@@ -70,6 +139,51 @@ export async function ContactPageContent({
       href: null,
     },
   ];
+  const contactCards =
+    detailSections.length > 0 || autoSocialCards.length > 0
+      ? [
+          ...detailSections.map((section) => {
+            const linkHref =
+              section.sectionKey === "email"
+                ? `mailto:${siteSettings.contactEmail}`
+                : getSectionSettingString(section, "href") ?? null;
+            const body = section.bodyMarkdown;
+            const title =
+              getSectionSettingString(section, "title") ??
+              (section.sectionKey === "email"
+                ? siteSettings.contactEmail
+                : section.sectionKey === "location" && siteSettings.locationLabel
+                  ? siteSettings.locationLabel
+                  : section.heading);
+            const eyebrow =
+              getSectionSettingString(section, "eyebrow") ?? section.sectionKey;
+
+            return {
+              key: section.id,
+              eyebrow,
+              title,
+              description: section.subheading,
+              href: linkHref,
+              body,
+            };
+          }),
+          ...autoSocialCards.map((card) => ({
+            key: card.key,
+            eyebrow: card.eyebrow,
+            title: card.title,
+            description: card.description,
+            href: card.href,
+            body: null,
+          })),
+        ]
+      : fallbackCards.map((card) => ({
+          key: card.key,
+          eyebrow: card.eyebrow,
+          title: card.title,
+          description: card.description,
+          href: card.href,
+          body: null,
+        }));
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-16 md:py-24">
@@ -104,47 +218,18 @@ export async function ContactPageContent({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-            {detailSections.length > 0
-              ? detailSections.map((section) => {
-                  const linkHref =
-                    section.sectionKey === "email"
-                      ? `mailto:${siteSettings.contactEmail}`
-                      : getSectionSettingString(section, "href") ?? null;
-                  const body = section.bodyMarkdown;
-                  const title =
-                    getSectionSettingString(section, "title") ??
-                    (section.sectionKey === "email"
-                      ? siteSettings.contactEmail
-                      : section.sectionKey === "location" &&
-                          siteSettings.locationLabel
-                        ? siteSettings.locationLabel
-                        : section.heading);
-                  const eyebrow =
-                    getSectionSettingString(section, "eyebrow") ?? section.sectionKey;
-
-                  return (
-                    <DetailCard
-                      key={section.id}
-                      eyebrow={eyebrow}
-                      title={title}
-                      description={section.subheading}
-                      href={linkHref}
-                      className="transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(9,21,33,0.12)]"
-                    >
-                      {body ? <Markdown className="mt-1" content={body} /> : null}
-                    </DetailCard>
-                  );
-                })
-              : fallbackCards.map((card) => (
-                  <DetailCard
-                    key={card.eyebrow}
-                    eyebrow={card.eyebrow}
-                    title={card.title}
-                    description={card.description}
-                    href={card.href}
-                    className="transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(9,21,33,0.12)]"
-                  />
-                ))}
+            {contactCards.map((card) => (
+              <DetailCard
+                key={card.key}
+                eyebrow={card.eyebrow}
+                title={card.title}
+                description={card.description}
+                href={card.href}
+                className="transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(9,21,33,0.12)]"
+              >
+                {card.body ? <Markdown className="mt-1" content={card.body} /> : null}
+              </DetailCard>
+            ))}
           </div>
         </div>
 
