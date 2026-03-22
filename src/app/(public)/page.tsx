@@ -5,10 +5,11 @@ import { ContentCard } from "@/components/site/content-card";
 import { DetailCard } from "@/components/site/detail-card";
 import { Markdown } from "@/components/site/markdown";
 import { SignalCard } from "@/components/site/signal-card";
+import { HeroCosmic } from "@/components/site/sections/hero-cosmic";
+import { HUDMetrics } from "@/components/site/sections/hud-metrics";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getHomePageData } from "@/lib/content/queries";
 import {
-  getSectionPanelItems,
   getSectionSettingString,
   getSectionSettingStringArray,
   getSectionVectorItems,
@@ -87,29 +88,6 @@ export async function HomePageContent({
     getSectionSettingStringArray(heroSection, "focusTags").length > 0
       ? getSectionSettingStringArray(heroSection, "focusTags")
       : ["LLM systems", "MLOps discipline", "Model evaluation", "Research practice"];
-  const capabilitySignals = getSectionPanelItems(heroSection, "capabilitySignals", [
-    {
-      label: "Primary track",
-      value: "AI engineering and ML systems",
-      description: null,
-    },
-    {
-      label: "Working style",
-      value: "Research-led and documentation-first",
-      description: null,
-    },
-    {
-      label: "Output signal",
-      value: "Visible progress over polished claims",
-      description: null,
-    },
-  ]);
-  const activeVectors = getSectionVectorItems(heroSection, "activeVectors", [
-    { label: "LLMs and orchestration", value: "82%" },
-    { label: "MLOps workflow", value: "74%" },
-    { label: "Applied ML", value: "68%" },
-    { label: "Research literacy", value: "79%" },
-  ]);
   const focusColumns =
     getSectionSettingStringArray(focusSection, "columns").length > 0
       ? getSectionSettingStringArray(focusSection, "columns")
@@ -137,16 +115,16 @@ export async function HomePageContent({
     getSectionSettingString(heroSection, "secondaryCtaHref") ?? "/contact";
   const heroEyebrow =
     getSectionSettingString(heroSection, "eyebrow") ?? "AI engineering platform";
-  const systemMapEyebrow =
-    getSectionSettingString(heroSection, "systemMapEyebrow") ?? "Research system map";
-  const systemMapTitle =
-    getSectionSettingString(heroSection, "systemMapTitle") ?? "Why this platform exists";
-  const systemMapBadge =
-    getSectionSettingString(heroSection, "systemMapBadge") ?? "Live notebook";
   const vectorLabel =
     getSectionSettingString(heroSection, "vectorLabel") ?? "Active vectors";
   const vectorBadge =
     getSectionSettingString(heroSection, "vectorBadge") ?? "Current emphasis";
+  const activeVectors = getSectionVectorItems(heroSection, "activeVectors", [
+    { label: "LLMs and orchestration", value: "82%" },
+    { label: "MLOps workflow", value: "74%" },
+    { label: "Applied ML", value: "68%" },
+    { label: "Research literacy", value: "79%" },
+  ]);
   const focusEyebrow =
     getSectionSettingString(focusSection, "eyebrow") ?? "Current vectors";
   const focusPanelTitle =
@@ -158,127 +136,22 @@ export async function HomePageContent({
 
   return (
     <div className="pb-20">
-      <section className="grid-backdrop border-b border-white/40">
-        <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
-          <div className="relative">
-            <span className="signal-pill">{heroEyebrow}</span>
-            <h1 className="mt-6 max-w-4xl font-display text-5xl leading-[0.95] font-semibold tracking-[-0.06em] text-balance md:text-7xl">
-              {heroSection?.heading ?? siteSettings.siteTagline}
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">
-              {heroSection?.subheading ?? siteSettings.siteDescription}
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              {focusTags.map((tag) => (
-                <span key={tag} className="signal-pill">
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href={primaryCtaHref}
-                className="inline-flex items-center rounded-full bg-surface-dark px-5 py-3 text-sm font-medium text-white shadow-[0_20px_45px_rgba(7,19,31,0.16)] transition hover:bg-surface-dark/92"
-              >
-                {primaryCtaLabel}
-              </Link>
-              <Link
-                href={secondaryCtaHref}
-                className="inline-flex items-center rounded-full border border-border-strong bg-white/55 px-5 py-3 text-sm font-medium text-foreground transition hover:bg-white/80"
-              >
-                {secondaryCtaLabel}
-              </Link>
-            </div>
-            <div className="mt-10 grid gap-4 sm:grid-cols-3">
-              {[
-                {
-                  label: "Featured notes",
-                  value: String(featuredPosts.length).padStart(2, "0"),
-                  description: "Published writing nodes",
-                },
-                {
-                  label: "Research items",
-                  value: String(featuredAcademic.length).padStart(2, "0"),
-                  description: "Academic and experiment records",
-                },
-                {
-                  label: "Curated tools",
-                  value: String(featuredRecommendations.length).padStart(2, "0"),
-                  description: "Resources worth keeping",
-                },
-              ].map((metric) => (
-                <SignalCard
-                  key={metric.label}
-                  eyebrow={metric.label}
-                  title={metric.value}
-                  description={metric.description}
-                  emphasis="display"
-                />
-              ))}
-            </div>
-          </div>
+      <HeroCosmic
+        siteSettings={siteSettings}
+        heroSection={heroSection}
+        primaryCtaLabel={primaryCtaLabel}
+        primaryCtaHref={primaryCtaHref}
+        secondaryCtaLabel={secondaryCtaLabel}
+        secondaryCtaHref={secondaryCtaHref}
+        heroEyebrow={heroEyebrow}
+        focusTags={focusTags}
+      />
 
-          <div className="dark-panel rounded-[2rem] p-6 text-white md:p-8">
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="font-mono text-xs uppercase tracking-[0.28em] text-cyan-200">
-                  {systemMapEyebrow}
-                </p>
-                <h2 className="mt-4 font-display text-3xl font-semibold tracking-[-0.05em] text-balance">
-                  {systemMapTitle}
-                </h2>
-              </div>
-              <div className="rounded-full border border-white/12 bg-white/6 px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.24em] text-cyan-100/80">
-                {systemMapBadge}
-              </div>
-            </div>
-            <Markdown
-              className="markdown-inverse mt-5"
-              content={
-                heroSection?.bodyMarkdown ??
-                "This is a long-horizon platform for technical credibility, public thinking, and visible growth."
-              }
-            />
-              <div className="mt-8 grid gap-4 md:grid-cols-3">
-                {capabilitySignals.map((signal) => (
-                  <SignalCard
-                    key={signal.label}
-                    eyebrow={signal.label}
-                    title={signal.value}
-                    description={signal.description}
-                    inverse
-                  />
-                ))}
-              </div>
-            <div className="mt-8 rounded-[1.5rem] border border-white/10 bg-black/10 p-5">
-              <div className="flex items-center justify-between gap-4">
-                <p className="font-mono text-[0.66rem] uppercase tracking-[0.24em] text-cyan-200">
-                  {vectorLabel}
-                </p>
-                <span className="text-[0.68rem] uppercase tracking-[0.2em] text-slate-400">
-                  {vectorBadge}
-                </span>
-              </div>
-              <div className="mt-5 space-y-4">
-                {activeVectors.map((item) => (
-                  <div key={item.label}>
-                    <div className="flex items-center justify-between gap-3 text-sm text-slate-300">
-                      <span>{item.label}</span>
-                      <span>{item.value}</span>
-                    </div>
-                    <div className="mt-2 h-2 rounded-full bg-white/8">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-200 via-cyan-300 to-blue-400"
-                        style={{ width: item.value }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HUDMetrics
+        activeVectors={activeVectors}
+        vectorLabel={vectorLabel}
+        vectorBadge={vectorBadge}
+      />
 
       <section className="mx-auto max-w-7xl px-6 py-18 md:py-24">
         <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
