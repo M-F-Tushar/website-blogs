@@ -56,23 +56,23 @@ export default async function RecommendationDetailPage({
       </div>
       <p className="mt-8 text-lg leading-8 text-muted">{item.summary}</p>
       {item.coverUrl ? (
-        <div className="surface-panel mt-10 overflow-hidden rounded-[2rem] p-3">
+        <div className="editorial-panel mt-10 overflow-hidden rounded-[2rem] p-3">
           <div className="relative aspect-[16/9] overflow-hidden rounded-[1.5rem]">
             <Image
               src={item.coverUrl}
               alt={item.coverAlt ?? item.title}
               fill
-              unoptimized
+              sizes="(max-width: 768px) 100vw, 80vw"
               className="object-cover"
             />
           </div>
         </div>
       ) : null}
-      <div className="surface-panel mt-12 rounded-[2rem] px-6 py-8 md:px-10 md:py-12">
+      <div className="editorial-panel mt-12 rounded-[2rem] px-6 py-8 md:px-10 md:py-12">
         <Markdown content={item.bodyMarkdown} />
       </div>
 
-      <div className="surface-panel mt-8 rounded-[1.5rem] p-6">
+      <div className="editorial-panel mt-8 rounded-[1.75rem] p-6">
         <div className="grid gap-6 md:grid-cols-3">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.26em] text-accent">

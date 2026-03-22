@@ -59,19 +59,19 @@ export default async function AcademicDetailPage({
       </div>
       <p className="mt-8 text-lg leading-8 text-muted">{entry.summary}</p>
       {entry.coverUrl ? (
-        <div className="surface-panel mt-10 overflow-hidden rounded-[2rem] p-3">
+        <div className="editorial-panel mt-10 overflow-hidden rounded-[2rem] p-3">
           <div className="relative aspect-[16/9] overflow-hidden rounded-[1.5rem]">
             <Image
               src={entry.coverUrl}
               alt={entry.coverAlt ?? entry.title}
               fill
-              unoptimized
+              sizes="(max-width: 768px) 100vw, 80vw"
               className="object-cover"
             />
           </div>
         </div>
       ) : null}
-      <div className="surface-panel mt-12 rounded-[2rem] px-6 py-8 md:px-10 md:py-12">
+      <div className="editorial-panel mt-12 rounded-[2rem] px-6 py-8 md:px-10 md:py-12">
         <Markdown content={entry.bodyMarkdown} />
       </div>
     </article>

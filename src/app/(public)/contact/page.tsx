@@ -76,7 +76,7 @@ export async function ContactPageContent({
       <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr]">
         <div className="space-y-6">
           <div className="grid-backdrop overflow-hidden rounded-[2.15rem] border border-white/45">
-            <div className="px-6 py-10 md:px-8 md:py-10">
+            <div className="editorial-panel px-6 py-10 md:px-8 md:py-10">
               <SectionHeading
                 eyebrow={
                   getSectionSettingString(heroSection, "eyebrow") ??
@@ -129,6 +129,7 @@ export async function ContactPageContent({
                       title={title}
                       description={section.subheading}
                       href={linkHref}
+                      className="transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(9,21,33,0.12)]"
                     >
                       {body ? <Markdown className="mt-1" content={body} /> : null}
                     </DetailCard>
@@ -141,6 +142,7 @@ export async function ContactPageContent({
                     title={card.title}
                     description={card.description}
                     href={card.href}
+                    className="transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(9,21,33,0.12)]"
                   />
                 ))}
           </div>

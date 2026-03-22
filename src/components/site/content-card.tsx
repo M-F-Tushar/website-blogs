@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { formatDisplayDate } from "@/lib/utils";
+import { cn, formatDisplayDate } from "@/lib/utils";
 
 interface ContentCardProps {
   href: string;
@@ -12,6 +12,8 @@ interface ContentCardProps {
   meta?: string | null;
   imageUrl?: string | null;
   imageAlt?: string | null;
+  size?: "default" | "feature";
+  className?: string;
 }
 
 export function ContentCard({
@@ -23,18 +25,37 @@ export function ContentCard({
   meta,
   imageUrl,
   imageAlt,
+  size = "default",
+  className,
 }: ContentCardProps) {
+  const isFeatured = size === "feature";
+
   return (
     <Link
       href={href}
-      className="content-card-shell group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] transition duration-300 hover:-translate-y-1.5 hover:border-border-strong hover:shadow-[0_28px_90px_rgba(9,21,33,0.14)]"
+      className={cn(
+        "content-card-shell group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] transition duration-300 hover:-translate-y-1.5 hover:border-border-strong hover:shadow-[0_28px_90px_rgba(9,21,33,0.14)]",
+        isFeatured && "min-h-[24rem] rounded-[2rem]",
+        isFeatured && imageUrl && "md:grid md:grid-cols-[1.04fr_0.96fr]",
+        className,
+      )}
     >
       {imageUrl ? (
-        <div className="relative aspect-[16/10] overflow-hidden border-b border-border/60 bg-[radial-gradient(circle_at_top,_rgba(118,196,255,0.18),_rgba(255,255,255,0)_65%)]">
+        <div
+          className={cn(
+            "relative aspect-[16/10] overflow-hidden border-b border-border/60 bg-[radial-gradient(circle_at_top,_rgba(118,196,255,0.18),_rgba(255,255,255,0)_65%)]",
+            isFeatured && "aspect-[16/9] md:order-2 md:h-full md:aspect-auto md:border-b-0 md:border-l",
+          )}
+        >
           <Image
             src={imageUrl}
             alt={imageAlt ?? title}
             fill
+            sizes={
+              isFeatured
+                ? "(max-width: 768px) 100vw, (max-width: 1280px) 60vw, 42vw"
+                : "(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            }
             className="object-cover transition duration-500 group-hover:scale-[1.03]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[rgba(6,18,28,0.28)] via-[rgba(6,18,28,0.04)] to-transparent" />
@@ -49,7 +70,12 @@ export function ContentCard({
           </div>
         </div>
       ) : null}
-      <div className="flex h-full flex-col p-6">
+      <div
+        className={cn(
+          "flex h-full flex-col p-6",
+          isFeatured && "p-7 md:p-8",
+        )}
+      >
         <div className="flex items-center justify-between gap-4">
           {!imageUrl ? <p className="signal-label">{eyebrow}</p> : <span />}
           {!imageUrl ? (
@@ -63,13 +89,28 @@ export function ContentCard({
           <span className="h-px flex-1 bg-gradient-to-r from-accent/70 to-transparent" />
           <span>{date ? formatDisplayDate(date) : meta ?? "Open entry"}</span>
         </div>
-        <h3 className="mt-5 line-clamp-3 font-display text-2xl leading-tight font-semibold tracking-[-0.05em] text-balance">
+        <h3
+          className={cn(
+            "mt-5 line-clamp-3 font-display leading-tight font-semibold tracking-[-0.05em] text-balance",
+            isFeatured ? "text-[2rem] md:text-[2.35rem]" : "text-2xl",
+          )}
+        >
           {title}
         </h3>
-        <p className="mt-4 line-clamp-4 flex-1 text-sm leading-7 text-muted">
+        <p
+          className={cn(
+            "mt-4 flex-1 text-sm leading-7 text-muted",
+            isFeatured ? "line-clamp-5 md:text-[0.98rem]" : "line-clamp-4",
+          )}
+        >
           {description ?? "Open this entry to review the full note, rationale, and linked work."}
         </p>
-        <div className="mt-7 flex items-center justify-between gap-3 border-t border-border/70 pt-5 text-xs uppercase tracking-[0.22em] text-muted">
+        <div
+          className={cn(
+            "mt-7 flex items-center justify-between gap-3 border-t border-border/70 pt-5 text-xs uppercase tracking-[0.22em] text-muted",
+            isFeatured && "mt-8 pt-6",
+          )}
+        >
           <span>{eyebrow}</span>
           <span className="text-accent transition group-hover:translate-x-1">Explore node</span>
         </div>

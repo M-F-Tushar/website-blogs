@@ -15,6 +15,7 @@ import {
   buildTopLevelPageMetadata,
   DEFAULT_TOP_LEVEL_PAGE_PATHS,
 } from "@/lib/content/page-routing";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata() {
   return buildTopLevelPageMetadata("blogs", {
@@ -22,6 +23,18 @@ export async function generateMetadata() {
     description:
       "Writing across AI/ML, LLMs, MLOps, project logs, paper notes, and the career journey behind them.",
   });
+}
+
+function getCollectionGridClasses(count: number) {
+  if (count <= 1) {
+    return "mt-12 max-w-4xl";
+  }
+
+  return "mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3";
+}
+
+function isFeaturedCollectionCard(count: number, index: number) {
+  return count === 1 || (count >= 3 && index === 0);
 }
 
 export async function BlogsPageContent({
@@ -77,7 +90,7 @@ export async function BlogsPageContent({
               <Markdown className="mt-8" content={heroSection.bodyMarkdown} />
             ) : null}
           </div>
-          <div className="surface-panel rounded-[1.75rem] p-6 md:p-8">
+          <div className="editorial-panel rounded-[1.75rem] p-6 md:p-8">
             <p className="signal-label">{panelLabel}</p>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {panelItems.map((item) => (
@@ -110,25 +123,34 @@ export async function BlogsPageContent({
         </section>
       ) : null}
 
-      <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {posts.map((post) => (
-          <ContentCard
-            key={post.id}
-            href={`/blogs/${post.slug}`}
-            eyebrow={post.categories[0] ?? "Blog"}
-            title={post.title}
-            description={post.excerpt}
-            date={post.publishedAt}
-            imageUrl={post.coverUrl}
-            imageAlt={post.coverAlt}
-          />
-        ))}
-      </div>
+      {posts.length > 0 ? (
+        <div className={getCollectionGridClasses(posts.length)}>
+          {posts.map((post, index) => (
+            <ContentCard
+              key={post.id}
+              href={`/blogs/${post.slug}`}
+              eyebrow={post.categories[0] ?? "Blog"}
+              title={post.title}
+              description={post.excerpt}
+              date={post.publishedAt}
+              imageUrl={post.coverUrl}
+              imageAlt={post.coverAlt}
+              size={isFeaturedCollectionCard(posts.length, index) ? "feature" : "default"}
+              className={cn(
+                posts.length >= 3 && index === 0 && "md:col-span-2 xl:col-span-2",
+              )}
+            />
+          ))}
+        </div>
+      ) : null}
 
       {posts.length === 0 ? (
-        <div className="surface-panel mt-10 rounded-[1.75rem] p-8 text-sm text-muted">
-          {emptyState}
-        </div>
+        <DetailCard
+          className="mt-10 md:p-8"
+          eyebrow="Archive status"
+          title="No published posts yet"
+          description={emptyState}
+        />
       ) : null}
     </div>
   );

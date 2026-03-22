@@ -271,7 +271,7 @@ export async function AboutPageContent({
               ))}
             </div>
 
-            <div className="surface-panel mt-8 rounded-[1.8rem] p-6 md:p-8">
+            <div className="editorial-panel mt-8 rounded-[1.8rem] p-6 md:p-8">
               <p className="signal-label">{formatSectionLabel(identitySection, "Identity")}</p>
               <h2 className="mt-5 font-display text-3xl font-semibold tracking-[-0.05em] text-balance">
                 {identitySection?.heading ?? "A personal platform for AI-native engineering work"}

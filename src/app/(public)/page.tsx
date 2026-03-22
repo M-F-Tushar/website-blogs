@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { ContentCard } from "@/components/site/content-card";
+import { DetailCard } from "@/components/site/detail-card";
 import { Markdown } from "@/components/site/markdown";
 import { SignalCard } from "@/components/site/signal-card";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -16,6 +17,7 @@ import {
   buildTopLevelPageMetadata,
   DEFAULT_TOP_LEVEL_PAGE_PATHS,
 } from "@/lib/content/page-routing";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata() {
   return buildTopLevelPageMetadata("home", {
@@ -23,6 +25,30 @@ export async function generateMetadata() {
     description:
       "A technical identity platform documenting learning, projects, academic growth, and long-term direction in AI, ML, LLM, and MLOps.",
   });
+}
+
+function getCollectionGridClasses(count: number) {
+  if (count <= 1) {
+    return "mt-10 max-w-4xl";
+  }
+
+  return "mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3";
+}
+
+function getCompactCollectionGridClasses(count: number) {
+  if (count <= 1) {
+    return "mt-8 max-w-4xl";
+  }
+
+  return "mt-8 grid gap-5 md:grid-cols-2";
+}
+
+function isFeaturedCollectionCard(count: number, index: number) {
+  return count === 1 || (count >= 3 && index === 0);
+}
+
+function getFeaturedCollectionSpan(count: number, index: number) {
+  return count >= 3 && index === 0 ? "md:col-span-2 xl:col-span-2" : undefined;
 }
 
 export async function HomePageContent({
@@ -256,7 +282,7 @@ export async function HomePageContent({
 
       <section className="mx-auto max-w-7xl px-6 py-18 md:py-24">
         <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
-          <div className="surface-panel rounded-[2rem] p-6 md:p-8">
+          <div className="editorial-panel rounded-[2rem] p-6 md:p-8">
             <p className="signal-label">{focusEyebrow}</p>
             <h2 className="mt-5 font-display text-3xl font-semibold tracking-[-0.05em] text-balance md:text-[2.4rem]">
               {focusPanelTitle}
@@ -276,19 +302,21 @@ export async function HomePageContent({
               </div>
             </div>
 
-          <div className="surface-panel rounded-[2rem] p-6 md:p-8">
+          <div className="editorial-panel rounded-[2rem] p-6 md:p-8">
             <SectionHeading
               eyebrow="Current focus"
               title={focusSection?.heading ?? "Current focus areas"}
               description={focusSection?.subheading}
             />
-            <Markdown
-              className="mt-8"
-              content={
-                focusSection?.bodyMarkdown ??
-                "The current phase is about building durable foundations in AI, ML, LLM tooling, and deployment discipline."
-              }
-            />
+            <div className="mt-8 rounded-[1.5rem] border border-border/70 bg-white/62 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+              <Markdown
+                className="[&_li]:py-1 [&_ul]:space-y-1"
+                content={
+                  focusSection?.bodyMarkdown ??
+                  "The current phase is about building durable foundations in AI, ML, LLM tooling, and deployment discipline."
+                }
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -310,25 +338,36 @@ export async function HomePageContent({
         {writingSection?.bodyMarkdown ? (
           <Markdown className="mt-6" content={writingSection.bodyMarkdown} />
         ) : null}
-        <div className="mt-10 grid gap-6 lg:grid-cols-3">
-          {featuredPosts.map((post) => (
-            <ContentCard
-              key={post.id}
-              href={`/blogs/${post.slug}`}
-              eyebrow="Blog"
-              title={post.title}
-              description={post.excerpt}
-              date={post.publishedAt}
-              imageUrl={post.coverUrl}
-              imageAlt={post.coverAlt}
-            />
-          ))}
-        </div>
+        {featuredPosts.length > 0 ? (
+          <div className={getCollectionGridClasses(featuredPosts.length)}>
+            {featuredPosts.map((post, index) => (
+              <ContentCard
+                key={post.id}
+                href={`/blogs/${post.slug}`}
+                eyebrow="Blog"
+                title={post.title}
+                description={post.excerpt}
+                date={post.publishedAt}
+                imageUrl={post.coverUrl}
+                imageAlt={post.coverAlt}
+                size={isFeaturedCollectionCard(featuredPosts.length, index) ? "feature" : "default"}
+                className={getFeaturedCollectionSpan(featuredPosts.length, index)}
+              />
+            ))}
+          </div>
+        ) : (
+          <DetailCard
+            className="mt-10 md:p-8"
+            eyebrow="Writing queue"
+            title="No featured writing is published yet"
+            description="Publish or feature a post from admin to turn this section into a stronger live showcase."
+          />
+        )}
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-18 md:py-24">
         <div className="grid gap-8 lg:grid-cols-2">
-          <div className="surface-panel rounded-[2rem] p-6 md:p-8">
+          <div className="editorial-panel rounded-[2rem] p-6 md:p-8">
             <SectionHeading
               eyebrow={
                 getSectionSettingString(academicSection, "eyebrow") ??
@@ -346,23 +385,38 @@ export async function HomePageContent({
             {academicSection?.bodyMarkdown ? (
               <Markdown className="mt-6" content={academicSection.bodyMarkdown} />
             ) : null}
-            <div className="mt-8 grid gap-5">
-              {featuredAcademic.map((entry) => (
-                <ContentCard
-                  key={entry.id}
-                  href={`/academic/${entry.slug}`}
-                  eyebrow={entry.entryType.replace(/_/g, " ")}
-                  title={entry.title}
-                  description={entry.summary}
-                  date={entry.completedAt ?? entry.startedAt}
-                  imageUrl={entry.coverUrl}
-                  imageAlt={entry.coverAlt}
-                />
-              ))}
-            </div>
+            {featuredAcademic.length > 0 ? (
+              <div className={getCompactCollectionGridClasses(featuredAcademic.length)}>
+                {featuredAcademic.map((entry, index) => (
+                  <ContentCard
+                    key={entry.id}
+                    href={`/academic/${entry.slug}`}
+                    eyebrow={entry.entryType.replace(/_/g, " ")}
+                    title={entry.title}
+                    description={entry.summary}
+                    date={entry.completedAt ?? entry.startedAt}
+                    imageUrl={entry.coverUrl}
+                    imageAlt={entry.coverAlt}
+                    size={isFeaturedCollectionCard(featuredAcademic.length, index) ? "feature" : "default"}
+                    className={
+                      featuredAcademic.length >= 3 && index === 0
+                        ? "md:col-span-2"
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
+            ) : (
+              <DetailCard
+                className="mt-8"
+                eyebrow="Academic preview"
+                title="Research and academic entries will appear here"
+                description="Once an academic note or experiment is published and featured, this section becomes a proper showcase instead of a placeholder."
+              />
+            )}
           </div>
 
-          <div className="surface-panel rounded-[2rem] p-6 md:p-8">
+          <div className="editorial-panel rounded-[2rem] p-6 md:p-8">
             <SectionHeading
               eyebrow={
                 getSectionSettingString(recommendationsSection, "eyebrow") ??
@@ -380,20 +434,35 @@ export async function HomePageContent({
             {recommendationsSection?.bodyMarkdown ? (
               <Markdown className="mt-6" content={recommendationsSection.bodyMarkdown} />
             ) : null}
-            <div className="mt-8 grid gap-5">
-              {featuredRecommendations.map((item) => (
-                <ContentCard
-                  key={item.id}
-                  href={`/recommendations/${item.slug}`}
-                  eyebrow={item.category ?? "Recommendation"}
-                  title={item.title}
-                  description={item.summary}
-                  meta={item.level}
-                  imageUrl={item.coverUrl}
-                  imageAlt={item.coverAlt}
-                />
-              ))}
-            </div>
+            {featuredRecommendations.length > 0 ? (
+              <div className={getCompactCollectionGridClasses(featuredRecommendations.length)}>
+                {featuredRecommendations.map((item, index) => (
+                  <ContentCard
+                    key={item.id}
+                    href={`/recommendations/${item.slug}`}
+                    eyebrow={item.category ?? "Recommendation"}
+                    title={item.title}
+                    description={item.summary}
+                    meta={item.level}
+                    imageUrl={item.coverUrl}
+                    imageAlt={item.coverAlt}
+                    size={isFeaturedCollectionCard(featuredRecommendations.length, index) ? "feature" : "default"}
+                    className={
+                      featuredRecommendations.length >= 3 && index === 0
+                        ? "md:col-span-2"
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
+            ) : (
+              <DetailCard
+                className="mt-8"
+                eyebrow="Recommendation queue"
+                title="No featured recommendations are live yet"
+                description="Feature a recommendation in admin to give this section a stronger visual anchor and a more useful signal."
+              />
+            )}
           </div>
         </div>
       </section>
@@ -412,20 +481,44 @@ export async function HomePageContent({
         {recentSection?.bodyMarkdown ? (
           <Markdown className="mt-6" content={recentSection.bodyMarkdown} />
         ) : null}
-        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {recentPosts.map((post) => (
-            <ContentCard
-              key={post.id}
-              href={`/blogs/${post.slug}`}
-              eyebrow={post.categories[0] ?? "Update"}
-              title={post.title}
-              description={post.excerpt}
-              date={post.publishedAt}
-              imageUrl={post.coverUrl}
-              imageAlt={post.coverAlt}
-            />
-          ))}
-        </div>
+        {recentPosts.length > 0 ? (
+          <div
+            className={cn(
+              "mt-10 grid gap-6",
+              recentPosts.length === 1
+                ? "max-w-4xl"
+                : recentPosts.length === 2
+                  ? "md:grid-cols-2"
+                  : "md:grid-cols-2 xl:grid-cols-4",
+            )}
+          >
+            {recentPosts.map((post, index) => (
+              <ContentCard
+                key={post.id}
+                href={`/blogs/${post.slug}`}
+                eyebrow={post.categories[0] ?? "Update"}
+                title={post.title}
+                description={post.excerpt}
+                date={post.publishedAt}
+                imageUrl={post.coverUrl}
+                imageAlt={post.coverAlt}
+                size={isFeaturedCollectionCard(recentPosts.length, index) ? "feature" : "default"}
+                className={
+                  recentPosts.length >= 3 && index === 0
+                    ? "md:col-span-2 xl:col-span-2"
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+        ) : (
+          <DetailCard
+            className="mt-10 md:p-8"
+            eyebrow="Fresh movement"
+            title="Recent updates will surface here"
+            description="This area activates automatically once new published posts are available."
+          />
+        )}
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-18 md:py-24">

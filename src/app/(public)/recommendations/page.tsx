@@ -15,6 +15,7 @@ import {
   buildTopLevelPageMetadata,
   DEFAULT_TOP_LEVEL_PAGE_PATHS,
 } from "@/lib/content/page-routing";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata() {
   return buildTopLevelPageMetadata("recommendations", {
@@ -22,6 +23,18 @@ export async function generateMetadata() {
     description:
       "Books, tools, courses, websites, and communities that support serious technical growth.",
   });
+}
+
+function getCollectionGridClasses(count: number) {
+  if (count <= 1) {
+    return "mt-12 max-w-4xl";
+  }
+
+  return "mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3";
+}
+
+function isFeaturedCollectionCard(count: number, index: number) {
+  return count === 1 || (count >= 3 && index === 0);
 }
 
 export async function RecommendationsPageContent({
@@ -77,7 +90,7 @@ export async function RecommendationsPageContent({
               <Markdown className="mt-8" content={heroSection.bodyMarkdown} />
             ) : null}
           </div>
-          <div className="surface-panel rounded-[1.75rem] p-6 md:p-8">
+          <div className="editorial-panel rounded-[1.75rem] p-6 md:p-8">
             <p className="signal-label">{panelLabel}</p>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {panelItems.map((item) => (
@@ -110,25 +123,40 @@ export async function RecommendationsPageContent({
         </section>
       ) : null}
 
-      <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {recommendations.map((recommendation) => (
-          <ContentCard
-            key={recommendation.id}
-            href={`/recommendations/${recommendation.slug}`}
-            eyebrow={recommendation.category ?? "Recommendation"}
-            title={recommendation.title}
-            description={recommendation.summary}
-            meta={recommendation.level}
-            imageUrl={recommendation.coverUrl}
-            imageAlt={recommendation.coverAlt}
-          />
-        ))}
-      </div>
+      {recommendations.length > 0 ? (
+        <div className={getCollectionGridClasses(recommendations.length)}>
+          {recommendations.map((recommendation, index) => (
+            <ContentCard
+              key={recommendation.id}
+              href={`/recommendations/${recommendation.slug}`}
+              eyebrow={recommendation.category ?? "Recommendation"}
+              title={recommendation.title}
+              description={recommendation.summary}
+              meta={recommendation.level}
+              imageUrl={recommendation.coverUrl}
+              imageAlt={recommendation.coverAlt}
+              size={
+                isFeaturedCollectionCard(recommendations.length, index)
+                  ? "feature"
+                  : "default"
+              }
+              className={cn(
+                recommendations.length >= 3 &&
+                  index === 0 &&
+                  "md:col-span-2 xl:col-span-2",
+              )}
+            />
+          ))}
+        </div>
+      ) : null}
 
       {recommendations.length === 0 ? (
-        <div className="surface-panel mt-10 rounded-[1.75rem] p-8 text-sm text-muted">
-          {emptyState}
-        </div>
+        <DetailCard
+          className="mt-10 md:p-8"
+          eyebrow="Archive status"
+          title="No published recommendations yet"
+          description={emptyState}
+        />
       ) : null}
     </div>
   );
