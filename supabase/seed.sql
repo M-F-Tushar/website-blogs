@@ -82,11 +82,58 @@ insert into public.page_sections (
   settings_json
 )
 values
-  ((select id from home_page), 'hero', 'hero', 'I''m a CSE student building toward AI, machine learning, LLM systems, and dependable engineering practice.', 'This platform documents what I''m learning, what I''m building, and how my technical direction evolves over time.', 'I care about research depth, practical systems thinking, and honest progress. The goal is not to look finished. The goal is to become difficult to ignore through consistency and real work.', 10, true, true, '{}'::jsonb),
-  ((select id from home_page), 'current-focus', 'focus', 'Current focus areas', 'The work streams shaping the next stage of growth.', E'- ML fundamentals and applied experimentation\n- LLM systems, prompting, and evaluation\n- MLOps habits: reproducibility, observability, deployment readiness\n- Technical writing and paper-reading discipline', 20, true, false, '{}'::jsonb),
+  ((select id from home_page), 'hero', 'hero', 'I''m a CSE student building toward AI, machine learning, LLM systems, and dependable engineering practice.', 'This platform documents what I''m learning, what I''m building, and how my technical direction evolves over time.', 'I care about research depth, practical systems thinking, and honest progress. The goal is not to look finished. The goal is to become difficult to ignore through consistency and real work.', 10, true, true, '{"eyebrow":"AI engineering platform","focusTags":["LLM systems","MLOps discipline","Model evaluation","Research practice"],"primaryCtaLabel":"Read the journey","primaryCtaHref":"/blogs","secondaryCtaLabel":"Connect","secondaryCtaHref":"/contact","capabilitySignals":[{"label":"Primary track","value":"AI engineering and ML systems"},{"label":"Working style","value":"Research-led and documentation-first"},{"label":"Output signal","value":"Visible progress over polished claims"}],"systemMapEyebrow":"Research system map","systemMapTitle":"Why this platform exists","systemMapBadge":"Live notebook","vectorLabel":"Active vectors","vectorBadge":"Current emphasis","activeVectors":[{"label":"LLMs and orchestration","value":"82%"},{"label":"MLOps workflow","value":"74%"},{"label":"Applied ML","value":"68%"},{"label":"Research literacy","value":"79%"}]}'::jsonb),
+  ((select id from home_page), 'current-focus', 'focus', 'Current focus areas', 'The work streams shaping the next stage of growth.', E'- ML fundamentals and applied experimentation\n- LLM systems, prompting, and evaluation\n- MLOps habits: reproducibility, observability, deployment readiness\n- Technical writing and paper-reading discipline', 20, true, false, '{"eyebrow":"Current vectors","panelTitle":"What the work is optimizing for right now","panelDescription":"A serious AI platform is part notebook, part research ledger, and part systems portfolio. These are the pillars shaping that direction.","columns":["Learning loops that end in working systems, not just notes.","Documentation that makes experiments, failures, and growth legible.","A platform that proves seriousness through consistency over time."]}'::jsonb),
+  ((select id from home_page), 'featured-writing', 'preview', 'Recent writing that reflects how the work is evolving', 'A mix of learning notes, project thinking, and system-building reflections.', 'Featured posts are still selected through the content model. This section only controls the framing around them.', 30, true, false, '{"eyebrow":"Featured writing"}'::jsonb),
+  ((select id from home_page), 'academic-preview', 'preview', 'Research notes, experiments, and academic continuity', 'A space for paper-reading, coursework reflections, research interests, and later thesis work.', 'Featured academic entries still come from the published academic content model, while this section controls the narrative around them.', 40, true, false, '{"eyebrow":"Academic and research"}'::jsonb),
+  ((select id from home_page), 'recommendations-preview', 'preview', 'Resources worth recommending because they genuinely help', 'Tools, books, and learning assets that support real progress instead of hype.', 'Featured recommendations still come from the recommendation model and its featured flags. Admin controls this intro copy, not the underlying selection rules.', 50, true, false, '{"eyebrow":"Recommendations"}'::jsonb),
+  ((select id from home_page), 'recent-updates', 'preview', 'Fresh notes and visible progress', 'The platform should feel alive, not static. These entries show recent movement.', 'Recent updates remain automatically driven by published posts so the homepage stays honest and self-refreshing.', 60, true, false, '{"eyebrow":"Recent updates"}'::jsonb),
+  ((select id from home_page), 'connect', 'connect', 'If you care about AI, ML, systems, or serious learning, let us talk.', null, 'I am building this platform as a public record of growth. If there is a research idea, project, or conversation worth having, reach out.', 70, true, false, '{"eyebrow":"Connect","primaryCtaLabel":"Open contact page","primaryCtaHref":"/contact","secondaryCtaLabel":"Email directly","tracks":["Research discussion","Project collaboration","MLOps systems","Learning network"]}'::jsonb),
   ((select id from about_page), 'who-i-am', 'identity', 'Who I am', 'A student-builder-researcher identity, still early but serious.', 'I am building a technical identity rooted in evidence, curiosity, and consistency. I want the public work to show real movement, not perform expertise.', 10, true, false, '{}'::jsonb),
   ((select id from about_page), 'roadmap', 'timeline', 'Current learning roadmap', 'Depth first, then leverage.', 'I''m building from CS fundamentals toward practical AI systems. That means strengthening statistics, ML workflows, LLM application design, and the deployment discipline needed to move from notebooks to reliable products.', 20, true, false, '{}'::jsonb),
   ((select id from about_page), 'values', 'principles', 'Values', 'Curiosity, depth, experimentation, and consistency.', 'I prefer serious iteration over surface-level speed. I want research habits, implementation discipline, and public learning to reinforce one another.', 30, true, false, '{}'::jsonb)
+on conflict (page_id, section_key) do update
+set section_type = excluded.section_type,
+    heading = excluded.heading,
+    subheading = excluded.subheading,
+    body_markdown = excluded.body_markdown,
+    sort_order = excluded.sort_order,
+    is_visible = excluded.is_visible,
+    featured = excluded.featured,
+    settings_json = excluded.settings_json;
+
+with blogs_page as (
+  select id from public.pages where page_key = 'blogs'
+), academic_page as (
+  select id from public.pages where page_key = 'academic'
+), recommendations_page as (
+  select id from public.pages where page_key = 'recommendations'
+), contact_page as (
+  select id from public.pages where page_key = 'contact'
+)
+insert into public.page_sections (
+  page_id,
+  section_key,
+  section_type,
+  heading,
+  subheading,
+  body_markdown,
+  sort_order,
+  is_visible,
+  featured,
+  settings_json
+)
+values
+  ((select id from blogs_page), 'hero', 'hero', 'Technical notes, project logs, paper reflections, and visible learning', 'Writing is part of the work. These posts track progress, sharpen understanding, and make the journey legible.', 'The blog archive is where experiments, learning loops, and system-level thinking become public. It should read like a real engineering record, not a content calendar.', 10, true, true, '{"eyebrow":"Blogs","panelLabel":"Writing system","panelItems":[{"label":"Published nodes","value":"02","description":"Published posts"},{"label":"Scope","value":"AI, ML, LLM, MLOps","description":"The themes running through the archive."}]}'::jsonb),
+  ((select id from blogs_page), 'why-writing', 'detail', 'Why the writing matters', 'The public notes are part of the technical system, not separate from it.', 'Writing helps convert reading, implementation, and debugging into durable understanding. It also creates an evidence trail that is useful for collaborators, hiring, and future work.', 20, true, false, '{"eyebrow":"Why it matters"}'::jsonb),
+  ((select id from academic_page), 'hero', 'hero', 'Coursework, research notes, experiments, and evidence of deeper study', 'This section tracks academic growth, research curiosity, and the transition from student work to more serious technical exploration.', 'Academic work matters here because it creates continuity. The goal is to make paper reading, experiments, coursework, and research interests visible as a coherent trajectory.', 10, true, true, '{"eyebrow":"Academic","panelLabel":"Research continuity","panelItems":[{"label":"Indexed entries","value":"01","description":"Published academic records"},{"label":"Emphasis","value":"Study and experiments","description":"Coursework, experiments, paper notes, and the evidence trail behind deeper study."}]}'::jsonb),
+  ((select id from academic_page), 'study-system', 'detail', 'Study is treated like an evolving research system', 'The page is for more than grades or summaries.', 'I want this area to show how academic work compounds into engineering judgment: reading critically, documenting ideas, building experiments, and tracking the questions worth pursuing next.', 20, true, false, '{"eyebrow":"Research habit"}'::jsonb),
+  ((select id from recommendations_page), 'hero', 'hero', 'Resources I''d recommend because they support real progress', 'Books, tools, and learning assets filtered through actual use, not generic listicle energy.', 'The goal of this page is curation, not volume. Anything listed here should be genuinely useful for building understanding, execution quality, or long-term technical taste.', 10, true, true, '{"eyebrow":"Recommendations","panelLabel":"Curated stack","panelItems":[{"label":"Saved resources","value":"01","description":"Published recommendations"},{"label":"Filter","value":"Useful in practice","description":"Books, tools, and references that actually hold up in practice."}]}'::jsonb),
+  ((select id from recommendations_page), 'curation-rule', 'detail', 'The bar is practical usefulness, not popularity', 'A recommendation should earn its place.', 'This page should stay selective. I only want to recommend things that improve how I learn, build, debug, or reason about systems over time.', 20, true, false, '{"eyebrow":"Curation rule"}'::jsonb),
+  ((select id from contact_page), 'hero', 'hero', 'Open a conversation', 'If there''s an idea, project, or direction worth exploring together, I''d like to hear about it.', 'The best outreach usually includes enough context to make the next step obvious: what the idea is, why it matters, and what kind of conversation would be useful.', 10, true, true, '{"eyebrow":"Contact","tracks":["Research conversations","AI/ML collaboration","Systems and tooling"]}'::jsonb),
+  ((select id from contact_page), 'email', 'detail', 'hello@example.com', 'Best for collaboration, research questions, or project discussion.', 'Email is still the clearest way to start a useful technical conversation here.', 20, true, false, '{"eyebrow":"Email","href":"mailto:hello@example.com"}'::jsonb),
+  ((select id from contact_page), 'location', 'detail', 'Dhaka, Bangladesh', 'Remote-friendly and open to thoughtful technical conversations across time zones.', 'Open to async conversation, remote collaboration, and practical discussions that can become real work.', 30, true, false, '{"eyebrow":"Location"}'::jsonb),
+  ((select id from contact_page), 'form', 'form', 'Start the conversation', 'Use this channel for collaboration, research questions, project ideas, or thoughtful technical discussion.', 'A short summary, relevant links, and the kind of discussion you want make it easier to respond well.', 40, true, false, '{"eyebrow":"Secure intake","badge":"Thoughtful replies over volume"}'::jsonb)
 on conflict (page_id, section_key) do update
 set section_type = excluded.section_type,
     heading = excluded.heading,

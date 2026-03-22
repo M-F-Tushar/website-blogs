@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
 
 import { getSiteSettings } from "@/lib/content/queries";
+import { getSiteUrl } from "@/lib/utils";
 import "./globals.css";
 
 const displayFont = Space_Grotesk({
@@ -30,9 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const description = siteSettings.metaDescription || siteSettings.siteDescription;
 
   return {
-    metadataBase: new URL(
-      process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-    ),
+    metadataBase: new URL(getSiteUrl()),
     title: {
       default: siteName,
       template: `%s | ${siteSettings.siteName}`,

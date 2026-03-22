@@ -11,6 +11,35 @@ function isValidHttpUrl(value: string | undefined) {
   }
 }
 
+export type AppRuntimeStage = "local" | "staging" | "production";
+
+export function getAppRuntimeStage(): AppRuntimeStage {
+  const explicitStage = process.env.APP_ENV?.toLowerCase();
+
+  if (explicitStage === "local" || explicitStage === "development") {
+    return "local";
+  }
+
+  if (explicitStage === "staging" || explicitStage === "preview") {
+    return "staging";
+  }
+
+  if (explicitStage === "production") {
+    return "production";
+  }
+
+  const vercelStage = process.env.VERCEL_ENV?.toLowerCase();
+  if (vercelStage === "preview") {
+    return "staging";
+  }
+
+  if (vercelStage === "production") {
+    return "production";
+  }
+
+  return process.env.NODE_ENV === "production" ? "production" : "local";
+}
+
 export function hasPublicSupabaseEnv() {
   return Boolean(
     isValidHttpUrl(process.env.NEXT_PUBLIC_SUPABASE_URL) &&

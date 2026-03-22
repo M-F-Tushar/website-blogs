@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { MediaAssetPicker } from "@/components/admin/media-asset-picker";
 import {
   AdminCheckbox,
   AdminField,
@@ -11,7 +12,10 @@ import {
   StatusPill,
   SubmitButton,
 } from "@/components/admin/primitives";
-import { getAdminAcademicEntries } from "@/lib/content/admin-queries";
+import {
+  getAdminAcademicEntries,
+  getAdminMediaAssets,
+} from "@/lib/content/admin-queries";
 import {
   archiveAcademicEntryAction,
   saveAcademicEntryAction,
@@ -24,7 +28,10 @@ interface AdminAcademicPageProps {
 export default async function AdminAcademicPage({
   searchParams,
 }: AdminAcademicPageProps) {
-  const entries = await getAdminAcademicEntries();
+  const [entries, assets] = await Promise.all([
+    getAdminAcademicEntries(),
+    getAdminMediaAssets(),
+  ]);
   const { edit } = await searchParams;
   const selectedEntry = entries.find((entry) => entry.id === edit) ?? null;
 
@@ -140,6 +147,13 @@ export default async function AdminAcademicPage({
                 />
               </AdminField>
             </div>
+
+            <MediaAssetPicker
+              label="Cover image"
+              name="coverAssetId"
+              assets={assets}
+              selectedAssetId={selectedEntry?.coverAssetId ?? null}
+            />
 
             <AdminCheckbox
               name="featured"

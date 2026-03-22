@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { MediaAssetPicker } from "@/components/admin/media-asset-picker";
 import {
   AdminCheckbox,
   AdminField,
@@ -11,7 +12,10 @@ import {
   StatusPill,
   SubmitButton,
 } from "@/components/admin/primitives";
-import { getAdminRecommendations } from "@/lib/content/admin-queries";
+import {
+  getAdminMediaAssets,
+  getAdminRecommendations,
+} from "@/lib/content/admin-queries";
 import {
   archiveRecommendationAction,
   saveRecommendationAction,
@@ -24,7 +28,10 @@ interface AdminRecommendationsPageProps {
 export default async function AdminRecommendationsPage({
   searchParams,
 }: AdminRecommendationsPageProps) {
-  const recommendations = await getAdminRecommendations();
+  const [recommendations, assets] = await Promise.all([
+    getAdminRecommendations(),
+    getAdminMediaAssets(),
+  ]);
   const { edit } = await searchParams;
   const selectedItem =
     recommendations.find((recommendation) => recommendation.id === edit) ?? null;
@@ -135,6 +142,13 @@ export default async function AdminRecommendationsPage({
                 defaultValue={selectedItem?.externalUrl ?? ""}
               />
             </AdminField>
+
+            <MediaAssetPicker
+              label="Cover image"
+              name="coverAssetId"
+              assets={assets}
+              selectedAssetId={selectedItem?.coverAssetId ?? null}
+            />
 
             <AdminCheckbox
               name="featured"

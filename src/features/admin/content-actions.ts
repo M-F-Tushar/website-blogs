@@ -6,6 +6,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdminSession } from "@/lib/auth/guards";
+import {
+  buildSubmissionFingerprint,
+  ContactRequestError,
+  evaluateContactSubmission,
+  verifyTurnstileToken,
+} from "@/lib/contact/anti-abuse";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import {
   academicEntrySchema,
@@ -26,12 +32,43 @@ interface NamedLookupRow {
   slug: string;
 }
 
-function revalidatePublicContent() {
+function normalizePageSlug(slug: string | null | undefined) {
+  if (!slug || slug === "/") {
+    return "/";
+  }
+
+  const normalized = slug.startsWith("/") ? slug : `/${slug}`;
+  return normalized.length > 1 ? normalized.replace(/\/+$/, "") : normalized;
+}
+
+async function revalidatePublicContent(extraPaths: string[] = []) {
+  const paths = new Set<string>([
+    "/",
+    "/blogs",
+    "/academic",
+    "/recommendations",
+    "/contact",
+    ...extraPaths.map((path) => normalizePageSlug(path)),
+  ]);
+
+  try {
+    const supabase = createServiceRoleClient();
+    const { data } = await supabase.from("pages").select("slug");
+
+    for (const page of data ?? []) {
+      if (page.slug) {
+        paths.add(normalizePageSlug(page.slug));
+      }
+    }
+  } catch {
+    // If page lookup fails, still revalidate the known top-level routes.
+  }
+
   revalidatePath("/", "layout");
-  revalidatePath("/blogs");
-  revalidatePath("/academic");
-  revalidatePath("/recommendations");
-  revalidatePath("/contact");
+
+  for (const path of paths) {
+    revalidatePath(path);
+  }
 }
 
 async function ensureUniqueSlug(
@@ -134,6 +171,85 @@ async function upsertRecommendationCategory(name: string | null) {
   return data?.id ?? null;
 }
 
+async function cleanupUploadedMediaObject(
+  bucketName: string,
+  objectPath: string,
+  supabase = createServiceRoleClient(),
+) {
+  const { error } = await supabase.storage.from(bucketName).remove([objectPath]);
+
+  if (error) {
+    console.error("Failed to clean up uploaded media object", {
+      bucketName,
+      objectPath,
+      error: error.message,
+    });
+  }
+}
+
+async function getContactNotificationRecipient(supabase = createServiceRoleClient()) {
+  const explicitRecipient = process.env.CONTACT_NOTIFICATION_EMAIL;
+  if (explicitRecipient) {
+    return explicitRecipient;
+  }
+
+  const { data } = await supabase
+    .from("site_settings")
+    .select("contact_email")
+    .eq("site_key", "primary")
+    .maybeSingle();
+
+  return typeof data?.contact_email === "string" ? data.contact_email : null;
+}
+
+async function sendContactNotificationEmail(input: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  spamScore: number;
+  spamFlags: string[];
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.CONTACT_NOTIFICATION_FROM_EMAIL;
+
+  if (!apiKey || !fromEmail) {
+    return;
+  }
+
+  const recipient = await getContactNotificationRecipient();
+  if (!recipient) {
+    return;
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: fromEmail,
+      to: [recipient],
+      reply_to: input.email,
+      subject: `New contact message: ${input.subject}`,
+      text: [
+        `From: ${input.name} <${input.email}>`,
+        `Spam score: ${input.spamScore}`,
+        `Spam flags: ${input.spamFlags.join(", ") || "none"}`,
+        "",
+        input.message,
+      ].join("\n"),
+    }),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Notification provider rejected the request: ${body}`);
+  }
+}
+
 export async function savePostAction(formData: FormData) {
   const { profile } = await requireAdminSession();
 
@@ -209,7 +325,7 @@ export async function savePostAction(formData: FormData) {
 
   await syncPostTaxonomy(mutation.data.id, payload.categories, payload.tags);
 
-  revalidatePublicContent();
+  await revalidatePublicContent();
   redirect("/admin/content/posts?saved=1");
 }
 
@@ -227,7 +343,7 @@ export async function archivePostAction(formData: FormData) {
     .update({ status: "archived", deleted_at: new Date().toISOString() })
     .eq("id", id);
 
-  revalidatePublicContent();
+  await revalidatePublicContent();
   redirect("/admin/content/posts?deleted=1");
 }
 
@@ -297,7 +413,7 @@ export async function saveAcademicEntryAction(formData: FormData) {
     throw new Error(mutation.error.message);
   }
 
-  revalidatePublicContent();
+  await revalidatePublicContent();
   redirect("/admin/content/academic?saved=1");
 }
 
@@ -315,7 +431,7 @@ export async function archiveAcademicEntryAction(formData: FormData) {
     .update({ status: "archived", deleted_at: new Date().toISOString() })
     .eq("id", id);
 
-  revalidatePublicContent();
+  await revalidatePublicContent();
   redirect("/admin/content/academic?deleted=1");
 }
 
@@ -392,7 +508,7 @@ export async function saveRecommendationAction(formData: FormData) {
     throw new Error(mutation.error.message);
   }
 
-  revalidatePublicContent();
+  await revalidatePublicContent();
   redirect("/admin/content/recommendations?saved=1");
 }
 
@@ -410,7 +526,7 @@ export async function archiveRecommendationAction(formData: FormData) {
     .update({ status: "archived", deleted_at: new Date().toISOString() })
     .eq("id", id);
 
-  revalidatePublicContent();
+  await revalidatePublicContent();
   redirect("/admin/content/recommendations?deleted=1");
 }
 
@@ -442,18 +558,28 @@ export async function uploadMediaAssetAction(formData: FormData) {
     throw new Error(uploadError.message);
   }
 
-  const { error: insertError } = await supabase.from("media_assets").insert({
-    label,
-    alt_text: altText,
-    bucket_name: bucketName,
-    object_path: objectPath,
-    mime_type: file.type,
-    file_size: file.size,
-    is_public: bucketName === "site-public",
-  });
+  try {
+    const { error: insertError } = await supabase.from("media_assets").insert({
+      label,
+      alt_text: altText,
+      bucket_name: bucketName,
+      object_path: objectPath,
+      mime_type: file.type,
+      file_size: file.size,
+      is_public: bucketName === "site-public",
+    });
 
-  if (insertError) {
-    throw new Error(insertError.message);
+    if (insertError) {
+      throw insertError;
+    }
+  } catch (error) {
+    await cleanupUploadedMediaObject(bucketName, objectPath, supabase);
+
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+
+    throw new Error("Unable to save uploaded media metadata.");
   }
 
   revalidatePath("/admin/media");
@@ -496,13 +622,27 @@ export async function submitContactMessage(formData: FormData, requestMeta: {
     email: normalizeText(formData.get("email")),
     subject: normalizeText(formData.get("subject")),
     message: normalizeText(formData.get("message")),
+    captchaToken: optionalText(formData.get("captchaToken")),
     honeypot: normalizeText(formData.get("company")),
   });
 
+  await verifyTurnstileToken(payload.captchaToken, requestMeta.sourceIp);
+
   const supabase = createServiceRoleClient();
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const fingerprint = buildSubmissionFingerprint({
+    email: payload.email,
+    message: payload.message,
+    sourceIp: requestMeta.sourceIp,
+    userAgent: requestMeta.userAgent,
+  });
 
   let rateLimitCount = 0;
+  let recentEmailCount = 0;
+  let duplicateMessageCount = 0;
+  let fingerprintCount = 0;
 
   if (requestMeta.sourceIp) {
     const { count } = await supabase
@@ -514,16 +654,71 @@ export async function submitContactMessage(formData: FormData, requestMeta: {
     rateLimitCount = count ?? 0;
   }
 
-  if (rateLimitCount >= 5) {
-    throw new Error("Too many messages sent recently. Please try again later.");
+  {
+    const { count } = await supabase
+      .from("contact_messages")
+      .select("*", { count: "exact", head: true })
+      .eq("email", payload.email)
+      .gte("created_at", oneDayAgo);
+
+    recentEmailCount = count ?? 0;
   }
 
-  const spamFlags: string[] = [];
-  let spamScore = 0;
+  {
+    const { count } = await supabase
+      .from("contact_messages")
+      .select("*", { count: "exact", head: true })
+      .eq("email", payload.email)
+      .eq("message", payload.message)
+      .gte("created_at", oneWeekAgo);
 
-  if (payload.message.length < 40) {
-    spamFlags.push("very_short_message");
-    spamScore += 10;
+    duplicateMessageCount = count ?? 0;
+  }
+
+  if (requestMeta.userAgent) {
+    const { data } = await supabase
+      .from("contact_messages")
+      .select("email, message, source_ip, user_agent")
+      .eq("user_agent", requestMeta.userAgent)
+      .gte("created_at", oneDayAgo)
+      .limit(20);
+
+    fingerprintCount =
+      data?.filter((row: {
+        email: string;
+        message: string;
+        source_ip: string | null;
+        user_agent: string | null;
+      }) => {
+        const existingFingerprint = buildSubmissionFingerprint({
+          email: row.email,
+          message: row.message,
+          sourceIp: row.source_ip,
+          userAgent: row.user_agent,
+        });
+
+        return existingFingerprint === fingerprint;
+      }).length ?? 0;
+  }
+
+  if (rateLimitCount >= 5 || recentEmailCount >= 6) {
+    throw new ContactRequestError(
+      "Too many messages sent recently. Please try again later.",
+      429,
+    );
+  }
+
+  const evaluation = evaluateContactSubmission({
+    name: payload.name,
+    subject: payload.subject,
+    message: payload.message,
+    duplicateMessageCount,
+    recentEmailCount,
+    fingerprintCount,
+  });
+
+  if (evaluation.rejectReason) {
+    throw new ContactRequestError(evaluation.rejectReason, 400);
   }
 
   const { error } = await supabase.from("contact_messages").insert({
@@ -532,13 +727,33 @@ export async function submitContactMessage(formData: FormData, requestMeta: {
     subject: payload.subject,
     message: payload.message,
     status: "new",
-    spam_score: spamScore,
-    spam_flags: spamFlags,
+    spam_score: evaluation.score,
+    spam_flags: evaluation.flags,
     source_ip: requestMeta.sourceIp,
     user_agent: requestMeta.userAgent,
   });
 
   if (error) {
-    throw new Error(error.message);
+    console.error("Failed to store contact message", error);
+    throw new ContactRequestError(
+      "Unable to submit your message right now.",
+      500,
+      false,
+    );
+  }
+
+  if (evaluation.score < 40) {
+    try {
+      await sendContactNotificationEmail({
+        name: payload.name,
+        email: payload.email,
+        subject: payload.subject,
+        message: payload.message,
+        spamScore: evaluation.score,
+        spamFlags: evaluation.flags,
+      });
+    } catch (notificationError) {
+      console.error("Failed to send contact notification", notificationError);
+    }
   }
 }

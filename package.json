@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "verify": "npm run lint && npm run typecheck && npm run build",
     "bootstrap-admin": "node scripts/bootstrap-admin.mjs"
   },
   "dependencies": {

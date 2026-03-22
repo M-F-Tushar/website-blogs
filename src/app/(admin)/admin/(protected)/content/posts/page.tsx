@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { MediaAssetPicker } from "@/components/admin/media-asset-picker";
 import {
   AdminCheckbox,
   AdminField,
@@ -11,7 +12,7 @@ import {
   StatusPill,
   SubmitButton,
 } from "@/components/admin/primitives";
-import { getAdminPosts } from "@/lib/content/admin-queries";
+import { getAdminMediaAssets, getAdminPosts } from "@/lib/content/admin-queries";
 import {
   archivePostAction,
   savePostAction,
@@ -24,7 +25,7 @@ interface AdminPostsPageProps {
 export default async function AdminPostsPage({
   searchParams,
 }: AdminPostsPageProps) {
-  const posts = await getAdminPosts();
+  const [posts, assets] = await Promise.all([getAdminPosts(), getAdminMediaAssets()]);
   const { edit } = await searchParams;
   const selectedPost = posts.find((post) => post.id === edit) ?? null;
 
@@ -110,13 +111,12 @@ export default async function AdminPostsPage({
                   defaultValue={selectedPost?.publishedAt?.slice(0, 16) ?? ""}
                 />
               </AdminField>
-              <AdminField label="Cover asset ID">
-                <AdminInput
-                  name="coverAssetId"
-                  defaultValue={selectedPost?.coverUrl ? "" : ""}
-                  placeholder="Paste a media asset UUID"
-                />
-              </AdminField>
+              <MediaAssetPicker
+                label="Cover image"
+                name="coverAssetId"
+                assets={assets}
+                selectedAssetId={selectedPost?.coverAssetId ?? null}
+              />
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">

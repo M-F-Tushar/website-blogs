@@ -16,6 +16,7 @@ export interface PostRow {
   status: PostSummary["status"];
   featured: boolean;
   published_at: string | null;
+  cover_asset_id?: string | null;
   cover?: AssetRow | null;
   category_names?: string[] | null;
   tag_names?: string[] | null;
@@ -36,6 +37,7 @@ export interface AcademicEntryRow {
   started_at: string | null;
   completed_at: string | null;
   external_url: string | null;
+  cover_asset_id?: string | null;
   cover?: AssetRow | null;
   meta_title: string | null;
   meta_description: string | null;
@@ -60,6 +62,7 @@ export interface RecommendationRow {
   status: Recommendation["status"];
   featured: boolean;
   recommendation_categories?: RecommendationCategoryRow | null;
+  cover_asset_id?: string | null;
   cover?: AssetRow | null;
   meta_title: string | null;
   meta_description: string | null;
@@ -84,6 +87,7 @@ export function mapPost(row: PostRow): PostSummary {
     status: row.status,
     featured: row.featured,
     publishedAt: row.published_at,
+    coverAssetId: row.cover_asset_id ?? null,
     coverUrl: mapAssetUrl(row.cover),
     coverAlt: row.cover?.alt_text ?? null,
     categories: row.category_names ?? [],
@@ -107,6 +111,7 @@ export function mapAcademicEntry(row: AcademicEntryRow): AcademicEntry {
     startedAt: row.started_at,
     completedAt: row.completed_at,
     externalUrl: row.external_url,
+    coverAssetId: row.cover_asset_id ?? null,
     coverUrl: mapAssetUrl(row.cover),
     coverAlt: row.cover?.alt_text ?? null,
     metaTitle: row.meta_title,
@@ -130,6 +135,7 @@ export function mapRecommendation(row: RecommendationRow): Recommendation {
     status: row.status,
     featured: row.featured,
     category: row.recommendation_categories?.name ?? null,
+    coverAssetId: row.cover_asset_id ?? null,
     coverUrl: mapAssetUrl(row.cover),
     coverAlt: row.cover?.alt_text ?? null,
     metaTitle: row.meta_title,

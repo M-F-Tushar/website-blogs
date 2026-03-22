@@ -28,6 +28,7 @@ import type {
   PageSection,
   SiteSettings,
 } from "@/types/content";
+import { getAppRuntimeStage } from "@/lib/supabase/env";
 
 interface SiteSettingsRow {
   site_name: string;
@@ -93,8 +94,59 @@ interface PageSectionRow {
   settings_json: Record<string, unknown> | null;
 }
 
-const fetchSiteSettings = cache(async (): Promise<SiteSettings> => {
+function normalizePageSlug(slug: string) {
+  if (!slug || slug === "/") {
+    return "/";
+  }
+
+  const normalized = slug.startsWith("/") ? slug : `/${slug}`;
+  return normalized.length > 1 ? normalized.replace(/\/+$/, "") : normalized;
+}
+
+function canUseLocalFallbacks() {
+  return getAppRuntimeStage() === "local";
+}
+
+function buildPublicContentFailureMessage(resource: string) {
+  return getAppRuntimeStage() === "staging"
+    ? `Staging content backend unavailable while loading ${resource}.`
+    : `Content backend unavailable while loading ${resource}.`;
+}
+
+function failPublicContent(resource: string, reason: string, error?: unknown): never {
+  console.error(`[content:${getAppRuntimeStage()}] ${resource} failed: ${reason}`, error);
+  throw new Error(buildPublicContentFailureMessage(resource));
+}
+
+function resolveLocalFallback<T>(
+  resource: string,
+  fallbackValue: T,
+  reason: string,
+  error?: unknown,
+) {
+  if (canUseLocalFallbacks()) {
+    console.warn(`[content:local] using fallback for ${resource}: ${reason}`, error);
+    return fallbackValue;
+  }
+
+  return failPublicContent(resource, reason, error);
+}
+
+function getPublicClientOrFallback(resource: string) {
   const supabase = createPublicServerClient();
+  if (supabase) {
+    return supabase;
+  }
+
+  if (canUseLocalFallbacks()) {
+    return null;
+  }
+
+  return failPublicContent(resource, "public Supabase environment is missing");
+}
+
+const fetchSiteSettings = cache(async (): Promise<SiteSettings> => {
+  const supabase = getPublicClientOrFallback("site settings");
   if (!supabase) {
     return fallbackSiteSettings;
   }
@@ -108,7 +160,12 @@ const fetchSiteSettings = cache(async (): Promise<SiteSettings> => {
     .maybeSingle();
 
   if (error || !data) {
-    return fallbackSiteSettings;
+    return resolveLocalFallback(
+      "site settings",
+      fallbackSiteSettings,
+      error?.message ?? "site settings record is missing",
+      error,
+    );
   }
 
   const row = data as SiteSettingsRow;
@@ -142,11 +199,12 @@ export const getSiteSettings = fetchSiteSettings;
 
 const fetchNavigation = cache(
   async (location?: NavigationItem["location"]): Promise<NavigationItem[]> => {
-    const supabase = createPublicServerClient();
+    const fallbackItems = fallbackNavigation.filter((item) =>
+      location ? item.location === location : true,
+    );
+    const supabase = getPublicClientOrFallback("navigation");
     if (!supabase) {
-      return fallbackNavigation.filter((item) =>
-        location ? item.location === location : true,
-      );
+      return fallbackItems;
     }
 
     let query = supabase
@@ -162,8 +220,11 @@ const fetchNavigation = cache(
     const { data, error } = await query;
 
     if (error || !data) {
-      return fallbackNavigation.filter((item) =>
-        location ? item.location === location : true,
+      return resolveLocalFallback(
+        "navigation",
+        fallbackItems,
+        error?.message ?? "navigation query returned no data",
+        error,
       );
     }
 
@@ -180,7 +241,7 @@ const fetchNavigation = cache(
 );
 
 const fetchPages = cache(async (): Promise<PageRecord[]> => {
-  const supabase = createPublicServerClient();
+  const supabase = getPublicClientOrFallback("pages");
   if (!supabase) {
     return fallbackPages;
   }
@@ -193,14 +254,19 @@ const fetchPages = cache(async (): Promise<PageRecord[]> => {
     .order("page_key", { ascending: true });
 
   if (error || !data) {
-    return fallbackPages;
+    return resolveLocalFallback(
+      "pages",
+      fallbackPages,
+      error?.message ?? "pages query returned no data",
+      error,
+    );
   }
 
   return (data as PageRow[]).map((page) => ({
     id: page.id,
     pageKey: page.page_key,
     title: page.title,
-    slug: page.slug,
+    slug: normalizePageSlug(page.slug),
     status: page.status,
     isVisible: page.is_visible,
     metaTitle: page.meta_title,
@@ -210,11 +276,12 @@ const fetchPages = cache(async (): Promise<PageRecord[]> => {
 });
 
 const fetchPageSections = cache(async (pageKey: PageKey): Promise<PageSection[]> => {
-  const supabase = createPublicServerClient();
+  const fallbackSections = fallbackPageSections
+    .filter((section) => section.pageKey === pageKey)
+    .sort((left, right) => left.sortOrder - right.sortOrder);
+  const supabase = getPublicClientOrFallback(`page sections for ${pageKey}`);
   if (!supabase) {
-    return fallbackPageSections
-      .filter((section) => section.pageKey === pageKey)
-      .sort((left, right) => left.sortOrder - right.sortOrder);
+    return fallbackSections;
   }
 
   const { data, error } = await supabase
@@ -227,9 +294,12 @@ const fetchPageSections = cache(async (pageKey: PageKey): Promise<PageSection[]>
     .order("sort_order", { ascending: true });
 
   if (error || !data) {
-    return fallbackPageSections
-      .filter((section) => section.pageKey === pageKey)
-      .sort((left, right) => left.sortOrder - right.sortOrder);
+    return resolveLocalFallback(
+      `page sections for ${pageKey}`,
+      fallbackSections,
+      error?.message ?? "page sections query returned no data",
+      error,
+    );
   }
 
   return (data as PageSectionRow[]).map((section) => ({
@@ -257,13 +327,16 @@ const fetchPageSections = cache(async (pageKey: PageKey): Promise<PageSection[]>
 });
 
 async function hydratePostTaxonomy(posts: ReturnType<typeof mapPost>[]) {
-  const supabase = createPublicServerClient();
+  const supabase = getPublicClientOrFallback("post taxonomy");
   if (!supabase || posts.length === 0) {
     return posts;
   }
 
   const postIds = posts.map((post) => post.id);
-  const [{ data: categories }, { data: tags }] = await Promise.all([
+  const [
+    { data: categories, error: categoriesError },
+    { data: tags, error: tagsError },
+  ] = await Promise.all([
     supabase
       .from("post_categories")
       .select("post_id, categories(name)")
@@ -273,6 +346,15 @@ async function hydratePostTaxonomy(posts: ReturnType<typeof mapPost>[]) {
       .select("post_id, tags(name)")
       .in("post_id", postIds),
   ]);
+
+  if (categoriesError || tagsError) {
+    return resolveLocalFallback(
+      "post taxonomy",
+      posts,
+      categoriesError?.message ?? tagsError?.message ?? "post taxonomy query failed",
+      categoriesError ?? tagsError,
+    );
+  }
 
   const categoriesByPost = new Map<string, string[]>();
   categories?.forEach((item: { post_id: string; categories: unknown }) => {
@@ -311,12 +393,12 @@ async function hydratePostTaxonomy(posts: ReturnType<typeof mapPost>[]) {
 
 export const getPublishedPosts = cache(
   async (options?: { featuredOnly?: boolean; limit?: number }) => {
-    const supabase = createPublicServerClient();
+    const fallbackSource = options?.featuredOnly
+      ? fallbackPosts.filter((post) => post.featured)
+      : fallbackPosts;
+    const supabase = getPublicClientOrFallback("published posts");
     if (!supabase) {
-      const source = options?.featuredOnly
-        ? fallbackPosts.filter((post) => post.featured)
-        : fallbackPosts;
-      return source.slice(0, options?.limit ?? source.length);
+      return fallbackSource.slice(0, options?.limit ?? fallbackSource.length);
     }
 
     let query = supabase
@@ -340,7 +422,12 @@ export const getPublishedPosts = cache(
     const { data, error } = await query;
 
     if (error || !data) {
-      return [];
+      return resolveLocalFallback(
+        "published posts",
+        fallbackSource.slice(0, options?.limit ?? fallbackSource.length),
+        error?.message ?? "published posts query returned no data",
+        error,
+      );
     }
 
     return hydratePostTaxonomy((data as PostRow[]).map(mapPost));
@@ -348,7 +435,7 @@ export const getPublishedPosts = cache(
 );
 
 export const getPostBySlug = cache(async (slug: string) => {
-  const supabase = createPublicServerClient();
+  const supabase = getPublicClientOrFallback(`post ${slug}`);
   if (!supabase) {
     return fallbackPosts.find((post) => post.slug === slug) ?? null;
   }
@@ -363,7 +450,16 @@ export const getPostBySlug = cache(async (slug: string) => {
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (error || !data) {
+  if (error) {
+    return resolveLocalFallback(
+      `post ${slug}`,
+      fallbackPosts.find((post) => post.slug === slug) ?? null,
+      error.message,
+      error,
+    );
+  }
+
+  if (!data) {
     return null;
   }
 
@@ -373,12 +469,12 @@ export const getPostBySlug = cache(async (slug: string) => {
 
 export const getPublishedAcademicEntries = cache(
   async (options?: { featuredOnly?: boolean; limit?: number }) => {
-    const supabase = createPublicServerClient();
+    const fallbackSource = options?.featuredOnly
+      ? fallbackAcademicEntries.filter((entry) => entry.featured)
+      : fallbackAcademicEntries;
+    const supabase = getPublicClientOrFallback("published academic entries");
     if (!supabase) {
-      const source = options?.featuredOnly
-        ? fallbackAcademicEntries.filter((entry) => entry.featured)
-        : fallbackAcademicEntries;
-      return source.slice(0, options?.limit ?? source.length);
+      return fallbackSource.slice(0, options?.limit ?? fallbackSource.length);
     }
 
     let query = supabase
@@ -403,7 +499,12 @@ export const getPublishedAcademicEntries = cache(
     const { data, error } = await query;
 
     if (error || !data) {
-      return [];
+      return resolveLocalFallback(
+        "published academic entries",
+        fallbackSource.slice(0, options?.limit ?? fallbackSource.length),
+        error?.message ?? "academic entries query returned no data",
+        error,
+      );
     }
 
     return (data as AcademicEntryRow[]).map(mapAcademicEntry);
@@ -411,7 +512,7 @@ export const getPublishedAcademicEntries = cache(
 );
 
 export const getAcademicEntryBySlug = cache(async (slug: string) => {
-  const supabase = createPublicServerClient();
+  const supabase = getPublicClientOrFallback(`academic entry ${slug}`);
   if (!supabase) {
     return fallbackAcademicEntries.find((entry) => entry.slug === slug) ?? null;
   }
@@ -426,7 +527,16 @@ export const getAcademicEntryBySlug = cache(async (slug: string) => {
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (error || !data) {
+  if (error) {
+    return resolveLocalFallback(
+      `academic entry ${slug}`,
+      fallbackAcademicEntries.find((entry) => entry.slug === slug) ?? null,
+      error.message,
+      error,
+    );
+  }
+
+  if (!data) {
     return null;
   }
 
@@ -435,12 +545,12 @@ export const getAcademicEntryBySlug = cache(async (slug: string) => {
 
 export const getPublishedRecommendations = cache(
   async (options?: { featuredOnly?: boolean; limit?: number }) => {
-    const supabase = createPublicServerClient();
+    const fallbackSource = options?.featuredOnly
+      ? fallbackRecommendations.filter((item) => item.featured)
+      : fallbackRecommendations;
+    const supabase = getPublicClientOrFallback("published recommendations");
     if (!supabase) {
-      const source = options?.featuredOnly
-        ? fallbackRecommendations.filter((item) => item.featured)
-        : fallbackRecommendations;
-      return source.slice(0, options?.limit ?? source.length);
+      return fallbackSource.slice(0, options?.limit ?? fallbackSource.length);
     }
 
     let query = supabase
@@ -464,7 +574,12 @@ export const getPublishedRecommendations = cache(
     const { data, error } = await query;
 
     if (error || !data) {
-      return [];
+      return resolveLocalFallback(
+        "published recommendations",
+        fallbackSource.slice(0, options?.limit ?? fallbackSource.length),
+        error?.message ?? "recommendations query returned no data",
+        error,
+      );
     }
 
     return (data as RecommendationRow[]).map(mapRecommendation);
@@ -472,7 +587,7 @@ export const getPublishedRecommendations = cache(
 );
 
 export const getRecommendationBySlug = cache(async (slug: string) => {
-  const supabase = createPublicServerClient();
+  const supabase = getPublicClientOrFallback(`recommendation ${slug}`);
   if (!supabase) {
     return fallbackRecommendations.find((item) => item.slug === slug) ?? null;
   }
@@ -487,7 +602,16 @@ export const getRecommendationBySlug = cache(async (slug: string) => {
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (error || !data) {
+  if (error) {
+    return resolveLocalFallback(
+      `recommendation ${slug}`,
+      fallbackRecommendations.find((item) => item.slug === slug) ?? null,
+      error.message,
+      error,
+    );
+  }
+
+  if (!data) {
     return null;
   }
 
@@ -511,13 +635,22 @@ export async function getPageContent(pageKey: PageKey) {
 
   const page =
     pages.find((item) => item.pageKey === pageKey) ??
-    fallbackPages.find((item) => item.pageKey === pageKey) ??
+    (canUseLocalFallbacks()
+      ? fallbackPages.find((item) => item.pageKey === pageKey)
+      : null) ??
     null;
 
   return {
     page,
     sections,
   };
+}
+
+export async function getPublicPageBySlug(slug: string) {
+  const normalizedSlug = normalizePageSlug(slug);
+  const pages = await fetchPages();
+
+  return pages.find((page) => page.slug === normalizedSlug) ?? null;
 }
 
 export async function getHomePageData() {
@@ -571,5 +704,44 @@ export async function getContactPageData() {
     siteSettings,
     page: pageContent.page,
     sections: pageContent.sections,
+  };
+}
+
+export async function getBlogsPageData() {
+  const [pageContent, posts] = await Promise.all([
+    getPageContent("blogs"),
+    getPublishedPosts(),
+  ]);
+
+  return {
+    page: pageContent.page,
+    sections: pageContent.sections,
+    posts,
+  };
+}
+
+export async function getAcademicPageData() {
+  const [pageContent, entries] = await Promise.all([
+    getPageContent("academic"),
+    getPublishedAcademicEntries(),
+  ]);
+
+  return {
+    page: pageContent.page,
+    sections: pageContent.sections,
+    entries,
+  };
+}
+
+export async function getRecommendationsPageData() {
+  const [pageContent, recommendations] = await Promise.all([
+    getPageContent("recommendations"),
+    getPublishedRecommendations(),
+  ]);
+
+  return {
+    page: pageContent.page,
+    sections: pageContent.sections,
+    recommendations,
   };
 }

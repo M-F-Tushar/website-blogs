@@ -8,6 +8,60 @@ interface MetadataInput {
   description: string;
   path?: string;
   image?: string | null;
+  canonicalUrl?: string | null;
+}
+
+function normalizeConfiguredCanonical(
+  canonicalUrl?: string | null,
+  baseUrl?: string | null,
+) {
+  if (!canonicalUrl) {
+    return null;
+  }
+
+  try {
+    return new URL(canonicalUrl).toString();
+  } catch {
+    if (!baseUrl) {
+      return null;
+    }
+
+    try {
+      return new URL(canonicalUrl, baseUrl).toString();
+    } catch {
+      return null;
+    }
+  }
+}
+
+function resolveCanonicalUrl(
+  path: string,
+  pageCanonicalUrl?: string | null,
+  siteCanonicalUrl?: string | null,
+) {
+  const normalizedSiteCanonical = normalizeConfiguredCanonical(siteCanonicalUrl);
+  const normalizedPageCanonical = normalizeConfiguredCanonical(
+    pageCanonicalUrl,
+    normalizedSiteCanonical,
+  );
+
+  if (normalizedPageCanonical) {
+    return normalizedPageCanonical;
+  }
+
+  if (normalizedSiteCanonical) {
+    if (path === "/") {
+      return normalizedSiteCanonical;
+    }
+
+    try {
+      return new URL(path, normalizedSiteCanonical).toString();
+    } catch {
+      return absoluteUrl(path);
+    }
+  }
+
+  return absoluteUrl(path);
 }
 
 export function buildMetadata({
@@ -15,19 +69,20 @@ export function buildMetadata({
   description,
   path = "/",
   image,
+  canonicalUrl,
 }: MetadataInput): Metadata {
-  const canonicalUrl = absoluteUrl(path);
+  const resolvedCanonicalUrl = resolveCanonicalUrl(path, canonicalUrl);
 
   return {
     title,
     description,
     alternates: {
-      canonical: canonicalUrl,
+      canonical: resolvedCanonicalUrl,
     },
     openGraph: {
       title,
       description,
-      url: canonicalUrl,
+      url: resolvedCanonicalUrl,
       type: "website",
       images: image ? [{ url: image, alt: title }] : undefined,
     },
@@ -42,9 +97,17 @@ export function buildMetadata({
 
 export async function buildSiteMetadata(input: MetadataInput): Promise<Metadata> {
   const siteSettings = await getSiteSettings();
+  const path = input.path ?? "/";
+  const resolvedCanonicalUrl = resolveCanonicalUrl(
+    path,
+    input.canonicalUrl,
+    siteSettings.canonicalUrl,
+  );
 
   return buildMetadata({
     ...input,
+    path,
     image: input.image ?? siteSettings.ogImageUrl ?? null,
+    canonicalUrl: resolvedCanonicalUrl,
   });
 }

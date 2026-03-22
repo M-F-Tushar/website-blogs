@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+function countUrls(value: string) {
+  return (value.match(/https?:\/\/|www\./gi) ?? []).length;
+}
+
 const slugSchema = z
   .string()
   .trim()
@@ -15,6 +19,14 @@ const nullableUrlSchema = z
   .url()
   .or(z.literal(""))
   .transform((value) => (value.length > 0 ? value : null));
+
+const topLevelPageSlugSchema = z
+  .string()
+  .trim()
+  .regex(/^\/(?:[a-z0-9-]+)?$/, {
+    message:
+      "Use / or a single lowercase path segment like /about. Nested paths are not supported here.",
+  });
 
 export const siteSettingsSchema = z.object({
   siteName: z.string().trim().min(2),
@@ -54,7 +66,7 @@ export const pageSchema = z.object({
     "contact",
   ]),
   title: z.string().trim().min(2),
-  slug: z.string().trim().min(1),
+  slug: topLevelPageSlugSchema,
   status: z.enum(["draft", "published", "archived"]),
   isVisible: z.boolean(),
   metaTitle: z.string().trim().nullable(),
@@ -147,9 +159,30 @@ export const recommendationSchema = z.object({
 });
 
 export const contactMessageSchema = z.object({
-  name: z.string().trim().min(2).max(100),
-  email: z.string().email(),
+  name: z
+    .string()
+    .trim()
+    .min(2)
+    .max(80)
+    .refine((value) => !/https?:\/\/|www\./i.test(value), {
+      message: "Name cannot contain links.",
+    })
+    .refine((value) => /[a-z]/i.test(value), {
+      message: "Name must contain letters.",
+    }),
+  email: z.string().trim().email().max(254),
   subject: z.string().trim().min(4).max(150),
-  message: z.string().trim().min(20).max(4000),
+  message: z
+    .string()
+    .trim()
+    .min(40)
+    .max(4000)
+    .refine((value) => countUrls(value) <= 5, {
+      message: "Too many links in the message.",
+    })
+    .refine((value) => /[a-z]/i.test(value), {
+      message: "Message must contain meaningful text.",
+    }),
+  captchaToken: z.string().trim().nullable(),
   honeypot: z.string().trim().max(0),
 });

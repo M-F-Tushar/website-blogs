@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdminSession } from "@/lib/auth/guards";
+import { DEFAULT_TOP_LEVEL_PAGE_PATHS } from "@/lib/content/page-routing";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { createAuthenticatedServerClient } from "@/lib/supabase/server";
 import {
@@ -19,13 +20,61 @@ import {
   toBoolean,
 } from "@/lib/utils";
 
-function revalidatePublicRoutes() {
+function normalizePageSlug(slug: string | null | undefined) {
+  if (!slug || slug === "/") {
+    return "/";
+  }
+
+  const normalized = slug.startsWith("/") ? slug : `/${slug}`;
+  return normalized.length > 1 ? normalized.replace(/\/+$/, "") : normalized;
+}
+
+async function revalidatePublicRoutes(extraPaths: string[] = []) {
+  const paths = new Set<string>([
+    "/",
+    "/about",
+    "/blogs",
+    "/academic",
+    "/recommendations",
+    "/contact",
+    ...extraPaths.map((path) => normalizePageSlug(path)),
+  ]);
+
+  try {
+    const supabase = createServiceRoleClient();
+    const { data } = await supabase.from("pages").select("slug");
+
+    for (const page of data ?? []) {
+      if (page.slug) {
+        paths.add(normalizePageSlug(page.slug));
+      }
+    }
+  } catch {
+    // If page lookup fails, still revalidate the known top-level routes.
+  }
+
   revalidatePath("/", "layout");
-  revalidatePath("/about");
-  revalidatePath("/blogs");
-  revalidatePath("/academic");
-  revalidatePath("/recommendations");
-  revalidatePath("/contact");
+
+  for (const path of paths) {
+    revalidatePath(path);
+  }
+}
+
+function assertPageSlugIsSupported(pageKey: string, slug: string) {
+  const reservedSystemSlugs = new Set(["/admin", "/api"]);
+  if (reservedSystemSlugs.has(slug)) {
+    throw new Error(`The slug "${slug}" is reserved by the application.`);
+  }
+
+  const reservedTopLevelSlugs = Object.entries(DEFAULT_TOP_LEVEL_PAGE_PATHS)
+    .filter(([key]) => key !== pageKey)
+    .map(([, path]) => path);
+
+  if (reservedTopLevelSlugs.includes(slug)) {
+    throw new Error(
+      `The slug "${slug}" is reserved by another top-level page route.`,
+    );
+  }
 }
 
 export async function signOutAction() {
@@ -84,7 +133,7 @@ export async function saveSiteSettingsAction(formData: FormData) {
     throw new Error(error.message);
   }
 
-  revalidatePublicRoutes();
+  await revalidatePublicRoutes();
   redirect("/admin/settings?saved=1");
 }
 
@@ -127,7 +176,7 @@ export async function saveNavigationItemAction(formData: FormData) {
     throw new Error(error.message);
   }
 
-  revalidatePublicRoutes();
+  await revalidatePublicRoutes();
   redirect("/admin/navigation?saved=1");
 }
 
@@ -146,7 +195,7 @@ export async function deleteNavigationItemAction(formData: FormData) {
     throw new Error(error.message);
   }
 
-  revalidatePublicRoutes();
+  await revalidatePublicRoutes();
   redirect("/admin/navigation?deleted=1");
 }
 
@@ -164,8 +213,18 @@ export async function savePageAction(formData: FormData) {
     metaDescription: optionalText(formData.get("metaDescription")),
     canonicalUrl: optionalText(formData.get("canonicalUrl")),
   });
+  assertPageSlugIsSupported(payload.pageKey, payload.slug);
 
   const supabase = createServiceRoleClient();
+  const previousSlug = payload.id
+    ? (
+        await supabase
+          .from("pages")
+          .select("slug")
+          .eq("id", payload.id)
+          .maybeSingle()
+      ).data?.slug ?? null
+    : null;
   const { error } = payload.id
     ? await supabase
         .from("pages")
@@ -195,7 +254,11 @@ export async function savePageAction(formData: FormData) {
     throw new Error(error.message);
   }
 
-  revalidatePublicRoutes();
+  await revalidatePublicRoutes([
+    DEFAULT_TOP_LEVEL_PAGE_PATHS[payload.pageKey],
+    payload.slug,
+    previousSlug,
+  ].filter((path): path is string => Boolean(path)));
   redirect("/admin/content/pages?saved=1");
 }
 
@@ -266,7 +329,7 @@ export async function savePageSectionAction(formData: FormData) {
     throw new Error(error.message);
   }
 
-  revalidatePublicRoutes();
+  await revalidatePublicRoutes();
   redirect(`/admin/content/${payload.pageKey}?saved=1`);
 }
 
@@ -287,6 +350,6 @@ export async function deletePageSectionAction(formData: FormData) {
     throw new Error(error.message);
   }
 
-  revalidatePublicRoutes();
+  await revalidatePublicRoutes();
   redirect(`/admin/content/${pageKey}?deleted=1`);
 }

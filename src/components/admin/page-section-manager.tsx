@@ -15,51 +15,50 @@ import {
   getAdminMediaAssets,
   getAdminPageSections,
 } from "@/lib/content/admin-queries";
-import {
-  deletePageSectionAction,
-  savePageSectionAction,
-} from "@/features/admin/actions";
+import { deletePageSectionAction, savePageSectionAction } from "@/features/admin/actions";
+import type { PageKey } from "@/types/content";
 
-interface AdminAboutPageManagerProps {
-  searchParams: Promise<{ edit?: string }>;
+interface SectionTypeOption {
+  value: string;
+  label: string;
 }
 
-const ABOUT_SECTION_TYPES = [
-  {
-    value: "identity",
-    label: "Identity",
-  },
-  {
-    value: "timeline",
-    label: "Timeline",
-  },
-  {
-    value: "principles",
-    label: "Principles",
-  },
-  {
-    value: "supporting",
-    label: "Supporting",
-  },
-] as const;
+interface AdminPageSectionManagerProps {
+  pageKey: PageKey;
+  pageTitle: string;
+  description: string;
+  sectionTypes: readonly SectionTypeOption[];
+  settingsHint: string;
+  searchParams: Promise<{ edit?: string }>;
+  allowImage?: boolean;
+  imageHint?: string;
+}
 
-export default async function AdminAboutPageManager({
+export async function AdminPageSectionManager({
+  pageKey,
+  pageTitle,
+  description,
+  sectionTypes,
+  settingsHint,
   searchParams,
-}: AdminAboutPageManagerProps) {
+  allowImage = false,
+  imageHint,
+}: AdminPageSectionManagerProps) {
   const [sections, assets] = await Promise.all([
-    getAdminPageSections("about"),
-    getAdminMediaAssets(),
+    getAdminPageSections(pageKey),
+    allowImage ? getAdminMediaAssets() : Promise.resolve([]),
   ]);
   const { edit } = await searchParams;
   const selectedSection = sections.find((section) => section.id === edit) ?? null;
   const publicAssets = assets.filter((asset) => Boolean(asset.publicUrl));
+  const pageLabel = `${pageTitle} page`;
 
   return (
     <div className="space-y-8">
       <AdminPageIntro
         eyebrow="Content"
-        title="About page manager"
-        description="Edit your identity, learning roadmap, values, and long-term goals without turning the page into a page-builder."
+        title={`${pageTitle} page manager`}
+        description={description}
       />
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
@@ -67,14 +66,14 @@ export default async function AdminAboutPageManager({
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-2xl font-semibold tracking-[-0.04em]">
-                About sections
+                {pageTitle} sections
               </h2>
               <p className="mt-2 text-sm text-muted">
-                Keep the page structured around depth, roadmap, and values.
+                Manage the sections that shape the live {pageLabel} experience.
               </p>
             </div>
             <Link
-              href="/admin/content/about"
+              href={`/admin/content/${pageKey === "recommendations" ? "recommendations-page" : pageKey === "academic" ? "academic-page" : pageKey}`}
               className="rounded-full border border-border-strong px-4 py-2 text-sm"
             >
               New section
@@ -82,10 +81,15 @@ export default async function AdminAboutPageManager({
           </div>
 
           <div className="mt-6 space-y-3">
+            {sections.length === 0 ? (
+              <div className="rounded-[1.25rem] border border-dashed border-border bg-white/50 p-4 text-sm text-muted">
+                No sections yet. Create the first section to make this page fully CMS-driven.
+              </div>
+            ) : null}
             {sections.map((section) => (
               <Link
                 key={section.id}
-                href={`/admin/content/about?edit=${section.id}`}
+                href={`/admin/content/${pageKey === "recommendations" ? "recommendations-page" : pageKey === "academic" ? "academic-page" : pageKey}?edit=${section.id}`}
                 className="block rounded-[1.25rem] border border-border bg-white/55 p-4 transition hover:bg-white/80"
               >
                 <div className="flex items-center justify-between gap-3">
@@ -110,7 +114,7 @@ export default async function AdminAboutPageManager({
           </h2>
           <form action={savePageSectionAction} className="mt-6 grid gap-5">
             <input type="hidden" name="id" defaultValue={selectedSection?.id ?? ""} />
-            <input type="hidden" name="pageKey" value="about" />
+            <input type="hidden" name="pageKey" value={pageKey} />
 
             <div className="grid gap-5 md:grid-cols-2">
               <AdminField label="Section key">
@@ -120,16 +124,13 @@ export default async function AdminAboutPageManager({
                   required
                 />
               </AdminField>
-              <AdminField
-                label="Section type"
-                hint="Use the fixed About layout types so the public page stays aligned with admin content."
-              >
+              <AdminField label="Section type">
                 <AdminSelect
                   name="sectionType"
-                  defaultValue={selectedSection?.sectionType ?? "identity"}
+                  defaultValue={selectedSection?.sectionType ?? sectionTypes[0]?.value ?? ""}
                   required
                 >
-                  {ABOUT_SECTION_TYPES.map((type) => (
+                  {sectionTypes.map((type) => (
                     <option key={type.value} value={type.value}>
                       {type.label}
                     </option>
@@ -163,22 +164,24 @@ export default async function AdminAboutPageManager({
               />
             </AdminField>
 
-            <AdminField
-              label="Portrait or section image"
-              hint="Choose a public media asset. Identity is used for the main portrait; timeline can act as a fallback."
-            >
-              <AdminSelect
-                name="imageAssetId"
-                defaultValue={selectedSection?.imageAssetId ?? ""}
+            {allowImage ? (
+              <AdminField
+                label="Section image"
+                hint={imageHint ?? "Choose a public media asset for this section."}
               >
-                <option value="">No image selected</option>
-                {publicAssets.map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.label ?? asset.objectPath}
-                  </option>
-                ))}
-              </AdminSelect>
-            </AdminField>
+                <AdminSelect
+                  name="imageAssetId"
+                  defaultValue={selectedSection?.imageAssetId ?? ""}
+                >
+                  <option value="">No image selected</option>
+                  {publicAssets.map((asset) => (
+                    <option key={asset.id} value={asset.id}>
+                      {asset.label ?? asset.objectPath}
+                    </option>
+                  ))}
+                </AdminSelect>
+              </AdminField>
+            ) : null}
 
             <div className="grid gap-5 md:grid-cols-2">
               <AdminField label="Sort order">
@@ -188,10 +191,7 @@ export default async function AdminAboutPageManager({
                   defaultValue={String(selectedSection?.sortOrder ?? 10)}
                 />
               </AdminField>
-              <AdminField
-                label="Settings JSON"
-                hint='For identity: {"signals":["AI engineering trajectory"],"metrics":[{"label":"Base","value":"CSE and software systems"}]}. For timeline: {"timelineItems":[{"phase":"01","status":"Foundation","title":"Computer science grounding","description":"Core engineering habits, systems thinking, and implementation discipline.","tags":["CSE","systems"],"align":"left"}]}.'
-              >
+              <AdminField label="Settings JSON" hint={settingsHint}>
                 <AdminTextarea
                   name="settingsJson"
                   rows={5}
@@ -224,7 +224,7 @@ export default async function AdminAboutPageManager({
           {selectedSection ? (
             <form action={deletePageSectionAction} className="mt-3">
               <input type="hidden" name="id" value={selectedSection.id} />
-              <input type="hidden" name="pageKey" value="about" />
+              <input type="hidden" name="pageKey" value={pageKey} />
               <SubmitButton variant="danger">Delete section</SubmitButton>
             </form>
           ) : null}

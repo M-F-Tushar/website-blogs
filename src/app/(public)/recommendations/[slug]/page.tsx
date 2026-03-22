@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { Markdown } from "@/components/site/markdown";
@@ -27,6 +28,7 @@ export async function generateMetadata({
     description: item.metaDescription ?? item.summary ?? item.title,
     path: `/recommendations/${item.slug}`,
     image: item.coverUrl,
+    canonicalUrl: item.canonicalUrl,
   });
 }
 
@@ -53,6 +55,19 @@ export default async function RecommendationDetailPage({
         {item.audience ? <span>{item.audience}</span> : null}
       </div>
       <p className="mt-8 text-lg leading-8 text-muted">{item.summary}</p>
+      {item.coverUrl ? (
+        <div className="surface-panel mt-10 overflow-hidden rounded-[2rem] p-3">
+          <div className="relative aspect-[16/9] overflow-hidden rounded-[1.5rem]">
+            <Image
+              src={item.coverUrl}
+              alt={item.coverAlt ?? item.title}
+              fill
+              unoptimized
+              className="object-cover"
+            />
+          </div>
+        </div>
+      ) : null}
       <div className="surface-panel mt-12 rounded-[2rem] px-6 py-8 md:px-10 md:py-12">
         <Markdown content={item.bodyMarkdown} />
       </div>

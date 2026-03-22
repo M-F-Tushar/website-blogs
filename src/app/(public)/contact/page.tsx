@@ -1,23 +1,73 @@
+import { notFound, permanentRedirect } from "next/navigation";
+
 import { ContactForm } from "@/components/site/contact-form";
+import { Markdown } from "@/components/site/markdown";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getContactPageData } from "@/lib/content/queries";
-import { buildSiteMetadata } from "@/lib/content/seo";
+import {
+  getPrimarySection,
+  getSectionSettingString,
+  getSectionSettingStringArray,
+} from "@/lib/content/section-settings";
+import {
+  buildTopLevelPageMetadata,
+  DEFAULT_TOP_LEVEL_PAGE_PATHS,
+} from "@/lib/content/page-routing";
+import { stripMarkdown } from "@/lib/utils";
 
 export async function generateMetadata() {
-  return buildSiteMetadata({
+  return buildTopLevelPageMetadata("contact", {
     title: "Contact",
     description:
       "Reach out for collaboration, conversation, project ideas, or research-oriented discussion.",
-    path: "/contact",
   });
 }
 
-export default async function ContactPage() {
-  const { siteSettings } = await getContactPageData();
-  const contactTracks = [
-    "Research conversations",
-    "AI/ML collaboration",
-    "Systems and tooling",
+export async function ContactPageContent({
+  data,
+}: {
+  data?: Awaited<ReturnType<typeof getContactPageData>>;
+} = {}) {
+  const resolvedData = data ?? (await getContactPageData());
+  const { siteSettings, page, sections } = resolvedData;
+  const heroSection = getPrimarySection(sections, ["hero", "intro"], ["hero"]);
+  const formSection =
+    sections.find((section) => section.sectionKey === "form") ??
+    sections.find((section) => section.sectionType === "form") ??
+    null;
+  const detailSections = sections.filter(
+    (section) => section.id !== heroSection?.id && section.id !== formSection?.id,
+  );
+  const contactTracks =
+    getSectionSettingStringArray(heroSection, "tracks").length > 0
+      ? getSectionSettingStringArray(heroSection, "tracks")
+      : ["Research conversations", "AI/ML collaboration", "Systems and tooling"];
+  const fallbackCards = [
+    {
+      eyebrow: "Email",
+      title: siteSettings.contactEmail,
+      description:
+        "Best for collaboration, research questions, or project discussion.",
+      href: `mailto:${siteSettings.contactEmail}`,
+    },
+    ...(siteSettings.locationLabel
+      ? [
+          {
+            eyebrow: "Location",
+            title: siteSettings.locationLabel,
+            description:
+              "Remote-friendly and open to thoughtful technical conversations across time zones.",
+            href: null,
+          },
+        ]
+      : []),
+    {
+      eyebrow: "Response mode",
+      title: "Clear context helps the fastest reply",
+      description:
+        "A short summary, relevant links, and the kind of discussion you want make it easier to respond well.",
+      href: null,
+    },
   ];
 
   return (
@@ -27,10 +77,21 @@ export default async function ContactPage() {
           <div className="grid-backdrop overflow-hidden rounded-[2.15rem] border border-white/45">
             <div className="px-6 py-10 md:px-8 md:py-10">
               <SectionHeading
-                eyebrow="Contact"
-                title="Open a conversation"
-                description="If there's an idea, project, or direction worth exploring together, I'd like to hear about it."
+                eyebrow={
+                  getSectionSettingString(heroSection, "eyebrow") ??
+                  page?.title ??
+                  "Contact"
+                }
+                title={heroSection?.heading ?? page?.title ?? "Open a conversation"}
+                description={
+                  heroSection?.subheading ??
+                  page?.metaDescription ??
+                  "If there's an idea, project, or direction worth exploring together, I'd like to hear about it."
+                }
               />
+              {heroSection?.bodyMarkdown ? (
+                <Markdown className="mt-6" content={heroSection.bodyMarkdown} />
+              ) : null}
               <div className="mt-8 flex flex-wrap gap-3">
                 {contactTracks.map((track) => (
                   <span key={track} className="signal-pill">
@@ -42,47 +103,102 @@ export default async function ContactPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-            <div className="surface-panel rounded-[1.75rem] p-6">
-              <p className="signal-label">Email</p>
-              <a
-                className="mt-4 inline-block text-lg font-medium text-foreground transition hover:text-accent-strong"
-                href={`mailto:${siteSettings.contactEmail}`}
-              >
-                {siteSettings.contactEmail}
-              </a>
-              <p className="mt-3 text-sm leading-7 text-muted">
-                Best for collaboration, research questions, or project discussion.
-              </p>
-            </div>
+            {detailSections.length > 0
+              ? detailSections.map((section) => {
+                  const linkHref =
+                    getSectionSettingString(section, "href") ??
+                    (section.sectionKey === "email"
+                      ? `mailto:${siteSettings.contactEmail}`
+                      : null);
+                  const body = section.bodyMarkdown;
+                  const title =
+                    getSectionSettingString(section, "title") ??
+                    (section.sectionKey === "email"
+                      ? siteSettings.contactEmail
+                      : section.sectionKey === "location" &&
+                          siteSettings.locationLabel
+                        ? siteSettings.locationLabel
+                        : section.heading);
+                  const eyebrow =
+                    getSectionSettingString(section, "eyebrow") ?? section.sectionKey;
 
-            {siteSettings.locationLabel ? (
-              <div className="surface-panel rounded-[1.75rem] p-6">
-                <p className="signal-label">Location</p>
-                <p className="mt-4 text-lg font-medium text-foreground">
-                  {siteSettings.locationLabel}
-                </p>
-                <p className="mt-3 text-sm leading-7 text-muted">
-                  Remote-friendly and open to thoughtful technical conversations across
-                  time zones.
-                </p>
-              </div>
-            ) : null}
-
-            <div className="surface-panel rounded-[1.75rem] p-6">
-              <p className="signal-label">Response mode</p>
-              <p className="mt-4 text-lg font-medium text-foreground">
-                Clear context helps the fastest reply
-              </p>
-              <p className="mt-3 text-sm leading-7 text-muted">
-                A short summary, relevant links, and the kind of discussion you want make
-                it easier to respond well.
-              </p>
-            </div>
+                  return (
+                    <div key={section.id} className="surface-panel rounded-[1.75rem] p-6">
+                      <p className="signal-label">{eyebrow}</p>
+                      {linkHref ? (
+                        <a
+                          className="mt-4 inline-block text-lg font-medium text-foreground transition hover:text-accent-strong"
+                          href={linkHref}
+                        >
+                          {title}
+                        </a>
+                      ) : (
+                        <p className="mt-4 text-lg font-medium text-foreground">{title}</p>
+                      )}
+                      {section.subheading ? (
+                        <p className="mt-3 text-sm leading-7 text-muted">
+                          {section.subheading}
+                        </p>
+                      ) : null}
+                      {body ? <Markdown className="mt-3" content={body} /> : null}
+                    </div>
+                  );
+                })
+              : fallbackCards.map((card) => (
+                  <div
+                    key={card.eyebrow}
+                    className="surface-panel rounded-[1.75rem] p-6"
+                  >
+                    <p className="signal-label">{card.eyebrow}</p>
+                    {card.href ? (
+                      <a
+                        className="mt-4 inline-block text-lg font-medium text-foreground transition hover:text-accent-strong"
+                        href={card.href}
+                      >
+                        {card.title}
+                      </a>
+                    ) : (
+                      <p className="mt-4 text-lg font-medium text-foreground">
+                        {card.title}
+                      </p>
+                    )}
+                    <p className="mt-3 text-sm leading-7 text-muted">
+                      {card.description}
+                    </p>
+                  </div>
+                ))}
           </div>
         </div>
 
-        <ContactForm />
+        <ContactForm
+          eyebrow={getSectionSettingString(formSection, "eyebrow") ?? "Secure intake"}
+          title={formSection?.heading ?? "Start the conversation"}
+          description={
+            formSection?.subheading ??
+            (formSection?.bodyMarkdown
+              ? stripMarkdown(formSection.bodyMarkdown)
+              : "Use this channel for collaboration, research questions, project ideas, or thoughtful technical discussion.")
+          }
+          badge={
+            getSectionSettingString(formSection, "badge") ??
+            "Thoughtful replies over volume"
+          }
+        />
       </div>
     </div>
   );
+}
+
+export default async function ContactPage() {
+  const data = await getContactPageData();
+
+  if (!data.page) {
+    notFound();
+  }
+
+  if (data.page.slug !== DEFAULT_TOP_LEVEL_PAGE_PATHS.contact) {
+    permanentRedirect(data.page.slug);
+  }
+
+  return <ContactPageContent data={data} />;
 }

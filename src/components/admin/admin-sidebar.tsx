@@ -14,9 +14,16 @@ const navigationGroups = [
       { href: "/admin/content/pages", label: "Pages" },
       { href: "/admin/content/home", label: "Home" },
       { href: "/admin/content/about", label: "About" },
+      { href: "/admin/content/blogs", label: "Blogs Page" },
       { href: "/admin/content/posts", label: "Posts" },
+      { href: "/admin/content/academic-page", label: "Academic Page" },
       { href: "/admin/content/academic", label: "Academic" },
+      {
+        href: "/admin/content/recommendations-page",
+        label: "Recommendations Page",
+      },
       { href: "/admin/content/recommendations", label: "Recommendations" },
+      { href: "/admin/content/contact", label: "Contact Page" },
     ],
   },
   {

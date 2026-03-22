@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import { getAppRuntimeStage } from "@/lib/supabase/env";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -117,7 +119,26 @@ export function excerptFromMarkdown(markdown: string, length = 180) {
 }
 
 export function getSiteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (configuredSiteUrl) {
+    try {
+      const url = new URL(configuredSiteUrl);
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        return url.toString();
+      }
+    } catch {
+      // Fall through to environment-aware handling below.
+    }
+  }
+
+  if (getAppRuntimeStage() === "local") {
+    return "http://localhost:3000";
+  }
+
+  throw new Error(
+    "NEXT_PUBLIC_SITE_URL must be configured for staging and production deployments.",
+  );
 }
 
 export function absoluteUrl(path = "/") {

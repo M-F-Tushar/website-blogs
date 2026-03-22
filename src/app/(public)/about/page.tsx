@@ -2,20 +2,23 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import Image from "next/image";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { Markdown } from "@/components/site/markdown";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getAboutPageData } from "@/lib/content/queries";
-import { buildSiteMetadata } from "@/lib/content/seo";
+import {
+  buildTopLevelPageMetadata,
+  DEFAULT_TOP_LEVEL_PAGE_PATHS,
+} from "@/lib/content/page-routing";
 import { cn } from "@/lib/utils";
 import type { PageSection } from "@/types/content";
 
 export async function generateMetadata() {
-  return buildSiteMetadata({
+  return buildTopLevelPageMetadata("about", {
     title: "About",
     description:
       "Who I am, what I study, why AI/ML matters to me, and the values shaping my long-term professional direction.",
-    path: "/about",
   });
 }
 
@@ -220,8 +223,13 @@ function formatSectionLabel(section: PageSection | null, fallback: string) {
   return section.sectionType.replace(/-/g, " ");
 }
 
-export default async function AboutPage() {
-  const { siteSettings, sections } = await getAboutPageData();
+export async function AboutPageContent({
+  data,
+}: {
+  data?: Awaited<ReturnType<typeof getAboutPageData>>;
+} = {}) {
+  const resolvedData = data ?? (await getAboutPageData());
+  const { siteSettings, sections } = resolvedData;
   const identitySection =
     sections.find((section) => section.sectionType === "identity") ?? null;
   const timelineSection =
@@ -469,4 +477,18 @@ export default async function AboutPage() {
       ) : null}
     </div>
   );
+}
+
+export default async function AboutPage() {
+  const data = await getAboutPageData();
+
+  if (!data.page) {
+    notFound();
+  }
+
+  if (data.page.slug !== DEFAULT_TOP_LEVEL_PAGE_PATHS.about) {
+    permanentRedirect(data.page.slug);
+  }
+
+  return <AboutPageContent data={data} />;
 }

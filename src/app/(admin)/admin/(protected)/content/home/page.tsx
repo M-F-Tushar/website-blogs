@@ -1,176 +1,27 @@
-import Link from "next/link";
+import { AdminPageSectionManager } from "@/components/admin/page-section-manager";
 
-import {
-  AdminCheckbox,
-  AdminField,
-  AdminInput,
-  AdminPageIntro,
-  AdminPanel,
-  AdminTextarea,
-  StatusPill,
-  SubmitButton,
-} from "@/components/admin/primitives";
-import { getAdminPageSections } from "@/lib/content/admin-queries";
-import {
-  deletePageSectionAction,
-  savePageSectionAction,
-} from "@/features/admin/actions";
+const HOME_SECTION_TYPES = [
+  { value: "hero", label: "Hero" },
+  { value: "focus", label: "Current focus" },
+  { value: "preview", label: "Collection preview" },
+  { value: "connect", label: "Connect" },
+] as const;
 
 interface AdminHomePageManagerProps {
   searchParams: Promise<{ edit?: string }>;
 }
 
-export default async function AdminHomePageManager({
+export default function AdminHomePageManager({
   searchParams,
 }: AdminHomePageManagerProps) {
-  const sections = await getAdminPageSections("home");
-  const { edit } = await searchParams;
-  const selectedSection = sections.find((section) => section.id === edit) ?? null;
-
   return (
-    <div className="space-y-8">
-      <AdminPageIntro
-        eyebrow="Content"
-        title="Homepage section manager"
-        description="Control hero copy, focus areas, homepage intro blocks, and section ordering."
-      />
-
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <AdminPanel>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="font-display text-2xl font-semibold tracking-[-0.04em]">
-                Home sections
-              </h2>
-              <p className="mt-2 text-sm text-muted">
-                Keep the homepage content dynamic while preserving the coded layout system.
-              </p>
-            </div>
-            <Link
-              href="/admin/content/home"
-              className="rounded-full border border-border-strong px-4 py-2 text-sm"
-            >
-              New section
-            </Link>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            {sections.map((section) => (
-              <Link
-                key={section.id}
-                href={`/admin/content/home?edit=${section.id}`}
-                className="block rounded-[1.25rem] border border-border bg-white/55 p-4 transition hover:bg-white/80"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-foreground">{section.heading}</p>
-                    <p className="mt-1 text-sm text-muted">
-                      {section.sectionKey} · order {section.sortOrder}
-                    </p>
-                  </div>
-                  <StatusPill tone={section.isVisible ? "success" : "warning"}>
-                    {section.isVisible ? "visible" : "hidden"}
-                  </StatusPill>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </AdminPanel>
-
-        <AdminPanel>
-          <h2 className="font-display text-2xl font-semibold tracking-[-0.04em]">
-            {selectedSection ? "Edit section" : "Create section"}
-          </h2>
-          <form action={savePageSectionAction} className="mt-6 grid gap-5">
-            <input type="hidden" name="id" defaultValue={selectedSection?.id ?? ""} />
-            <input type="hidden" name="pageKey" value="home" />
-
-            <div className="grid gap-5 md:grid-cols-2">
-              <AdminField label="Section key">
-                <AdminInput
-                  name="sectionKey"
-                  defaultValue={selectedSection?.sectionKey ?? ""}
-                  required
-                />
-              </AdminField>
-              <AdminField label="Section type">
-                <AdminInput
-                  name="sectionType"
-                  defaultValue={selectedSection?.sectionType ?? ""}
-                  required
-                />
-              </AdminField>
-            </div>
-
-            <AdminField label="Heading">
-              <AdminInput
-                name="heading"
-                defaultValue={selectedSection?.heading ?? ""}
-                required
-              />
-            </AdminField>
-
-            <AdminField label="Subheading">
-              <AdminTextarea
-                name="subheading"
-                rows={3}
-                defaultValue={selectedSection?.subheading ?? ""}
-              />
-            </AdminField>
-
-            <AdminField label="Body markdown">
-              <AdminTextarea
-                name="bodyMarkdown"
-                rows={10}
-                defaultValue={selectedSection?.bodyMarkdown ?? ""}
-                required
-              />
-            </AdminField>
-
-            <div className="grid gap-5 md:grid-cols-2">
-              <AdminField label="Sort order">
-                <AdminInput
-                  name="sortOrder"
-                  type="number"
-                  defaultValue={String(selectedSection?.sortOrder ?? 10)}
-                />
-              </AdminField>
-              <AdminField label="Settings JSON">
-                <AdminTextarea
-                  name="settingsJson"
-                  rows={5}
-                  defaultValue={JSON.stringify(selectedSection?.settings ?? {}, null, 2)}
-                />
-              </AdminField>
-            </div>
-
-            <div className="flex flex-wrap gap-6">
-              <AdminCheckbox
-                name="isVisible"
-                label="Visible"
-                defaultChecked={selectedSection?.isVisible ?? true}
-              />
-              <AdminCheckbox
-                name="featured"
-                label="Featured"
-                defaultChecked={selectedSection?.featured ?? false}
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-3 pt-2">
-              <SubmitButton>Save section</SubmitButton>
-            </div>
-          </form>
-
-          {selectedSection ? (
-            <form action={deletePageSectionAction} className="mt-3">
-              <input type="hidden" name="id" value={selectedSection.id} />
-              <input type="hidden" name="pageKey" value="home" />
-              <SubmitButton variant="danger">Delete section</SubmitButton>
-            </form>
-          ) : null}
-        </AdminPanel>
-      </div>
-    </div>
+    <AdminPageSectionManager
+      pageKey="home"
+      pageTitle="Home"
+      description="Keep the homepage hybrid: the layout stays coded and production-safe, while the major copy blocks, tags, CTA labels, vectors, and section intros stay editable from admin."
+      sectionTypes={HOME_SECTION_TYPES}
+      settingsHint='Hero supports {"eyebrow":"AI engineering platform","focusTags":["LLM systems"],"primaryCtaLabel":"Read the journey","primaryCtaHref":"/blogs","secondaryCtaLabel":"Connect","secondaryCtaHref":"/contact","metrics":[{"label":"Featured notes","value":"03","description":"Published writing nodes"}],"capabilitySignals":[{"label":"Primary track","value":"AI engineering and ML systems","description":"Optional"}],"systemMapEyebrow":"Research system map","systemMapTitle":"Why this platform exists","systemMapBadge":"Live notebook","vectorLabel":"Active vectors","vectorBadge":"Current emphasis","activeVectors":[{"label":"LLMs and orchestration","value":"82%"}]}. Focus supports {"eyebrow":"Current vectors","panelTitle":"What the work is optimizing for right now","panelDescription":"Intro copy","columns":["Learning loops that end in working systems, not just notes."]}. Preview/connect sections support {"eyebrow":"Featured writing","description":"Optional intro","tracks":["Research discussion"],"primaryCtaLabel":"Open contact page","primaryCtaHref":"/contact","secondaryCtaLabel":"Email directly"}.'
+      searchParams={searchParams}
+    />
   );
 }
