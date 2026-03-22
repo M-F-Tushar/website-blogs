@@ -26,6 +26,11 @@ const remotePatterns = (() => {
 })() as RemotePattern[];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
   images: {
     remotePatterns,
   },

@@ -32,6 +32,8 @@ interface NamedLookupRow {
   slug: string;
 }
 
+const MAX_MEDIA_UPLOAD_BYTES = 10 * 1024 * 1024;
+
 function normalizePageSlug(slug: string | null | undefined) {
   if (!slug || slug === "/") {
     return "/";
@@ -536,6 +538,10 @@ export async function uploadMediaAssetAction(formData: FormData) {
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("Choose a file before uploading.");
+  }
+
+  if (file.size > MAX_MEDIA_UPLOAD_BYTES) {
+    throw new Error("File is too large. Upload an asset smaller than 10 MB.");
   }
 
   const label = optionalText(formData.get("label"));
