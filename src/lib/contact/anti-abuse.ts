@@ -31,8 +31,13 @@ export class ContactRequestError extends Error {
 }
 
 function base64UrlEncode(bytes: Uint8Array) {
-  return Buffer.from(bytes)
-    .toString("base64")
+  let binary = "";
+
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary)
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/g, "");
