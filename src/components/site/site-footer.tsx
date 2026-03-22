@@ -42,8 +42,8 @@ export function SiteFooter({ siteSettings, navigationItems }: SiteFooterProps) {
         : defaultNavItems;
 
   return (
-    <footer className="relative mt-24 overflow-hidden border-t border-white/10 bg-surface-dark text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(27,154,209,0.16),transparent_22%),radial-gradient(circle_at_90%_10%,rgba(68,138,255,0.12),transparent_18%)] opacity-80" />
+    <footer className="relative mt-24 overflow-hidden border-t border-white/5 bg-[#020617] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(29,78,216,0.15),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(30,64,175,0.1),transparent_40%)] opacity-80" />
       <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[1.35fr_0.75fr_0.75fr]">
         <div className="max-w-xl">
           <div className="flex items-center gap-4">

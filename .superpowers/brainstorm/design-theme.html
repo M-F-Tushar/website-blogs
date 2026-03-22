@@ -1,0 +1,56 @@
+<h2>Design Section: Theme & Core Styling</h2>
+<p class="subtitle">Defining the "Dark Nebula" foundation</p>
+
+<div class="section">
+  <h3>1. Color Palette & Background</h3>
+  <div class="split">
+    <div class="card">
+      <div class="card-body">
+        <h4>Background Strategy</h4>
+        <p>A deep base of <code>#020617</code> (Slate-950) with animated mesh gradients (nebulas) in <code>#1d4ed8</code> (Blue-700) and <code>#7e22ce</code> (Purple-700).</p>
+        <div style="height: 40px; background: linear-gradient(135deg, #020617, #1d4ed8, #7e22ce); border-radius: 8px; margin-top: 10px;"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h4>Glass Properties</h4>
+        <p>Cards will use <code>backdrop-filter: blur(40px)</code> with a very thin <code>1px</code> border of <code>rgba(255,255,255,0.08)</code> and a subtle inner shadow.</p>
+        <div style="height: 40px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; margin-top: 10px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. Typography & Motion</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-body">
+        <h4>Typography</h4>
+        <p><strong>Headings:</strong> A bold, wide sans-serif (e.g., <i>Clash Display</i> or <i>Inter Tight</i>) with tight letter-spacing (-0.05em).</p>
+        <p><strong>Body:</strong> High-legibility <i>Inter</i> with increased line-height (1.8) for long-form reading.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h4>Motion (Framer Motion)</h4>
+        <p><strong>Scroll-Linked Animations:</strong> Sections fade and scale slightly as they enter the viewport.</p>
+        <p><strong>Hover Interactions:</strong> Glass cards "glow" and lift slightly on hover using spring physics.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. Technical Implementation</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>Our Stack</h4>
+      <ul>
+        <li><strong>Tailwind CSS 4:</strong> Utilizing the new JIT engine for ultra-precise gradient and blur control.</li>
+        <li><strong>Framer Motion:</strong> For smooth, hardware-accelerated transitions and scroll effects.</li>
+        <li><strong>Lucide React:</strong> For crisp, technical-looking icons.</li>
+      </ul>
+    </div>
+  </div>
+</div>

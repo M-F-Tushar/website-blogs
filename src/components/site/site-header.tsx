@@ -28,7 +28,7 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
         ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/45 bg-background/75 backdrop-blur-2xl">
+    <header className="sticky top-0 z-50 border-b border-white/5 bg-background/60 backdrop-blur-3xl transition-colors duration-500">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
         <Link href="/" className="group flex items-center gap-4">
           <span className="brand-mark" aria-hidden="true">
@@ -53,14 +53,14 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
         </Link>
 
         <div className="flex flex-col gap-3 lg:items-end">
-          <nav className="flex flex-wrap items-center gap-2 rounded-[1.5rem] border border-white/70 bg-white/55 p-2 shadow-[0_18px_45px_rgba(9,21,33,0.06)]">
+          <nav className="flex flex-wrap items-center gap-2 rounded-[1.5rem] border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-md">
             {headerItems.map((item) => (
               <Link
                 key={item.id}
                 href={item.href}
                 target={item.isExternal ? "_blank" : undefined}
                 rel={item.isExternal ? "noreferrer" : undefined}
-                className="rounded-full px-4 py-2.5 text-sm text-muted transition hover:bg-white/85 hover:text-foreground"
+                className="rounded-full px-4 py-2.5 text-sm text-muted transition hover:bg-white/10 hover:text-foreground"
               >
                 {item.label}
               </Link>
