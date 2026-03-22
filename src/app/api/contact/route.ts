@@ -12,9 +12,40 @@ import { submitContactMessage } from "@/features/admin/content-actions";
 
 export const runtime = "nodejs";
 
+async function parseContactPayload(request: Request) {
+  const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
+
+  if (
+    contentType.includes("multipart/form-data") ||
+    contentType.includes("application/x-www-form-urlencoded")
+  ) {
+    return request.formData();
+  }
+
+  if (contentType.includes("application/json")) {
+    const body = (await request.json()) as Record<string, unknown>;
+    const formData = new FormData();
+
+    for (const [key, value] of Object.entries(body)) {
+      if (value === null || value === undefined) {
+        continue;
+      }
+
+      formData.set(key, String(value));
+    }
+
+    return formData;
+  }
+
+  throw new ContactRequestError(
+    "Submit the contact form using form data or JSON.",
+    415,
+  );
+}
+
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
+    const formData = await parseContactPayload(request);
     const sourceIp = extractClientIp(request.headers);
     const userAgent = request.headers.get("user-agent");
 
