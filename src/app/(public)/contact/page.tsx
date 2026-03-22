@@ -106,10 +106,9 @@ export async function ContactPageContent({
             {detailSections.length > 0
               ? detailSections.map((section) => {
                   const linkHref =
-                    getSectionSettingString(section, "href") ??
-                    (section.sectionKey === "email"
+                    section.sectionKey === "email"
                       ? `mailto:${siteSettings.contactEmail}`
-                      : null);
+                      : getSectionSettingString(section, "href") ?? null;
                   const body = section.bodyMarkdown;
                   const title =
                     getSectionSettingString(section, "title") ??
