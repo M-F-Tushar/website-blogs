@@ -4,7 +4,9 @@ import { join } from "node:path";
 import Image from "next/image";
 import { notFound, permanentRedirect } from "next/navigation";
 
+import { DetailCard } from "@/components/site/detail-card";
 import { Markdown } from "@/components/site/markdown";
+import { SignalCard } from "@/components/site/signal-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getAboutPageData } from "@/lib/content/queries";
 import {
@@ -335,15 +337,12 @@ export async function AboutPageContent({
 
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               {identityMetrics.map((metric) => (
-                <div
+                <SignalCard
                   key={metric.label}
-                  className="rounded-[1.25rem] border border-white/10 bg-white/5 p-4"
-                >
-                  <p className="font-mono text-[0.66rem] uppercase tracking-[0.22em] text-cyan-200/90">
-                    {metric.label}
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-slate-200">{metric.value}</p>
-                </div>
+                  eyebrow={metric.label}
+                  title={metric.value}
+                  inverse
+                />
               ))}
             </div>
           </div>
@@ -385,8 +384,8 @@ export async function AboutPageContent({
                       "relative pl-14 md:pl-0",
                       item.align === "left" ? "md:pr-10" : "md:col-start-2 md:pl-10",
                     )}
-                  >
-                    <div className="rounded-[1.75rem] border border-white/10 bg-white/6 p-5 backdrop-blur-md">
+                    >
+                    <div className="signal-card signal-card-inverse rounded-[1.75rem] p-5 md:p-6">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <span className="font-mono text-[0.66rem] uppercase tracking-[0.24em] text-cyan-200/90">
                           Phase {item.phase}
@@ -442,36 +441,28 @@ export async function AboutPageContent({
       </section>
 
       {valuesSection ? (
-        <section className="surface-panel mt-12 rounded-[2rem] p-6 md:p-8">
-          <p className="signal-label">{formatSectionLabel(valuesSection, "Principles")}</p>
-          <h2 className="mt-5 font-display text-3xl font-semibold tracking-[-0.05em] text-balance">
-            {valuesSection.heading}
-          </h2>
-          {valuesSection.subheading ? (
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-muted">
-              {valuesSection.subheading}
-            </p>
-          ) : null}
-          <Markdown className="mt-6" content={valuesSection.bodyMarkdown} />
-        </section>
+        <DetailCard
+          className="mt-12 md:p-8"
+          eyebrow={formatSectionLabel(valuesSection, "Principles")}
+          title={valuesSection.heading}
+          description={valuesSection.subheading}
+        >
+          <Markdown content={valuesSection.bodyMarkdown} />
+        </DetailCard>
       ) : null}
 
       {supportingSections.length > 0 ? (
         <div className="mt-12 grid gap-6 lg:grid-cols-2">
           {supportingSections.map((section) => (
-            <section
+            <DetailCard
               key={section.id}
-              className="surface-panel rounded-[1.85rem] p-6 transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(9,21,33,0.12)] md:p-8"
+              className="transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(9,21,33,0.12)] md:p-8"
+              eyebrow={formatSectionLabel(section, "Supporting")}
+              title={section.heading}
+              description={section.subheading}
             >
-              <p className="signal-label">{formatSectionLabel(section, "Supporting")}</p>
-              <h2 className="mt-5 font-display text-3xl font-semibold tracking-[-0.05em] text-balance">
-                {section.heading}
-              </h2>
-              {section.subheading ? (
-                <p className="mt-4 text-sm leading-7 text-muted">{section.subheading}</p>
-              ) : null}
-              <Markdown className="mt-6" content={section.bodyMarkdown} />
-            </section>
+              <Markdown content={section.bodyMarkdown} />
+            </DetailCard>
           ))}
         </div>
       ) : null}

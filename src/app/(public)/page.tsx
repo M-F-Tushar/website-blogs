@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 
 import { ContentCard } from "@/components/site/content-card";
 import { Markdown } from "@/components/site/markdown";
+import { SignalCard } from "@/components/site/signal-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getHomePageData } from "@/lib/content/queries";
 import {
@@ -180,15 +181,13 @@ export async function HomePageContent({
                   description: "Resources worth keeping",
                 },
               ].map((metric) => (
-                <div key={metric.label} className="surface-panel rounded-[1.5rem] p-4">
-                  <p className="font-mono text-[0.66rem] uppercase tracking-[0.26em] text-muted">
-                    {metric.label}
-                  </p>
-                  <p className="mt-3 font-display text-4xl font-semibold tracking-[-0.06em]">
-                    {metric.value}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-muted">{metric.description}</p>
-                </div>
+                <SignalCard
+                  key={metric.label}
+                  eyebrow={metric.label}
+                  title={metric.value}
+                  description={metric.description}
+                  emphasis="display"
+                />
               ))}
             </div>
           </div>
@@ -214,24 +213,17 @@ export async function HomePageContent({
                 "This is a long-horizon platform for technical credibility, public thinking, and visible growth."
               }
             />
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {capabilitySignals.map((signal) => (
-                <div
-                  key={signal.label}
-                  className="rounded-[1.25rem] border border-white/10 bg-white/5 p-4"
-                >
-                  <p className="font-mono text-[0.66rem] uppercase tracking-[0.22em] text-cyan-200/90">
-                    {signal.label}
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-slate-200">{signal.value}</p>
-                  {signal.description ? (
-                    <p className="mt-2 text-xs leading-6 text-slate-400">
-                      {signal.description}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
+              <div className="mt-8 grid gap-4 md:grid-cols-3">
+                {capabilitySignals.map((signal) => (
+                  <SignalCard
+                    key={signal.label}
+                    eyebrow={signal.label}
+                    title={signal.value}
+                    description={signal.description}
+                    inverse
+                  />
+                ))}
+              </div>
             <div className="mt-8 rounded-[1.5rem] border border-white/10 bg-black/10 p-5">
               <div className="flex items-center justify-between gap-4">
                 <p className="font-mono text-[0.66rem] uppercase tracking-[0.24em] text-cyan-200">
@@ -272,20 +264,17 @@ export async function HomePageContent({
             <p className="mt-4 text-sm leading-7 text-muted">
               {focusPanelDescription}
             </p>
-            <div className="mt-8 grid gap-4">
-              {focusColumns.map((column, index) => (
-                <div
-                  key={column}
-                  className="rounded-[1.4rem] border border-border bg-white/60 px-5 py-4"
-                >
-                  <p className="font-mono text-[0.66rem] uppercase tracking-[0.24em] text-accent-strong">
-                    Vector {String(index + 1).padStart(2, "0")}
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-muted">{column}</p>
-                </div>
-              ))}
+              <div className="mt-8 grid gap-4">
+                {focusColumns.map((column, index) => (
+                  <SignalCard
+                    key={column}
+                    eyebrow={`Vector ${String(index + 1).padStart(2, "0")}`}
+                    title={column}
+                    className="px-5 py-4"
+                  />
+                ))}
+              </div>
             </div>
-          </div>
 
           <div className="surface-panel rounded-[2rem] p-6 md:p-8">
             <SectionHeading
@@ -483,19 +472,14 @@ export async function HomePageContent({
 
             <div className="grid gap-4 sm:grid-cols-2">
               {collaborationTracks.map((track, index) => (
-                <div
+                <SignalCard
                   key={track}
-                  className="rounded-[1.5rem] border border-white/10 bg-white/6 p-5"
-                >
-                  <p className="font-mono text-[0.66rem] uppercase tracking-[0.22em] text-cyan-200/90">
-                    Track {String(index + 1).padStart(2, "0")}
-                  </p>
-                  <p className="mt-4 text-lg font-medium text-white">{track}</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-300">
-                    Open to useful, thoughtful conversations where technical depth and
-                    long-term intent actually matter.
-                  </p>
-                </div>
+                  eyebrow={`Track ${String(index + 1).padStart(2, "0")}`}
+                  title={track}
+                  description="Open to useful, thoughtful conversations where technical depth and long-term intent actually matter."
+                  inverse
+                  className="p-5"
+                />
               ))}
             </div>
           </div>

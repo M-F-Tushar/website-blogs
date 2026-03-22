@@ -1,7 +1,9 @@
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { ContentCard } from "@/components/site/content-card";
+import { DetailCard } from "@/components/site/detail-card";
 import { Markdown } from "@/components/site/markdown";
+import { SignalCard } from "@/components/site/signal-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getAcademicPageData } from "@/lib/content/queries";
 import {
@@ -80,20 +82,13 @@ export async function AcademicPageContent({
             <p className="signal-label">{panelLabel}</p>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {panelItems.map((item) => (
-                <div
+                <SignalCard
                   key={`${item.label}-${item.value}`}
-                  className="rounded-[1.35rem] border border-border bg-white/60 p-4"
-                >
-                  <p className="font-mono text-[0.66rem] uppercase tracking-[0.24em] text-muted">
-                    {item.label}
-                  </p>
-                  <p className="mt-3 font-display text-4xl font-semibold tracking-[-0.06em]">
-                    {item.value}
-                  </p>
-                  {item.description ? (
-                    <p className="mt-3 text-sm leading-7 text-muted">{item.description}</p>
-                  ) : null}
-                </div>
+                  eyebrow={item.label}
+                  title={item.value}
+                  description={item.description}
+                  emphasis="display"
+                />
               ))}
             </div>
           </div>
@@ -103,18 +98,15 @@ export async function AcademicPageContent({
       {supportingSections.length > 0 ? (
         <section className="mt-12 grid gap-6 lg:grid-cols-2">
           {supportingSections.map((section) => (
-            <div key={section.id} className="surface-panel rounded-[1.75rem] p-6 md:p-8">
-              <p className="signal-label">
-                {getSectionSettingString(section, "eyebrow") ?? section.sectionKey}
-              </p>
-              <h2 className="mt-4 font-display text-2xl font-semibold tracking-[-0.05em] text-balance">
-                {section.heading}
-              </h2>
-              {section.subheading ? (
-                <p className="mt-3 text-sm leading-7 text-muted">{section.subheading}</p>
-              ) : null}
-              <Markdown className="mt-5" content={section.bodyMarkdown} />
-            </div>
+            <DetailCard
+              key={section.id}
+              eyebrow={getSectionSettingString(section, "eyebrow") ?? section.sectionKey}
+              title={section.heading}
+              description={section.subheading}
+              className="md:p-8"
+            >
+              <Markdown content={section.bodyMarkdown} />
+            </DetailCard>
           ))}
         </section>
       ) : null}

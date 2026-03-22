@@ -1,6 +1,7 @@
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { ContactForm } from "@/components/site/contact-form";
+import { DetailCard } from "@/components/site/detail-card";
 import { Markdown } from "@/components/site/markdown";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getContactPageData } from "@/lib/content/queries";
@@ -122,49 +123,25 @@ export async function ContactPageContent({
                     getSectionSettingString(section, "eyebrow") ?? section.sectionKey;
 
                   return (
-                    <div key={section.id} className="surface-panel rounded-[1.75rem] p-6">
-                      <p className="signal-label">{eyebrow}</p>
-                      {linkHref ? (
-                        <a
-                          className="mt-4 inline-block text-lg font-medium text-foreground transition hover:text-accent-strong"
-                          href={linkHref}
-                        >
-                          {title}
-                        </a>
-                      ) : (
-                        <p className="mt-4 text-lg font-medium text-foreground">{title}</p>
-                      )}
-                      {section.subheading ? (
-                        <p className="mt-3 text-sm leading-7 text-muted">
-                          {section.subheading}
-                        </p>
-                      ) : null}
-                      {body ? <Markdown className="mt-3" content={body} /> : null}
-                    </div>
+                    <DetailCard
+                      key={section.id}
+                      eyebrow={eyebrow}
+                      title={title}
+                      description={section.subheading}
+                      href={linkHref}
+                    >
+                      {body ? <Markdown className="mt-1" content={body} /> : null}
+                    </DetailCard>
                   );
                 })
               : fallbackCards.map((card) => (
-                  <div
+                  <DetailCard
                     key={card.eyebrow}
-                    className="surface-panel rounded-[1.75rem] p-6"
-                  >
-                    <p className="signal-label">{card.eyebrow}</p>
-                    {card.href ? (
-                      <a
-                        className="mt-4 inline-block text-lg font-medium text-foreground transition hover:text-accent-strong"
-                        href={card.href}
-                      >
-                        {card.title}
-                      </a>
-                    ) : (
-                      <p className="mt-4 text-lg font-medium text-foreground">
-                        {card.title}
-                      </p>
-                    )}
-                    <p className="mt-3 text-sm leading-7 text-muted">
-                      {card.description}
-                    </p>
-                  </div>
+                    eyebrow={card.eyebrow}
+                    title={card.title}
+                    description={card.description}
+                    href={card.href}
+                  />
                 ))}
           </div>
         </div>
