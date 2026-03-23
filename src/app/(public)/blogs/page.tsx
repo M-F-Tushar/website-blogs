@@ -1,7 +1,5 @@
 import { notFound, permanentRedirect } from "next/navigation";
 
-import { DetailCard } from "@/components/site/detail-card";
-import { Markdown } from "@/components/site/markdown";
 import { PostsDirectory } from "@/components/site/posts-directory";
 import { getBlogsPageData } from "@/lib/content/queries";
 import {
@@ -12,7 +10,6 @@ import {
   buildTopLevelPageMetadata,
   DEFAULT_TOP_LEVEL_PAGE_PATHS,
 } from "@/lib/content/page-routing";
-import { cn } from "@/lib/utils";
 
 export async function generateMetadata() {
   return buildTopLevelPageMetadata("blogs", {
@@ -30,7 +27,6 @@ export async function BlogsPageContent({
   const resolvedData = data ?? (await getBlogsPageData());
   const { page, sections, posts } = resolvedData;
   const heroSection = getPrimarySection(sections, ["hero", "intro"], ["hero"]);
-  const supportingSections = sections.filter((section) => section.id !== heroSection?.id);
   const title = getSectionSettingString(heroSection, "heroTitle") ?? "The Blog";
   const badge =
     getSectionSettingString(heroSection, "eyebrow") ?? "Explore my thoughts & tutorials";
@@ -50,38 +46,7 @@ export async function BlogsPageContent({
             page?.metaDescription ??
             "Discover articles on web development, software engineering, and the latest tech trends."}
         </p>
-        {heroSection?.bodyMarkdown ? (
-          <div className="mt-7 text-left">
-            <DetailCard
-              eyebrow="Editorial note"
-              title="Why this archive exists"
-              description="The writing here is part of the work, not separate from it."
-            >
-              <Markdown content={heroSection.bodyMarkdown} />
-            </DetailCard>
-          </div>
-        ) : null}
       </section>
-
-      {supportingSections.length > 0 ? (
-        <section
-          className={cn(
-            "mt-10 gap-5",
-            supportingSections.length === 1 ? "mx-auto max-w-3xl" : "grid lg:grid-cols-2",
-          )}
-        >
-          {supportingSections.map((section) => (
-            <DetailCard
-              key={section.id}
-              eyebrow={getSectionSettingString(section, "eyebrow") ?? section.sectionKey}
-              title={section.heading}
-              description={section.subheading}
-            >
-              <Markdown content={section.bodyMarkdown} />
-            </DetailCard>
-          ))}
-        </section>
-      ) : null}
 
       <PostsDirectory posts={posts} />
     </div>

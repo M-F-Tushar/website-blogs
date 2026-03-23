@@ -1,7 +1,5 @@
 import { notFound, permanentRedirect } from "next/navigation";
 
-import { DetailCard } from "@/components/site/detail-card";
-import { Markdown } from "@/components/site/markdown";
 import { RecommendationsDirectory } from "@/components/site/recommendations-directory";
 import { getRecommendationsPageData } from "@/lib/content/queries";
 import {
@@ -12,7 +10,6 @@ import {
   buildTopLevelPageMetadata,
   DEFAULT_TOP_LEVEL_PAGE_PATHS,
 } from "@/lib/content/page-routing";
-import { cn } from "@/lib/utils";
 
 export async function generateMetadata() {
   return buildTopLevelPageMetadata("recommendations", {
@@ -30,7 +27,6 @@ export async function RecommendationsPageContent({
   const resolvedData = data ?? (await getRecommendationsPageData());
   const { page, sections, recommendations } = resolvedData;
   const heroSection = getPrimarySection(sections, ["hero", "intro"], ["hero"]);
-  const supportingSections = sections.filter((section) => section.id !== heroSection?.id);
   const categoryCount = new Set(
     recommendations.map((item) => item.category).filter(Boolean),
   ).size;
@@ -61,38 +57,6 @@ export async function RecommendationsPageContent({
           <span className="signal-pill">{categoryCount} categories</span>
         </div>
       </section>
-
-      {heroSection?.bodyMarkdown ? (
-        <section className="mx-auto mt-10 max-w-6xl">
-          <DetailCard
-            eyebrow="Curation note"
-            title={heroSection.heading}
-            description="Everything here should be something worth returning to, not filler."
-          >
-            <Markdown content={heroSection.bodyMarkdown} />
-          </DetailCard>
-        </section>
-      ) : null}
-
-      {supportingSections.length > 0 ? (
-        <section
-          className={cn(
-            "mt-10 gap-5",
-            supportingSections.length === 1 ? "mx-auto max-w-3xl" : "grid lg:grid-cols-2",
-          )}
-        >
-          {supportingSections.map((section) => (
-            <DetailCard
-              key={section.id}
-              eyebrow={getSectionSettingString(section, "eyebrow") ?? section.sectionKey}
-              title={section.heading}
-              description={section.subheading}
-            >
-              <Markdown content={section.bodyMarkdown} />
-            </DetailCard>
-          ))}
-        </section>
-      ) : null}
 
       <RecommendationsDirectory recommendations={recommendations} />
     </div>

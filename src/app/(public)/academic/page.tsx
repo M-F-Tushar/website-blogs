@@ -1,8 +1,6 @@
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { AcademicDirectory } from "@/components/site/academic-directory";
-import { DetailCard } from "@/components/site/detail-card";
-import { Markdown } from "@/components/site/markdown";
 import { getAcademicPageData } from "@/lib/content/queries";
 import {
   getPrimarySection,
@@ -12,7 +10,6 @@ import {
   buildTopLevelPageMetadata,
   DEFAULT_TOP_LEVEL_PAGE_PATHS,
 } from "@/lib/content/page-routing";
-import { cn } from "@/lib/utils";
 
 export async function generateMetadata() {
   return buildTopLevelPageMetadata("academic", {
@@ -30,7 +27,6 @@ export async function AcademicPageContent({
   const resolvedData = data ?? (await getAcademicPageData());
   const { page, sections, entries } = resolvedData;
   const heroSection = getPrimarySection(sections, ["hero", "intro"], ["hero"]);
-  const supportingSections = sections.filter((section) => section.id !== heroSection?.id);
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
@@ -50,38 +46,6 @@ export async function AcademicPageContent({
             "Coursework, research notes, experiments, and evidence of deeper study."}
         </p>
       </section>
-
-      {heroSection?.bodyMarkdown ? (
-        <section className="mx-auto mt-10 max-w-6xl">
-          <DetailCard
-            eyebrow="Research continuity"
-            title={heroSection.heading}
-            description="This area keeps academic work connected to the wider engineering journey."
-          >
-            <Markdown content={heroSection.bodyMarkdown} />
-          </DetailCard>
-        </section>
-      ) : null}
-
-      {supportingSections.length > 0 ? (
-        <section
-          className={cn(
-            "mt-10 gap-5",
-            supportingSections.length === 1 ? "mx-auto max-w-3xl" : "grid lg:grid-cols-2",
-          )}
-        >
-          {supportingSections.map((section) => (
-            <DetailCard
-              key={section.id}
-              eyebrow={getSectionSettingString(section, "eyebrow") ?? section.sectionKey}
-              title={section.heading}
-              description={section.subheading}
-            >
-              <Markdown content={section.bodyMarkdown} />
-            </DetailCard>
-          ))}
-        </section>
-      ) : null}
 
       <AcademicDirectory entries={entries} />
     </div>
