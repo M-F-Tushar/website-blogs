@@ -6,7 +6,11 @@ import {
   mapRecommendation,
 } from "@/lib/content/query-mappers";
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import { getSupabaseStoragePublicUrl } from "@/lib/utils";
+import {
+  getSupabaseStoragePublicUrl,
+  normalizeEmailAddress,
+  normalizeLegacyBrandCopy,
+} from "@/lib/utils";
 import type {
   AcademicEntry,
   ContactMessage,
@@ -151,17 +155,17 @@ export const getAdminSiteSettings = cache(async (): Promise<SiteSettings | null>
   const row = data as SiteSettingsRow;
 
   return {
-    siteName: row.site_name,
+    siteName: normalizeLegacyBrandCopy(row.site_name) ?? row.site_name,
     siteTagline: row.site_tagline,
     siteDescription: row.site_description,
     footerBlurb: row.footer_blurb,
-    contactEmail: row.contact_email,
+    contactEmail: normalizeEmailAddress(row.contact_email) ?? row.contact_email,
     locationLabel: row.location_label,
     githubUrl: row.github_url,
     linkedinUrl: row.linkedin_url,
     xUrl: row.x_url,
     resumeUrl: row.resume_url,
-    metaTitle: row.meta_title,
+    metaTitle: normalizeLegacyBrandCopy(row.meta_title),
     metaDescription: row.meta_description,
     canonicalUrl: row.canonical_url,
     defaultOgImageAssetId: row.default_og_image_asset_id,
@@ -205,7 +209,7 @@ export const getAdminPages = cache(async (): Promise<PageRecord[]> => {
     slug: page.slug,
     status: page.status,
     isVisible: page.is_visible,
-    metaTitle: page.meta_title,
+    metaTitle: normalizeLegacyBrandCopy(page.meta_title),
     metaDescription: page.meta_description,
     canonicalUrl: page.canonical_url,
   }));

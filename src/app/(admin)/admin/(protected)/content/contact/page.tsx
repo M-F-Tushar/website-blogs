@@ -1,4 +1,4 @@
-import { AdminPageSectionManager } from "@/components/admin/page-section-manager";
+import { AdminManagedPageWorkspace } from "@/components/admin/admin-managed-page-workspace";
 
 const CONTACT_SECTION_TYPES = [
   { value: "hero", label: "Hero" },
@@ -14,13 +14,14 @@ export default function AdminContactPageManager({
   searchParams,
 }: AdminContactPageManagerProps) {
   return (
-    <AdminPageSectionManager
+    <AdminManagedPageWorkspace
       pageKey="contact"
       pageTitle="Contact"
       description="Control the public contact page intro, supporting cards, and form copy from admin."
       sectionTypes={CONTACT_SECTION_TYPES}
       settingsHint='Hero supports {"eyebrow":"Contact","tracks":["Research conversations"]}. Form supports {"eyebrow":"Secure intake","badge":"Thoughtful replies over volume"}. Detail cards can use {"eyebrow":"Email"}.'
       searchParams={searchParams}
+      adminRoute="/admin/content/contact"
     />
   );
 }

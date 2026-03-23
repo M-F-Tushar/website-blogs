@@ -109,7 +109,8 @@ export async function buildSiteMetadata(input: MetadataInput): Promise<Metadata>
   const normalizedTitle = input.title.trim().toLowerCase();
   const absoluteTitle =
     input.absoluteTitle ??
-    (normalizedSiteName.length > 0 && normalizedTitle.includes(normalizedSiteName));
+    (normalizedTitle.includes("|") ||
+      (normalizedSiteName.length > 0 && normalizedTitle.includes(normalizedSiteName)));
 
   return buildMetadata({
     ...input,

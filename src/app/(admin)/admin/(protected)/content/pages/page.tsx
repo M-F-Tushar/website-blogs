@@ -1,134 +1,100 @@
 import Link from "next/link";
+import { FilePenLine, GraduationCap, Home, Mail, NotebookTabs, Star } from "lucide-react";
 
-import {
-  AdminCheckbox,
-  AdminField,
-  AdminInput,
-  AdminPageIntro,
-  AdminPanel,
-  AdminSelect,
-  AdminTextarea,
-  StatusPill,
-  SubmitButton,
-} from "@/components/admin/primitives";
+import { AdminPageIntro, AdminPanel, StatusPill } from "@/components/admin/primitives";
 import { getAdminPages } from "@/lib/content/admin-queries";
-import { savePageAction } from "@/features/admin/actions";
 
-interface AdminPagesPageProps {
-  searchParams: Promise<{ edit?: string }>;
-}
+const pageWorkspaces = [
+  {
+    pageKey: "home",
+    title: "Home page",
+    href: "/admin/content/home",
+    description: "Hero, focus rails, previews, and connect section.",
+    icon: Home,
+  },
+  {
+    pageKey: "about",
+    title: "About page",
+    href: "/admin/content/about",
+    description: "Identity framing, roadmap, supporting sections, and portrait.",
+    icon: NotebookTabs,
+  },
+  {
+    pageKey: "blogs",
+    title: "Blog page",
+    href: "/admin/content/blogs",
+    description: "Archive intro, support cards, and writing index framing.",
+    icon: FilePenLine,
+  },
+  {
+    pageKey: "academic",
+    title: "Academic page",
+    href: "/admin/content/academic-page",
+    description: "Research continuity, academic positioning, and landing-page sections.",
+    icon: GraduationCap,
+  },
+  {
+    pageKey: "recommendations",
+    title: "Recommendations page",
+    href: "/admin/content/recommendations-page",
+    description: "Curation notes, support blocks, and recommendations landing layout.",
+    icon: Star,
+  },
+  {
+    pageKey: "contact",
+    title: "Contact page",
+    href: "/admin/content/contact",
+    description: "Intro copy, availability framing, and contact-form context.",
+    icon: Mail,
+  },
+] as const;
 
-export default async function AdminPagesPage({
-  searchParams,
-}: AdminPagesPageProps) {
+export default async function AdminPagesPage() {
   const pages = await getAdminPages();
-  const { edit } = await searchParams;
-  const selectedPage = pages.find((page) => page.id === edit) ?? pages[0] ?? null;
 
   return (
     <div className="space-y-8">
       <AdminPageIntro
-        eyebrow="Content"
-        title="Pages manager"
-        description="Manage route-level metadata, visibility, publishing state, and canonical SEO fields."
+        eyebrow="Pages"
+        title="Page workspaces"
+        description="Each public page now has one designated admin surface. Open the page you want to control, then manage metadata and sections together instead of across disconnected routes."
       />
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <AdminPanel>
-          <h2 className="font-display text-2xl font-semibold tracking-[-0.04em]">
-            Registered pages
-          </h2>
-          <div className="mt-6 space-y-3">
-            {pages.map((page) => (
-              <Link
-                key={page.id}
-                href={`/admin/content/pages?edit=${page.id}`}
-                className="block rounded-[1.25rem] border border-border bg-white/55 p-4 transition hover:bg-white/80"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-foreground">{page.title}</p>
-                    <p className="mt-1 text-sm text-muted">
-                      {page.pageKey} · {page.slug}
-                    </p>
+      <div className="grid gap-5 xl:grid-cols-2">
+        {pageWorkspaces.map((workspace) => {
+          const page = pages.find((item) => item.pageKey === workspace.pageKey) ?? null;
+          const Icon = workspace.icon;
+
+          return (
+            <Link key={workspace.pageKey} href={workspace.href}>
+              <AdminPanel className="admin-list-card h-full transition hover:-translate-y-0.5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="rounded-[1rem] border border-border bg-white/70 p-3 text-accent">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-display text-2xl font-semibold tracking-[-0.04em] text-foreground">
+                        {workspace.title}
+                      </p>
+                      <p className="mt-2 max-w-xl text-sm leading-7 text-muted">
+                        {workspace.description}
+                      </p>
+                      <p className="mt-3 font-mono text-[0.68rem] uppercase tracking-[0.22em] text-muted">
+                        {page?.slug ?? "missing route"}
+                      </p>
+                    </div>
                   </div>
-                  <StatusPill tone={page.status === "published" ? "success" : "warning"}>
-                    {page.status}
-                  </StatusPill>
+                  {page ? (
+                    <StatusPill tone={page.status === "published" ? "success" : "warning"}>
+                      {page.status}
+                    </StatusPill>
+                  ) : null}
                 </div>
-              </Link>
-            ))}
-          </div>
-        </AdminPanel>
-
-        <AdminPanel>
-          <h2 className="font-display text-2xl font-semibold tracking-[-0.04em]">
-            Edit page metadata
-          </h2>
-          {selectedPage ? (
-            <form action={savePageAction} className="mt-6 grid gap-5">
-              <input type="hidden" name="id" defaultValue={selectedPage.id} />
-
-              <div className="grid gap-5 md:grid-cols-2">
-                <AdminField label="Page key">
-                  <AdminSelect name="pageKey" defaultValue={selectedPage.pageKey}>
-                    <option value="home">home</option>
-                    <option value="about">about</option>
-                    <option value="blogs">blogs</option>
-                    <option value="academic">academic</option>
-                    <option value="recommendations">recommendations</option>
-                    <option value="contact">contact</option>
-                  </AdminSelect>
-                </AdminField>
-                <AdminField label="Title">
-                  <AdminInput name="title" defaultValue={selectedPage.title} required />
-                </AdminField>
-              </div>
-
-              <div className="grid gap-5 md:grid-cols-2">
-                <AdminField label="Slug">
-                  <AdminInput name="slug" defaultValue={selectedPage.slug} required />
-                </AdminField>
-                <AdminField label="Status">
-                  <AdminSelect name="status" defaultValue={selectedPage.status}>
-                    <option value="draft">draft</option>
-                    <option value="published">published</option>
-                    <option value="archived">archived</option>
-                  </AdminSelect>
-                </AdminField>
-              </div>
-
-              <AdminCheckbox
-                name="isVisible"
-                label="Visible to the public"
-                defaultChecked={selectedPage.isVisible}
-              />
-
-              <AdminField label="Meta title">
-                <AdminInput name="metaTitle" defaultValue={selectedPage.metaTitle ?? ""} />
-              </AdminField>
-              <AdminField label="Meta description">
-                <AdminTextarea
-                  name="metaDescription"
-                  defaultValue={selectedPage.metaDescription ?? ""}
-                  rows={3}
-                />
-              </AdminField>
-              <AdminField label="Canonical URL">
-                <AdminInput
-                  name="canonicalUrl"
-                  defaultValue={selectedPage.canonicalUrl ?? ""}
-                />
-              </AdminField>
-
-              <div className="pt-2">
-                <SubmitButton>Save page</SubmitButton>
-              </div>
-            </form>
-          ) : (
-            <p className="mt-4 text-sm text-muted">No page records available yet.</p>
-          )}
-        </AdminPanel>
+              </AdminPanel>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

@@ -201,6 +201,7 @@ export async function deleteNavigationItemAction(formData: FormData) {
 
 export async function savePageAction(formData: FormData) {
   await requireAdminSession();
+  const returnTo = optionalText(formData.get("returnTo"));
 
   const payload = pageSchema.parse({
     id: optionalText(formData.get("id")),
@@ -213,7 +214,8 @@ export async function savePageAction(formData: FormData) {
     metaDescription: optionalText(formData.get("metaDescription")),
     canonicalUrl: optionalText(formData.get("canonicalUrl")),
   });
-  assertPageSlugIsSupported(payload.pageKey, payload.slug);
+  const lockedSlug = DEFAULT_TOP_LEVEL_PAGE_PATHS[payload.pageKey];
+  assertPageSlugIsSupported(payload.pageKey, lockedSlug);
 
   const supabase = createServiceRoleClient();
   const previousSlug = payload.id
@@ -231,7 +233,7 @@ export async function savePageAction(formData: FormData) {
         .update({
           page_key: payload.pageKey,
           title: payload.title,
-          slug: payload.slug,
+          slug: lockedSlug,
           status: payload.status,
           is_visible: payload.isVisible,
           meta_title: payload.metaTitle,
@@ -242,7 +244,7 @@ export async function savePageAction(formData: FormData) {
     : await supabase.from("pages").insert({
         page_key: payload.pageKey,
         title: payload.title,
-        slug: payload.slug,
+        slug: lockedSlug,
         status: payload.status,
         is_visible: payload.isVisible,
         meta_title: payload.metaTitle,
@@ -256,14 +258,15 @@ export async function savePageAction(formData: FormData) {
 
   await revalidatePublicRoutes([
     DEFAULT_TOP_LEVEL_PAGE_PATHS[payload.pageKey],
-    payload.slug,
+    lockedSlug,
     previousSlug,
   ].filter((path): path is string => Boolean(path)));
-  redirect("/admin/content/pages?saved=1");
+  redirect(`${returnTo ?? "/admin/content/pages"}?saved=1`);
 }
 
 export async function savePageSectionAction(formData: FormData) {
   await requireAdminSession();
+  const returnTo = optionalText(formData.get("returnTo"));
 
   const payload = pageSectionSchema.parse({
     id: optionalText(formData.get("id")),
@@ -330,7 +333,11 @@ export async function savePageSectionAction(formData: FormData) {
   }
 
   await revalidatePublicRoutes();
-  redirect(`/admin/content/${payload.pageKey}?saved=1`);
+  const basePath = returnTo ?? `/admin/content/${payload.pageKey}`;
+  const redirectTarget = payload.id
+    ? `${basePath}?edit=${payload.id}&saved=1`
+    : `${basePath}?saved=1`;
+  redirect(redirectTarget);
 }
 
 export async function deletePageSectionAction(formData: FormData) {
@@ -338,9 +345,10 @@ export async function deletePageSectionAction(formData: FormData) {
 
   const id = optionalText(formData.get("id"));
   const pageKey = normalizeText(formData.get("pageKey"));
+  const returnTo = optionalText(formData.get("returnTo"));
 
   if (!id) {
-    redirect(`/admin/content/${pageKey}`);
+    redirect(returnTo ?? `/admin/content/${pageKey}`);
   }
 
   const supabase = createServiceRoleClient();
@@ -351,5 +359,5 @@ export async function deletePageSectionAction(formData: FormData) {
   }
 
   await revalidatePublicRoutes();
-  redirect(`/admin/content/${pageKey}?deleted=1`);
+  redirect(`${returnTo ?? `/admin/content/${pageKey}`}?deleted=1`);
 }

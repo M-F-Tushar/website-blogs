@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { Send } from "lucide-react";
 
 declare global {
   interface Window {
@@ -44,7 +45,7 @@ export function ContactForm({
   const widgetIdRef = useRef<string | null>(null);
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const fieldClassName =
-    "rounded-[1.25rem] border border-border bg-white/76 px-4 py-3.5 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/12";
+    "rounded-[1.2rem] border border-white/8 bg-white/4 px-4 py-3.5 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/30 focus:bg-white/7";
 
   useEffect(() => {
     if (!turnstileSiteKey || !turnstileContainerRef.current) {
@@ -74,7 +75,7 @@ export function ContactForm({
           setCaptchaToken("");
           setCaptchaReady(false);
         },
-        theme: "light",
+        theme: "dark",
       });
     };
 
@@ -167,47 +168,57 @@ export function ContactForm({
   }
 
   return (
-    <form className="surface-panel rounded-[2rem] p-6 md:p-8" onSubmit={handleSubmit}>
-      <div className="border-b border-border/70 pb-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="signal-label">{eyebrow}</p>
-            <h2 className="mt-4 font-display text-3xl font-semibold tracking-[-0.05em] text-balance">
-              {title}
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">
-              {description}
-            </p>
-          </div>
-          <div className="rounded-[1.2rem] border border-border bg-white/60 px-4 py-3 text-xs uppercase tracking-[0.24em] text-muted">
-            {badge}
-          </div>
+    <form className="surface-panel rounded-[1.8rem] p-6 md:p-8" onSubmit={handleSubmit}>
+      <div className="flex flex-col gap-4 border-b border-white/8 pb-6 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="signal-label">{eyebrow}</p>
+          <h2 className="mt-4 font-display text-[2.4rem] font-semibold leading-[1.02] tracking-[-0.05em] text-white">
+            {title}
+          </h2>
+          <p className="mt-3 max-w-2xl text-[0.98rem] leading-8 text-slate-400">
+            {description}
+          </p>
+        </div>
+        <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.24em] text-slate-400">
+          {badge}
         </div>
       </div>
 
       <div className="mt-8 grid gap-5 md:grid-cols-2">
-        <label className="flex flex-col gap-2 text-sm text-muted">
-          Name
-          <input name="name" required className={fieldClassName} />
+        <label className="flex flex-col gap-2 text-sm text-slate-300">
+          Your Name *
+          <input name="name" required className={fieldClassName} placeholder="John Doe" />
         </label>
-        <label className="flex flex-col gap-2 text-sm text-muted">
-          Email
-          <input name="email" required type="email" className={fieldClassName} />
+        <label className="flex flex-col gap-2 text-sm text-slate-300">
+          Email Address *
+          <input
+            name="email"
+            required
+            type="email"
+            className={fieldClassName}
+            placeholder="john@example.com"
+          />
         </label>
       </div>
 
-      <label className="mt-5 flex flex-col gap-2 text-sm text-muted">
-        Subject
-        <input name="subject" required className={fieldClassName} />
+      <label className="mt-5 flex flex-col gap-2 text-sm text-slate-300">
+        Subject *
+        <input
+          name="subject"
+          required
+          className={fieldClassName}
+          placeholder="Project inquiry"
+        />
       </label>
 
-      <label className="mt-5 flex flex-col gap-2 text-sm text-muted">
-        Message
+      <label className="mt-5 flex flex-col gap-2 text-sm text-slate-300">
+        Message *
         <textarea
           name="message"
           required
           rows={7}
           className={fieldClassName}
+          placeholder="Tell me about your project or inquiry..."
         />
       </label>
 
@@ -221,13 +232,13 @@ export function ContactForm({
       <input type="hidden" name="captchaToken" value={captchaToken} />
 
       {turnstileSiteKey ? (
-        <div className="mt-5 rounded-[1.25rem] border border-border bg-white/55 p-4">
-          <p className="text-sm text-muted">
+        <div className="mt-5 rounded-[1.25rem] border border-white/8 bg-white/4 p-4">
+          <p className="text-sm text-slate-400">
             Complete the bot protection check before sending your message.
           </p>
           <div ref={turnstileContainerRef} className="mt-4" />
           {!captchaReady ? (
-            <p className="mt-3 text-xs text-muted">
+            <p className="mt-3 text-xs text-slate-500">
               Bot protection is required for public submissions.
             </p>
           ) : null}
@@ -237,17 +248,21 @@ export function ContactForm({
       <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <button
           type="submit"
-          disabled={state.status === "submitting" || (Boolean(turnstileSiteKey) && !captchaToken)}
-          className="inline-flex items-center justify-center rounded-full bg-surface-dark px-6 py-3.5 text-sm font-medium text-white shadow-[0_20px_45px_rgba(7,19,31,0.22)] transition hover:bg-surface-dark/92 disabled:opacity-60"
+          disabled={
+            state.status === "submitting" ||
+            (Boolean(turnstileSiteKey) && !captchaToken)
+          }
+          className="inline-flex items-center justify-center gap-2 rounded-[1.15rem] bg-sky-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {state.status === "submitting" ? "Sending..." : "Send message"}
+          <Send className="h-4 w-4" />
+          {state.status === "submitting" ? "Sending..." : "Send Message"}
         </button>
         {state.message ? (
           <p
             className={
               state.status === "success"
-                ? "rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-success"
-                : "rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600"
+                ? "rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-300"
+                : "rounded-full border border-red-400/20 bg-red-400/10 px-4 py-2 text-sm text-red-300"
             }
           >
             {state.message}

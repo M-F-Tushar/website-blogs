@@ -13,15 +13,15 @@ insert into public.site_settings (
 )
 values (
   'primary',
-  'Arian''s Lab Notes',
+  'Tusher''s Blog',
   'Student builder. Research-minded. AI/ML in motion.',
   'A production-grade personal knowledge platform documenting the path from CSE student to AI, ML, LLM, and MLOps professional.',
   'A long-horizon digital identity for documenting projects, research interests, notes, and real technical growth.',
-  'hello@example.com',
+  'mahirfaysaltushar@gmail.com',
   'Dhaka, Bangladesh',
-  'https://github.com/',
-  'https://linkedin.com/',
-  'Arian''s Lab Notes',
+  'https://github.com/M-F-Tushar',
+  'https://www.linkedin.com/in/mahir-faysal-tusher',
+  'Tusher''s Blog',
   'A technical identity platform for blogging, academic notes, recommendations, and learning progress in AI, ML, LLM, and MLOps.'
 )
 on conflict (site_key) do update
@@ -44,18 +44,18 @@ values
   ('Academic', '/academic', 'header', 40, true, false),
   ('Recommendations', '/recommendations', 'header', 50, true, false),
   ('Contact', '/contact', 'header', 60, true, false),
-  ('GitHub', 'https://github.com/', 'social', 10, true, true),
-  ('LinkedIn', 'https://linkedin.com/', 'social', 20, true, true)
+  ('GitHub', 'https://github.com/M-F-Tushar', 'social', 10, true, true),
+  ('LinkedIn', 'https://www.linkedin.com/in/mahir-faysal-tusher', 'social', 20, true, true)
 on conflict do nothing;
 
 insert into public.pages (page_key, title, slug, status, is_visible, meta_title, meta_description)
 values
-  ('home', 'Home', '/', 'published', true, 'Home | Arian''s Lab Notes', 'AI/ML learning journey, technical writing, and research growth.'),
-  ('about', 'About', '/about', 'published', true, 'About | Arian''s Lab Notes', 'Who I am, what I study, and where I''m headed in AI/ML.'),
-  ('blogs', 'Blogs', '/blogs', 'published', true, 'Blogs | Arian''s Lab Notes', 'Learning notes, project logs, and evidence-driven technical writing.'),
-  ('academic', 'Academic', '/academic', 'published', true, 'Academic | Arian''s Lab Notes', 'Coursework, experiments, research notes, and academic growth.'),
-  ('recommendations', 'Recommendations', '/recommendations', 'published', true, 'Recommendations | Arian''s Lab Notes', 'Books, tools, courses, and resources worth recommending.'),
-  ('contact', 'Contact', '/contact', 'published', true, 'Contact | Arian''s Lab Notes', 'Reach out for collaboration, conversation, or research exchange.')
+  ('home', 'Home', '/', 'published', true, 'Home | Tusher''s Blog', 'AI/ML learning journey, technical writing, and research growth.'),
+  ('about', 'About', '/about', 'published', true, 'About | Tusher''s Blog', 'Who I am, what I study, and where I''m headed in AI/ML.'),
+  ('blogs', 'Blogs', '/blogs', 'published', true, 'Blogs | Tusher''s Blog', 'Learning notes, project logs, and evidence-driven technical writing.'),
+  ('academic', 'Academic', '/academic', 'published', true, 'Academic | Tusher''s Blog', 'Coursework, experiments, research notes, and academic growth.'),
+  ('recommendations', 'Recommendations', '/recommendations', 'published', true, 'Recommendations | Tusher''s Blog', 'Books, tools, courses, and resources worth recommending.'),
+  ('contact', 'Contact', '/contact', 'published', true, 'Contact | Tusher''s Blog', 'Reach out for collaboration, conversation, or research exchange.')
 on conflict (page_key) do update
 set title = excluded.title,
     slug = excluded.slug,
@@ -131,7 +131,7 @@ values
   ((select id from recommendations_page), 'hero', 'hero', 'Resources I''d recommend because they support real progress', 'Books, tools, and learning assets filtered through actual use, not generic listicle energy.', 'The goal of this page is curation, not volume. Anything listed here should be genuinely useful for building understanding, execution quality, or long-term technical taste.', 10, true, true, '{"eyebrow":"Recommendations","panelLabel":"Curated stack","panelItems":[{"label":"Saved resources","value":"01","description":"Published recommendations"},{"label":"Filter","value":"Useful in practice","description":"Books, tools, and references that actually hold up in practice."}]}'::jsonb),
   ((select id from recommendations_page), 'curation-rule', 'detail', 'The bar is practical usefulness, not popularity', 'A recommendation should earn its place.', 'This page should stay selective. I only want to recommend things that improve how I learn, build, debug, or reason about systems over time.', 20, true, false, '{"eyebrow":"Curation rule"}'::jsonb),
   ((select id from contact_page), 'hero', 'hero', 'Open a conversation', 'If there''s an idea, project, or direction worth exploring together, I''d like to hear about it.', 'The best outreach usually includes enough context to make the next step obvious: what the idea is, why it matters, and what kind of conversation would be useful.', 10, true, true, '{"eyebrow":"Contact","tracks":["Research conversations","AI/ML collaboration","Systems and tooling"]}'::jsonb),
-  ((select id from contact_page), 'email', 'detail', 'hello@example.com', 'Best for collaboration, research questions, or project discussion.', 'Email is still the clearest way to start a useful technical conversation here.', 20, true, false, '{"eyebrow":"Email","href":"mailto:hello@example.com"}'::jsonb),
+  ((select id from contact_page), 'email', 'detail', 'mahirfaysaltushar@gmail.com', 'Best for collaboration, research questions, or project discussion.', 'Email is still the clearest way to start a useful technical conversation here.', 20, true, false, '{"eyebrow":"Email","href":"mailto:mahirfaysaltushar@gmail.com"}'::jsonb),
   ((select id from contact_page), 'location', 'detail', 'Dhaka, Bangladesh', 'Remote-friendly and open to thoughtful technical conversations across time zones.', 'Open to async conversation, remote collaboration, and practical discussions that can become real work.', 30, true, false, '{"eyebrow":"Location"}'::jsonb),
   ((select id from contact_page), 'form', 'form', 'Start the conversation', 'Use this channel for collaboration, research questions, project ideas, or thoughtful technical discussion.', 'A short summary, relevant links, and the kind of discussion you want make it easier to respond well.', 40, true, false, '{"eyebrow":"Secure intake","badge":"Thoughtful replies over volume"}'::jsonb)
 on conflict (page_id, section_key) do update

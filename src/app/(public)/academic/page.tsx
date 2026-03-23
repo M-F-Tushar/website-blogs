@@ -1,14 +1,11 @@
 import { notFound, permanentRedirect } from "next/navigation";
 
-import { ContentCard } from "@/components/site/content-card";
+import { AcademicDirectory } from "@/components/site/academic-directory";
 import { DetailCard } from "@/components/site/detail-card";
 import { Markdown } from "@/components/site/markdown";
-import { SignalCard } from "@/components/site/signal-card";
-import { SectionHeading } from "@/components/ui/section-heading";
 import { getAcademicPageData } from "@/lib/content/queries";
 import {
   getPrimarySection,
-  getSectionPanelItems,
   getSectionSettingString,
 } from "@/lib/content/section-settings";
 import {
@@ -25,18 +22,6 @@ export async function generateMetadata() {
   });
 }
 
-function getCollectionGridClasses(count: number) {
-  if (count <= 1) {
-    return "mt-12 max-w-4xl";
-  }
-
-  return "mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3";
-}
-
-function isFeaturedCollectionCard(count: number, index: number) {
-  return count === 1 || (count >= 3 && index === 0);
-}
-
 export async function AcademicPageContent({
   data,
 }: {
@@ -46,77 +31,51 @@ export async function AcademicPageContent({
   const { page, sections, entries } = resolvedData;
   const heroSection = getPrimarySection(sections, ["hero", "intro"], ["hero"]);
   const supportingSections = sections.filter((section) => section.id !== heroSection?.id);
-  const panelLabel =
-    getSectionSettingString(heroSection, "panelLabel") ?? "Research continuity";
-  const panelItems = getSectionPanelItems(heroSection, "panelItems", [
-    {
-      label: "Indexed entries",
-      value: String(entries.length).padStart(2, "0"),
-      description: "Published academic records",
-    },
-    {
-      label: "Emphasis",
-      value: "Study and experiments",
-      description:
-        "Coursework, experiments, paper notes, and the evidence trail behind deeper study.",
-    },
-  ]);
-  const emptyState =
-    getSectionSettingString(heroSection, "emptyState") ??
-    "No published academic entries yet. Add your first item from the admin panel.";
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-16 md:py-24">
-      <section className="grid-backdrop overflow-hidden rounded-[2.15rem] border border-white/45">
-        <div className="grid gap-8 px-6 py-10 md:px-10 md:py-12 lg:grid-cols-[1.05fr_0.95fr]">
-          <div>
-            <SectionHeading
-              eyebrow={
-                getSectionSettingString(heroSection, "eyebrow") ??
-                page?.title ??
-                "Academic"
-              }
-              title={
-                heroSection?.heading ??
-                page?.title ??
-                "Coursework, research notes, experiments, and evidence of deeper study"
-              }
-              description={
-                heroSection?.subheading ??
-                page?.metaDescription ??
-                "This section tracks academic growth, research curiosity, and the transition from student work to more serious technical exploration."
-              }
-            />
-            {heroSection?.bodyMarkdown ? (
-              <Markdown className="mt-8" content={heroSection.bodyMarkdown} />
-            ) : null}
-          </div>
-          <div className="editorial-panel rounded-[1.75rem] p-6 md:p-8">
-            <p className="signal-label">{panelLabel}</p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {panelItems.map((item) => (
-                <SignalCard
-                  key={`${item.label}-${item.value}`}
-                  eyebrow={item.label}
-                  title={item.value}
-                  description={item.description}
-                  emphasis="display"
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+    <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
+      <section className="mx-auto max-w-4xl text-center">
+        <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
+          <span className="text-sky-400">✦</span>
+          {getSectionSettingString(heroSection, "eyebrow") ?? "Academic trail"}
+        </p>
+        <h1 className="mt-6 font-display text-[3.9rem] font-semibold leading-[0.92] tracking-[-0.06em] text-white md:text-[5.2rem]">
+          <span className="accent-gradient-text">
+            {getSectionSettingString(heroSection, "heroTitle") ?? page?.title ?? "Academic"}
+          </span>
+        </h1>
+        <p className="mx-auto mt-5 max-w-3xl text-[1.04rem] leading-8 text-slate-300 md:text-[1.14rem]">
+          {heroSection?.subheading ??
+            page?.metaDescription ??
+            "Coursework, research notes, experiments, and evidence of deeper study."}
+        </p>
       </section>
 
+      {heroSection?.bodyMarkdown ? (
+        <section className="mx-auto mt-10 max-w-6xl">
+          <DetailCard
+            eyebrow="Research continuity"
+            title={heroSection.heading}
+            description="This area keeps academic work connected to the wider engineering journey."
+          >
+            <Markdown content={heroSection.bodyMarkdown} />
+          </DetailCard>
+        </section>
+      ) : null}
+
       {supportingSections.length > 0 ? (
-        <section className="mt-12 grid gap-6 lg:grid-cols-2">
+        <section
+          className={cn(
+            "mt-10 gap-5",
+            supportingSections.length === 1 ? "mx-auto max-w-3xl" : "grid lg:grid-cols-2",
+          )}
+        >
           {supportingSections.map((section) => (
             <DetailCard
               key={section.id}
               eyebrow={getSectionSettingString(section, "eyebrow") ?? section.sectionKey}
               title={section.heading}
               description={section.subheading}
-              className="md:p-8"
             >
               <Markdown content={section.bodyMarkdown} />
             </DetailCard>
@@ -124,35 +83,7 @@ export async function AcademicPageContent({
         </section>
       ) : null}
 
-      {entries.length > 0 ? (
-        <div className={getCollectionGridClasses(entries.length)}>
-          {entries.map((entry, index) => (
-            <ContentCard
-              key={entry.id}
-              href={`/academic/${entry.slug}`}
-              eyebrow={entry.entryType.replace(/_/g, " ")}
-              title={entry.title}
-              description={entry.summary}
-              date={entry.completedAt ?? entry.startedAt}
-              imageUrl={entry.coverUrl}
-              imageAlt={entry.coverAlt}
-              size={isFeaturedCollectionCard(entries.length, index) ? "feature" : "default"}
-              className={cn(
-                entries.length >= 3 && index === 0 && "md:col-span-2 xl:col-span-2",
-              )}
-            />
-          ))}
-        </div>
-      ) : null}
-
-      {entries.length === 0 ? (
-        <DetailCard
-          className="mt-10 md:p-8"
-          eyebrow="Archive status"
-          title="No published academic entries yet"
-          description={emptyState}
-        />
-      ) : null}
+      <AcademicDirectory entries={entries} />
     </div>
   );
 }

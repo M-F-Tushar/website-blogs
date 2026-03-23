@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { MarkdownEditorField } from "@/components/admin/markdown-editor-field";
 import { MediaAssetPicker } from "@/components/admin/media-asset-picker";
 import {
   AdminCheckbox,
@@ -38,28 +39,31 @@ export default async function AdminAcademicPage({
   return (
     <div className="space-y-8">
       <AdminPageIntro
-        eyebrow="Content"
-        title="Academic manager"
-        description="Track coursework, research notes, experiments, paper summaries, and future thesis work."
+        eyebrow="Collections"
+        title="Academic entries"
+        description="Write research notes, coursework reflections, experiments, and paper summaries with the same markdown workflow used on the public site."
+        actions={
+          <Link
+            href="/admin/content/academic"
+            className="inline-flex items-center justify-center rounded-full border border-border-strong px-5 py-3 text-sm font-medium text-foreground transition hover:bg-white/60"
+          >
+            New entry
+          </Link>
+        }
       />
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <AdminPanel>
-          <div className="flex items-center justify-between gap-3">
+      <div className="grid gap-6 xl:grid-cols-[0.88fr_minmax(0,1.12fr)]">
+        <AdminPanel className="admin-panel-quiet xl:sticky xl:top-6 xl:self-start">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="font-display text-2xl font-semibold tracking-[-0.04em]">
-                Academic entries
+              <h2 className="font-display text-2xl font-semibold tracking-[-0.04em] text-foreground">
+                Academic library
               </h2>
-              <p className="mt-2 text-sm text-muted">
-                Research-facing content and academic signals.
+              <p className="mt-2 text-sm leading-7 text-muted">
+                Coursework, research notes, paper logs, and experiments.
               </p>
             </div>
-            <Link
-              href="/admin/content/academic"
-              className="rounded-full border border-border-strong px-4 py-2 text-sm"
-            >
-              New entry
-            </Link>
+            <StatusPill>{entries.length} total</StatusPill>
           </div>
 
           <div className="mt-6 space-y-3">
@@ -67,14 +71,17 @@ export default async function AdminAcademicPage({
               <Link
                 key={entry.id}
                 href={`/admin/content/academic?edit=${entry.id}`}
-                className="block rounded-[1.25rem] border border-border bg-white/55 p-4 transition hover:bg-white/80"
+                className="admin-list-card"
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-medium text-foreground">{entry.title}</p>
                     <p className="mt-1 text-sm text-muted">
                       {entry.entryType.replace(/_/g, " ")}
                     </p>
+                    {entry.summary ? (
+                      <p className="mt-2 text-sm leading-7 text-muted">{entry.summary}</p>
+                    ) : null}
                   </div>
                   <StatusPill tone={entry.status === "published" ? "success" : "warning"}>
                     {entry.status}
@@ -86,9 +93,27 @@ export default async function AdminAcademicPage({
         </AdminPanel>
 
         <AdminPanel>
-          <h2 className="font-display text-2xl font-semibold tracking-[-0.04em]">
-            {selectedEntry ? "Edit entry" : "Create entry"}
-          </h2>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="font-display text-2xl font-semibold tracking-[-0.04em] text-foreground">
+                {selectedEntry ? "Edit entry" : "Create entry"}
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-muted">
+                Use markdown for research structure, evidence tables, code, image embeds, and
+                Mermaid diagrams.
+              </p>
+            </div>
+            {selectedEntry ? (
+              <Link
+                href={`/academic/${selectedEntry.slug}`}
+                target="_blank"
+                className="inline-flex items-center justify-center rounded-full border border-border-strong px-4 py-2 text-sm font-medium text-foreground transition hover:bg-white/60"
+              >
+                View live entry
+              </Link>
+            ) : null}
+          </div>
+
           <form action={saveAcademicEntryAction} className="mt-6 grid gap-5">
             <input type="hidden" name="id" defaultValue={selectedEntry?.id ?? ""} />
 
@@ -164,19 +189,21 @@ export default async function AdminAcademicPage({
             <AdminField label="Summary">
               <AdminTextarea
                 name="summary"
-                rows={3}
+                rows={4}
                 defaultValue={selectedEntry?.summary ?? ""}
               />
             </AdminField>
 
-            <AdminField label="Body markdown">
-              <AdminTextarea
-                name="bodyMarkdown"
-                rows={14}
-                defaultValue={selectedEntry?.bodyMarkdown ?? ""}
-                required
-              />
-            </AdminField>
+            <MarkdownEditorField
+              name="bodyMarkdown"
+              label="Entry markdown"
+              defaultValue={selectedEntry?.bodyMarkdown ?? ""}
+              hint="Preview matches the public academic renderer."
+              assets={assets}
+              variant="academic"
+              required
+              minHeightClassName="min-h-[28rem]"
+            />
 
             <div className="grid gap-5 md:grid-cols-2">
               <AdminField label="Meta title">
@@ -193,18 +220,18 @@ export default async function AdminAcademicPage({
             <AdminField label="Meta description">
               <AdminTextarea
                 name="metaDescription"
-                rows={3}
+                rows={4}
                 defaultValue={selectedEntry?.metaDescription ?? ""}
               />
             </AdminField>
 
-            <div className="pt-2">
+            <div className="flex flex-wrap gap-3 pt-2">
               <SubmitButton>Save entry</SubmitButton>
             </div>
           </form>
 
           {selectedEntry ? (
-            <form action={archiveAcademicEntryAction} className="mt-3">
+            <form action={archiveAcademicEntryAction} className="mt-4">
               <input type="hidden" name="id" value={selectedEntry.id} />
               <SubmitButton variant="danger">Archive entry</SubmitButton>
             </form>

@@ -38,3 +38,9 @@ bootstrap-app-temp
 # agent and editor state
 .claude/
 .claude/settings.local.json
+CLAUDE.md
+GEMINI.md
+.superpowers/
+
+# local agent output
+.superpowers/**/complete.html

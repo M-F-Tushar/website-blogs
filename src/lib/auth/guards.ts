@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { createAuthenticatedServerClient } from "@/lib/supabase/server";
+import { normalizeEmailAddress } from "@/lib/utils";
 import type { SessionProfile } from "@/types/content";
 
 export async function getOptionalSessionProfile() {
@@ -32,7 +33,7 @@ export async function getOptionalSessionProfile() {
 
   const mappedProfile: SessionProfile = {
     id: profile.id,
-    email: profile.email,
+    email: normalizeEmailAddress(profile.email) ?? profile.email,
     fullName: profile.full_name,
     headline: profile.headline,
     role: profile.role,

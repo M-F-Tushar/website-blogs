@@ -20,7 +20,11 @@ import type {
   RecommendationRow,
 } from "@/lib/content/query-mappers";
 import { createPublicServerClient } from "@/lib/supabase/server";
-import { getSupabaseStoragePublicUrl } from "@/lib/utils";
+import {
+  getSupabaseStoragePublicUrl,
+  normalizeEmailAddress,
+  normalizeLegacyBrandCopy,
+} from "@/lib/utils";
 import type {
   NavigationItem,
   PageKey,
@@ -171,17 +175,18 @@ const fetchSiteSettings = cache(async (): Promise<SiteSettings> => {
   const row = data as SiteSettingsRow;
 
   return {
-    siteName: row.site_name,
+    siteName: normalizeLegacyBrandCopy(row.site_name) ?? fallbackSiteSettings.siteName,
     siteTagline: row.site_tagline,
     siteDescription: row.site_description,
     footerBlurb: row.footer_blurb,
-    contactEmail: row.contact_email,
+    contactEmail:
+      normalizeEmailAddress(row.contact_email) ?? fallbackSiteSettings.contactEmail,
     locationLabel: row.location_label,
     githubUrl: row.github_url,
     linkedinUrl: row.linkedin_url,
     xUrl: row.x_url,
     resumeUrl: row.resume_url,
-    metaTitle: row.meta_title,
+    metaTitle: normalizeLegacyBrandCopy(row.meta_title),
     metaDescription: row.meta_description,
     canonicalUrl: row.canonical_url,
     defaultOgImageAssetId: row.default_og_image_asset_id,
@@ -269,7 +274,7 @@ const fetchPages = cache(async (): Promise<PageRecord[]> => {
     slug: normalizePageSlug(page.slug),
     status: page.status,
     isVisible: page.is_visible,
-    metaTitle: page.meta_title,
+    metaTitle: normalizeLegacyBrandCopy(page.meta_title),
     metaDescription: page.meta_description,
     canonicalUrl: page.canonical_url,
   }));
@@ -619,12 +624,13 @@ export const getRecommendationBySlug = cache(async (slug: string) => {
 });
 
 export async function getSiteChromeData() {
-  const [siteSettings, navigationItems] = await Promise.all([
+  const [siteSettings, navigationItems, recentPosts] = await Promise.all([
     fetchSiteSettings(),
     fetchNavigation(),
+    getPublishedPosts({ limit: 3 }),
   ]);
 
-  return { siteSettings, navigationItems };
+  return { siteSettings, navigationItems, recentPosts };
 }
 
 export async function getPageContent(pageKey: PageKey) {
@@ -682,15 +688,22 @@ export async function getHomePageData() {
 }
 
 export async function getAboutPageData() {
-  const [siteSettings, pageContent] = await Promise.all([
+  const [siteSettings, pageContent, posts, academicEntries, recommendations] =
+    await Promise.all([
     fetchSiteSettings(),
     getPageContent("about"),
-  ]);
+    getPublishedPosts(),
+    getPublishedAcademicEntries(),
+    getPublishedRecommendations(),
+    ]);
 
   return {
     siteSettings,
     page: pageContent.page,
     sections: pageContent.sections,
+    posts,
+    academicEntries,
+    recommendations,
   };
 }
 

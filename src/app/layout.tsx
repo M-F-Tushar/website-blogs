@@ -1,20 +1,26 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
+import {
+  Cormorant_Garamond,
+  IBM_Plex_Mono,
+  Manrope,
+} from "next/font/google";
 
 import { getSiteSettings } from "@/lib/content/queries";
 import { getSiteUrl } from "@/lib/utils";
 import "./globals.css";
 
-const displayFont = Space_Grotesk({
+const displayFont = Cormorant_Garamond({
   variable: "--font-display",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
   display: "swap",
 });
 
-const sansFont = IBM_Plex_Sans({
+const sansFont = Manrope({
   variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 

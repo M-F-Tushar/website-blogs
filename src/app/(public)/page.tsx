@@ -2,23 +2,18 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { ContentCard } from "@/components/site/content-card";
-import { DetailCard } from "@/components/site/detail-card";
-import { Markdown } from "@/components/site/markdown";
-import { SignalCard } from "@/components/site/signal-card";
-import { HeroCosmic } from "@/components/site/sections/hero-cosmic";
-import { HUDMetrics } from "@/components/site/sections/hud-metrics";
+import { NewsletterSignup } from "@/components/site/newsletter-signup";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getHomePageData } from "@/lib/content/queries";
 import {
   getSectionSettingString,
   getSectionSettingStringArray,
-  getSectionVectorItems,
 } from "@/lib/content/section-settings";
 import {
   buildTopLevelPageMetadata,
   DEFAULT_TOP_LEVEL_PAGE_PATHS,
 } from "@/lib/content/page-routing";
-import { cn } from "@/lib/utils";
+import { cn, estimateReadingTime, stripMarkdown } from "@/lib/utils";
 
 export async function generateMetadata() {
   return buildTopLevelPageMetadata("home", {
@@ -28,28 +23,25 @@ export async function generateMetadata() {
   });
 }
 
-function getCollectionGridClasses(count: number) {
-  if (count <= 1) {
-    return "mt-10 max-w-4xl";
+function getDisplayName(siteName: string, explicitName: string | null) {
+  if (explicitName) {
+    return explicitName;
   }
 
-  return "mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3";
+  return siteName.replace(/'?s\s+blog/i, "").trim() || siteName;
 }
 
-function getCompactCollectionGridClasses(count: number) {
-  if (count <= 1) {
-    return "mt-8 max-w-4xl";
-  }
+function getTrendingTopics(
+  recentPosts: Awaited<ReturnType<typeof getHomePageData>>["recentPosts"],
+  fallbackTopics: string[],
+) {
+  const derivedTopics = Array.from(
+    new Set(
+      recentPosts.flatMap((post) => [...post.tags, ...post.categories]).filter(Boolean),
+    ),
+  ).slice(0, 6);
 
-  return "mt-8 grid gap-5 md:grid-cols-2";
-}
-
-function isFeaturedCollectionCard(count: number, index: number) {
-  return count === 1 || (count >= 3 && index === 0);
-}
-
-function getFeaturedCollectionSpan(count: number, index: number) {
-  return count >= 3 && index === 0 ? "md:col-span-2 xl:col-span-2" : undefined;
+  return derivedTopics.length > 0 ? derivedTopics : fallbackTopics.slice(0, 6);
 }
 
 export async function HomePageContent({
@@ -58,397 +50,190 @@ export async function HomePageContent({
   data?: Awaited<ReturnType<typeof getHomePageData>>;
 } = {}) {
   const resolvedData = data ?? (await getHomePageData());
-  const {
-    siteSettings,
-    sections,
-    featuredPosts,
-    featuredAcademic,
-    featuredRecommendations,
-    recentPosts,
-  } = resolvedData;
+  const { siteSettings, sections, featuredPosts, recentPosts } = resolvedData;
 
   const heroSection = sections.find((section) => section.sectionKey === "hero");
-  const focusSection = sections.find(
-    (section) => section.sectionKey === "current-focus",
-  );
   const writingSection = sections.find(
     (section) => section.sectionKey === "featured-writing",
-  );
-  const academicSection = sections.find(
-    (section) => section.sectionKey === "academic-preview",
-  );
-  const recommendationsSection = sections.find(
-    (section) => section.sectionKey === "recommendations-preview",
   );
   const recentSection = sections.find(
     (section) => section.sectionKey === "recent-updates",
   );
   const connectSection = sections.find((section) => section.sectionKey === "connect");
-  const focusTags =
-    getSectionSettingStringArray(heroSection, "focusTags").length > 0
-      ? getSectionSettingStringArray(heroSection, "focusTags")
-      : ["LLM systems", "MLOps discipline", "Model evaluation", "Research practice"];
-  const focusColumns =
-    getSectionSettingStringArray(focusSection, "columns").length > 0
-      ? getSectionSettingStringArray(focusSection, "columns")
-      : [
-          "Learning loops that end in working systems, not just notes.",
-          "Documentation that makes experiments, failures, and growth legible.",
-          "A platform that proves seriousness through consistency over time.",
-        ];
-  const collaborationTracks =
-    getSectionSettingStringArray(connectSection, "tracks").length > 0
-      ? getSectionSettingStringArray(connectSection, "tracks")
-      : [
-          "Research discussion",
-          "Project collaboration",
-          "MLOps systems",
-          "Learning network",
-        ];
+
+  const displayName = getDisplayName(
+    siteSettings.siteName,
+    getSectionSettingString(heroSection, "displayName"),
+  );
+  const heroLead = getSectionSettingString(heroSection, "titleLead") ?? "Hi, I'm";
+  const heroBadge =
+    getSectionSettingString(heroSection, "welcomeLabel") ?? "Welcome to my blog";
   const primaryCtaLabel =
-    getSectionSettingString(heroSection, "primaryCtaLabel") ?? "Read the journey";
+    getSectionSettingString(heroSection, "primaryCtaLabel") ?? "Start Reading";
   const primaryCtaHref =
     getSectionSettingString(heroSection, "primaryCtaHref") ?? "/blogs";
   const secondaryCtaLabel =
-    getSectionSettingString(heroSection, "secondaryCtaLabel") ?? "Connect";
+    getSectionSettingString(heroSection, "secondaryCtaLabel") ?? "More About Me";
   const secondaryCtaHref =
-    getSectionSettingString(heroSection, "secondaryCtaHref") ?? "/contact";
-  const heroEyebrow =
-    getSectionSettingString(heroSection, "eyebrow") ?? "AI engineering platform";
-  const vectorLabel =
-    getSectionSettingString(heroSection, "vectorLabel") ?? "Active vectors";
-  const vectorBadge =
-    getSectionSettingString(heroSection, "vectorBadge") ?? "Current emphasis";
-  const activeVectors = getSectionVectorItems(heroSection, "activeVectors", [
-    { label: "LLMs and orchestration", value: "82%" },
-    { label: "MLOps workflow", value: "74%" },
-    { label: "Applied ML", value: "68%" },
-    { label: "Research literacy", value: "79%" },
-  ]);
-  const focusEyebrow =
-    getSectionSettingString(focusSection, "eyebrow") ?? "Current vectors";
-  const focusPanelTitle =
-    getSectionSettingString(focusSection, "panelTitle") ??
-    "What the work is optimizing for right now";
-  const focusPanelDescription =
-    getSectionSettingString(focusSection, "panelDescription") ??
-    "A serious AI platform is part notebook, part research ledger, and part systems portfolio. These are the pillars shaping that direction.";
+    getSectionSettingString(heroSection, "secondaryCtaHref") ?? "/about";
+  const heroDescription =
+    heroSection?.subheading ??
+    siteSettings.siteTagline ??
+    "AI & ML Enthusiast • Aspiring AI Agent Developer • LLM Explorer • Lifelong Learner";
+  const featuredStory = featuredPosts[0] ?? recentPosts[0] ?? null;
+  const latestPosts = recentPosts
+    .filter((post) => post.id !== featuredStory?.id)
+    .slice(0, 3);
+  const focusTags =
+    getSectionSettingStringArray(heroSection, "focusTags").length > 0
+      ? getSectionSettingStringArray(heroSection, "focusTags")
+      : ["AI", "Artificial Intelligence", "Machine Learning", "Tech Careers"];
+  const trendingTopics = getTrendingTopics(recentPosts, focusTags);
+  const subscribeHeading =
+    connectSection?.heading ?? "Stay Updated";
+  const subscribeDescription =
+    connectSection?.subheading ??
+    stripMarkdown(
+      connectSection?.bodyMarkdown ?? "Subscribe to get notified about new posts.",
+    );
 
   return (
     <div className="pb-20">
-      <HeroCosmic
-        siteSettings={siteSettings}
-        heroSection={heroSection}
-        primaryCtaLabel={primaryCtaLabel}
-        primaryCtaHref={primaryCtaHref}
-        secondaryCtaLabel={secondaryCtaLabel}
-        secondaryCtaHref={secondaryCtaHref}
-        heroEyebrow={heroEyebrow}
-        focusTags={focusTags}
-      />
-
-      <HUDMetrics
-        activeVectors={activeVectors}
-        vectorLabel={vectorLabel}
-        vectorBadge={vectorBadge}
-      />
-
-      <section className="mx-auto max-w-7xl px-6 py-18 md:py-24">
-        <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
-          <div className="editorial-panel rounded-[2rem] p-6 md:p-8">
-            <p className="signal-label">{focusEyebrow}</p>
-            <h2 className="mt-5 font-display text-3xl font-semibold tracking-[-0.05em] text-balance md:text-[2.4rem]">
-              {focusPanelTitle}
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-muted">
-              {focusPanelDescription}
-            </p>
-              <div className="mt-8 grid gap-4">
-                {focusColumns.map((column, index) => (
-                  <SignalCard
-                    key={column}
-                    eyebrow={`Vector ${String(index + 1).padStart(2, "0")}`}
-                    title={column}
-                    className="px-5 py-4"
-                  />
-                ))}
-              </div>
-            </div>
-
-          <div className="editorial-panel rounded-[2rem] p-6 md:p-8">
-            <SectionHeading
-              eyebrow="Current focus"
-              title={focusSection?.heading ?? "Current focus areas"}
-              description={focusSection?.subheading}
-            />
-            <div className="mt-8 rounded-[1.5rem] border border-border/70 bg-white/62 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-              <Markdown
-                className="[&_li]:py-1 [&_ul]:space-y-1"
-                content={
-                  focusSection?.bodyMarkdown ??
-                  "The current phase is about building durable foundations in AI, ML, LLM tooling, and deployment discipline."
-                }
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 py-18 md:py-24">
-        <SectionHeading
-          eyebrow={
-            getSectionSettingString(writingSection, "eyebrow") ?? "Featured writing"
-          }
-          title={
-            writingSection?.heading ??
-            "Recent writing that reflects how the work is evolving"
-          }
-          description={
-            writingSection?.subheading ??
-            "A mix of learning notes, project thinking, and system-building reflections."
-          }
-        />
-        {writingSection?.bodyMarkdown ? (
-          <Markdown className="mt-6" content={writingSection.bodyMarkdown} />
-        ) : null}
-        {featuredPosts.length > 0 ? (
-          <div className={getCollectionGridClasses(featuredPosts.length)}>
-            {featuredPosts.map((post, index) => (
-              <ContentCard
-                key={post.id}
-                href={`/blogs/${post.slug}`}
-                eyebrow="Blog"
-                title={post.title}
-                description={post.excerpt}
-                date={post.publishedAt}
-                imageUrl={post.coverUrl}
-                imageAlt={post.coverAlt}
-                size={isFeaturedCollectionCard(featuredPosts.length, index) ? "feature" : "default"}
-                className={getFeaturedCollectionSpan(featuredPosts.length, index)}
-              />
-            ))}
-          </div>
-        ) : (
-          <DetailCard
-            className="mt-10 md:p-8"
-            eyebrow="Writing queue"
-            title="No featured writing is published yet"
-            description="Publish or feature a post from admin to turn this section into a stronger live showcase."
-          />
-        )}
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 py-18 md:py-24">
-        <div className="grid gap-8 lg:grid-cols-2">
-          <div className="editorial-panel rounded-[2rem] p-6 md:p-8">
-            <SectionHeading
-              eyebrow={
-                getSectionSettingString(academicSection, "eyebrow") ??
-                "Academic and research"
-              }
-              title={
-                academicSection?.heading ??
-                "Research notes, experiments, and academic continuity"
-              }
-              description={
-                academicSection?.subheading ??
-                "A space for paper-reading, coursework reflections, research interests, and later thesis work."
-              }
-            />
-            {academicSection?.bodyMarkdown ? (
-              <Markdown className="mt-6" content={academicSection.bodyMarkdown} />
-            ) : null}
-            {featuredAcademic.length > 0 ? (
-              <div className={getCompactCollectionGridClasses(featuredAcademic.length)}>
-                {featuredAcademic.map((entry, index) => (
-                  <ContentCard
-                    key={entry.id}
-                    href={`/academic/${entry.slug}`}
-                    eyebrow={entry.entryType.replace(/_/g, " ")}
-                    title={entry.title}
-                    description={entry.summary}
-                    date={entry.completedAt ?? entry.startedAt}
-                    imageUrl={entry.coverUrl}
-                    imageAlt={entry.coverAlt}
-                    size={isFeaturedCollectionCard(featuredAcademic.length, index) ? "feature" : "default"}
-                    className={
-                      featuredAcademic.length >= 3 && index === 0
-                        ? "md:col-span-2"
-                        : undefined
-                    }
-                  />
-                ))}
-              </div>
-            ) : (
-              <DetailCard
-                className="mt-8"
-                eyebrow="Academic preview"
-                title="Research and academic entries will appear here"
-                description="Once an academic note or experiment is published and featured, this section becomes a proper showcase instead of a placeholder."
-              />
-            )}
-          </div>
-
-          <div className="editorial-panel rounded-[2rem] p-6 md:p-8">
-            <SectionHeading
-              eyebrow={
-                getSectionSettingString(recommendationsSection, "eyebrow") ??
-                "Recommendations"
-              }
-              title={
-                recommendationsSection?.heading ??
-                "Resources worth recommending because they genuinely help"
-              }
-              description={
-                recommendationsSection?.subheading ??
-                "Tools, books, and learning assets that support real progress instead of hype."
-              }
-            />
-            {recommendationsSection?.bodyMarkdown ? (
-              <Markdown className="mt-6" content={recommendationsSection.bodyMarkdown} />
-            ) : null}
-            {featuredRecommendations.length > 0 ? (
-              <div className={getCompactCollectionGridClasses(featuredRecommendations.length)}>
-                {featuredRecommendations.map((item, index) => (
-                  <ContentCard
-                    key={item.id}
-                    href={`/recommendations/${item.slug}`}
-                    eyebrow={item.category ?? "Recommendation"}
-                    title={item.title}
-                    description={item.summary}
-                    meta={item.level}
-                    imageUrl={item.coverUrl}
-                    imageAlt={item.coverAlt}
-                    size={isFeaturedCollectionCard(featuredRecommendations.length, index) ? "feature" : "default"}
-                    className={
-                      featuredRecommendations.length >= 3 && index === 0
-                        ? "md:col-span-2"
-                        : undefined
-                    }
-                  />
-                ))}
-              </div>
-            ) : (
-              <DetailCard
-                className="mt-8"
-                eyebrow="Recommendation queue"
-                title="No featured recommendations are live yet"
-                description="Feature a recommendation in admin to give this section a stronger visual anchor and a more useful signal."
-              />
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 py-18 md:py-24">
-        <SectionHeading
-          eyebrow={
-            getSectionSettingString(recentSection, "eyebrow") ?? "Recent updates"
-          }
-          title={recentSection?.heading ?? "Fresh notes and visible progress"}
-          description={
-            recentSection?.subheading ??
-            "The platform should feel alive, not static. These entries show recent movement."
-          }
-        />
-        {recentSection?.bodyMarkdown ? (
-          <Markdown className="mt-6" content={recentSection.bodyMarkdown} />
-        ) : null}
-        {recentPosts.length > 0 ? (
-          <div
-            className={cn(
-              "mt-10 grid gap-6",
-              recentPosts.length === 1
-                ? "max-w-4xl"
-                : recentPosts.length === 2
-                  ? "md:grid-cols-2"
-                  : "md:grid-cols-2 xl:grid-cols-4",
-            )}
+      <section className="mx-auto flex min-h-[70svh] max-w-6xl flex-col items-center justify-center px-6 py-14 text-center md:min-h-[76svh] md:py-16">
+        <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
+          <span className="text-sky-400">✦</span>
+          {heroBadge}
+        </p>
+        <h1 className="mt-8 max-w-5xl font-display text-[4rem] font-semibold leading-[0.92] tracking-[-0.06em] text-white md:text-[5.8rem] xl:text-[6.6rem]">
+          {heroLead} <span className="accent-gradient-text">{displayName}</span>
+        </h1>
+        <p className="mt-6 max-w-3xl text-[1.08rem] leading-8 text-slate-300 md:text-[1.2rem]">
+          {heroDescription}
+        </p>
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <Link
+            href={primaryCtaHref}
+            className="rounded-full bg-sky-500 px-8 py-4 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(14,165,233,0.3)] transition hover:bg-sky-400"
           >
-            {recentPosts.map((post, index) => (
-              <ContentCard
-                key={post.id}
-                href={`/blogs/${post.slug}`}
-                eyebrow={post.categories[0] ?? "Update"}
-                title={post.title}
-                description={post.excerpt}
-                date={post.publishedAt}
-                imageUrl={post.coverUrl}
-                imageAlt={post.coverAlt}
-                size={isFeaturedCollectionCard(recentPosts.length, index) ? "feature" : "default"}
-                className={
-                  recentPosts.length >= 3 && index === 0
-                    ? "md:col-span-2 xl:col-span-2"
-                    : undefined
-                }
-              />
-            ))}
+            {primaryCtaLabel}
+          </Link>
+          <Link
+            href={secondaryCtaHref}
+            className="rounded-full border border-white/10 bg-white/4 px-8 py-4 text-sm font-semibold text-white transition hover:bg-white/8"
+          >
+            {secondaryCtaLabel}
+          </Link>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 py-8">
+        <SectionHeading
+          eyebrow={writingSection?.heading ?? "Featured Story"}
+          title={featuredStory?.title ?? "Featured story will appear here"}
+          description={
+            featuredStory?.excerpt ??
+            writingSection?.subheading ??
+            "Publish a featured post to anchor the homepage with a lead story."
+          }
+        />
+        {featuredStory ? (
+          <div className="mt-7">
+            <ContentCard
+              href={`/blogs/${featuredStory.slug}`}
+              eyebrow={featuredStory.categories[0] ?? "Featured"}
+              title={featuredStory.title}
+              description={featuredStory.excerpt}
+              date={featuredStory.publishedAt}
+              meta={estimateReadingTime(featuredStory.bodyMarkdown)}
+              imageUrl={featuredStory.coverUrl}
+              imageAlt={featuredStory.coverAlt}
+              size="feature"
+              actionLabel="Read Article"
+              tags={featuredStory.tags}
+            />
           </div>
         ) : (
-          <DetailCard
-            className="mt-10 md:p-8"
-            eyebrow="Fresh movement"
-            title="Recent updates will surface here"
-            description="This area activates automatically once new published posts are available."
-          />
+          <div className="detail-card mt-8">
+            <p className="signal-label">Featured Story</p>
+            <h3 className="mt-5 font-display text-[2rem] font-semibold leading-[1.04] tracking-[-0.04em] text-white">
+              Publish a featured post to complete the hero-to-story flow
+            </h3>
+            <p className="mt-4 text-[0.98rem] leading-8 text-slate-400">
+              The homepage is ready. It just needs one standout published article to take the spotlight.
+            </p>
+          </div>
         )}
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-18 md:py-24">
-        <div className="dark-panel rounded-[2.25rem] p-8 text-white md:p-12">
-          <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr]">
-            <div>
-              <p className="font-mono text-xs uppercase tracking-[0.32em] text-cyan-200">
-                {getSectionSettingString(connectSection, "eyebrow") ?? "Connect"}
-              </p>
-              <h2 className="mt-5 font-display text-4xl font-semibold tracking-[-0.05em] text-balance md:text-5xl">
-                {connectSection?.heading ??
-                  "If you care about AI, ML, systems, or serious learning, let us talk."}
-              </h2>
-              <Markdown
-                className="markdown-inverse mt-5 max-w-2xl [&_p]:text-lg [&_p]:leading-8"
-                content={
-                  connectSection?.bodyMarkdown ??
-                  "I am building this platform as a public record of growth. If there is a research idea, project, or conversation worth having, reach out."
-                }
-              />
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Link
-                  href={
-                    getSectionSettingString(connectSection, "primaryCtaHref") ??
-                    "/contact"
-                  }
-                  className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-medium text-slate-950 transition hover:bg-cyan-50"
-                >
-                  {getSectionSettingString(connectSection, "primaryCtaLabel") ??
-                    "Open contact page"}
-                </Link>
-                <a
-                  href={
-                    getSectionSettingString(connectSection, "secondaryCtaHref") ??
-                    `mailto:${siteSettings.contactEmail}`
-                  }
-                  className="inline-flex items-center rounded-full border border-white/18 px-5 py-3 text-sm font-medium text-white transition hover:bg-white/8"
-                >
-                  {getSectionSettingString(connectSection, "secondaryCtaLabel") ??
-                    "Email directly"}
-                </a>
-              </div>
-            </div>
+      <section className="mx-auto max-w-7xl px-6 py-8">
+        <SectionHeading
+          eyebrow="Trending Topics"
+          title="The ideas running through the site right now"
+          description="Topics are derived from your published writing, so the homepage stays honest as the archive changes."
+        />
+        <div className="mt-6 flex flex-wrap gap-3">
+          {trendingTopics.map((topic) => (
+            <span key={topic} className="signal-pill">
+              {topic}
+            </span>
+          ))}
+        </div>
+      </section>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {collaborationTracks.map((track, index) => (
-                <SignalCard
-                  key={track}
-                  eyebrow={`Track ${String(index + 1).padStart(2, "0")}`}
-                  title={track}
-                  description="Open to useful, thoughtful conversations where technical depth and long-term intent actually matter."
-                  inverse
-                  className="p-5"
-                />
-              ))}
-            </div>
-          </div>
+      <section className="mx-auto max-w-7xl px-6 py-8">
+        <div className="flex items-end justify-between gap-6">
+          <SectionHeading
+            eyebrow={recentSection?.heading ?? "Latest Articles"}
+            title={recentSection?.subheading ?? "Fresh writing from the archive"}
+            description={
+              stripMarkdown(
+                recentSection?.bodyMarkdown ??
+                  "Recent posts stay visible here so the homepage always feels active.",
+              ) || undefined
+            }
+          />
+          <Link href="/blogs" className="hidden text-sm text-sky-300 transition hover:text-white md:inline-flex">
+            View all →
+          </Link>
+        </div>
+
+        <div
+          className={cn(
+            "mt-8 grid gap-6",
+            latestPosts.length < 3 ? "mx-auto max-w-5xl md:grid-cols-2" : "md:grid-cols-2 xl:grid-cols-3",
+          )}
+        >
+          {latestPosts.map((post) => (
+            <ContentCard
+              key={post.id}
+              href={`/blogs/${post.slug}`}
+              eyebrow={post.categories[0] ?? "Article"}
+              title={post.title}
+              description={post.excerpt}
+              date={post.publishedAt}
+              meta={estimateReadingTime(post.bodyMarkdown)}
+              imageUrl={post.coverUrl}
+              imageAlt={post.coverAlt}
+              tags={post.tags}
+              actionLabel="Read Article"
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 py-10">
+        <div className="dark-panel rounded-[2rem] px-6 py-9 text-center md:px-10 md:py-12">
+          <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
+            <span className="text-sky-400">✦</span>
+            Newsletter
+          </p>
+          <h2 className="mt-7 font-display text-[2.8rem] font-semibold leading-[0.98] tracking-[-0.05em] text-white md:text-[4rem]">
+            {subscribeHeading}
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-[0.98rem] leading-7 text-slate-300">
+            {subscribeDescription}
+          </p>
+          <NewsletterSignup className="mx-auto mt-7 max-w-xl" />
         </div>
       </section>
     </div>

@@ -20,6 +20,7 @@ import {
   recommendationSchema,
 } from "@/lib/content/validators";
 import {
+  normalizeEmailAddress,
   normalizeText,
   optionalText,
   parseDelimitedList,
@@ -33,6 +34,15 @@ interface NamedLookupRow {
 }
 
 const MAX_MEDIA_UPLOAD_BYTES = 10 * 1024 * 1024;
+const ALLOWED_MEDIA_BUCKETS = new Set(["site-public", "site-admin"]);
+const ALLOWED_MEDIA_MIME_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/avif",
+  "image/gif",
+  "image/svg+xml",
+]);
 
 function normalizePageSlug(slug: string | null | undefined) {
   if (!slug || slug === "/") {
@@ -190,7 +200,7 @@ async function cleanupUploadedMediaObject(
 }
 
 async function getContactNotificationRecipient(supabase = createServiceRoleClient()) {
-  const explicitRecipient = process.env.CONTACT_NOTIFICATION_EMAIL;
+  const explicitRecipient = normalizeEmailAddress(process.env.CONTACT_NOTIFICATION_EMAIL);
   if (explicitRecipient) {
     return explicitRecipient;
   }
@@ -201,7 +211,7 @@ async function getContactNotificationRecipient(supabase = createServiceRoleClien
     .eq("site_key", "primary")
     .maybeSingle();
 
-  return typeof data?.contact_email === "string" ? data.contact_email : null;
+  return normalizeEmailAddress(data?.contact_email);
 }
 
 async function sendContactNotificationEmail(input: {
@@ -328,7 +338,7 @@ export async function savePostAction(formData: FormData) {
   await syncPostTaxonomy(mutation.data.id, payload.categories, payload.tags);
 
   await revalidatePublicContent();
-  redirect("/admin/content/posts?saved=1");
+  redirect(`/admin/content/posts?edit=${mutation.data.id}&saved=1`);
 }
 
 export async function archivePostAction(formData: FormData) {
@@ -394,29 +404,35 @@ export async function saveAcademicEntryAction(formData: FormData) {
           deleted_at: null,
         })
         .eq("id", payload.id)
-    : await supabase.from("academic_entries").insert({
-        title: payload.title,
-        slug: payload.slug,
-        summary: payload.summary,
-        body_markdown: payload.bodyMarkdown,
-        entry_type: payload.entryType,
-        status: payload.status,
-        featured: payload.featured,
-        started_at: payload.startedAt,
-        completed_at: payload.completedAt,
-        external_url: payload.externalUrl,
-        cover_asset_id: payload.coverAssetId,
-        meta_title: payload.metaTitle,
-        meta_description: payload.metaDescription,
-        canonical_url: payload.canonicalUrl,
-      });
+        .select("id")
+        .single()
+    : await supabase
+        .from("academic_entries")
+        .insert({
+          title: payload.title,
+          slug: payload.slug,
+          summary: payload.summary,
+          body_markdown: payload.bodyMarkdown,
+          entry_type: payload.entryType,
+          status: payload.status,
+          featured: payload.featured,
+          started_at: payload.startedAt,
+          completed_at: payload.completedAt,
+          external_url: payload.externalUrl,
+          cover_asset_id: payload.coverAssetId,
+          meta_title: payload.metaTitle,
+          meta_description: payload.metaDescription,
+          canonical_url: payload.canonicalUrl,
+        })
+        .select("id")
+        .single();
 
-  if (mutation.error) {
-    throw new Error(mutation.error.message);
+  if (mutation.error || !mutation.data) {
+    throw new Error(mutation.error?.message ?? "Unable to save academic entry.");
   }
 
   await revalidatePublicContent();
-  redirect("/admin/content/academic?saved=1");
+  redirect(`/admin/content/academic?edit=${mutation.data.id}&saved=1`);
 }
 
 export async function archiveAcademicEntryAction(formData: FormData) {
@@ -487,31 +503,37 @@ export async function saveRecommendationAction(formData: FormData) {
           deleted_at: null,
         })
         .eq("id", payload.id)
-    : await supabase.from("recommendations").insert({
-        title: payload.title,
-        slug: payload.slug,
-        summary: payload.summary,
-        body_markdown: payload.bodyMarkdown,
-        why_recommend: payload.whyRecommend,
-        audience: payload.audience,
-        use_case: payload.useCase,
-        level: payload.level,
-        external_url: payload.externalUrl,
-        status: payload.status,
-        featured: payload.featured,
-        cover_asset_id: payload.coverAssetId,
-        meta_title: payload.metaTitle,
-        meta_description: payload.metaDescription,
-        canonical_url: payload.canonicalUrl,
-        category_id: categoryId,
-      });
+        .select("id")
+        .single()
+    : await supabase
+        .from("recommendations")
+        .insert({
+          title: payload.title,
+          slug: payload.slug,
+          summary: payload.summary,
+          body_markdown: payload.bodyMarkdown,
+          why_recommend: payload.whyRecommend,
+          audience: payload.audience,
+          use_case: payload.useCase,
+          level: payload.level,
+          external_url: payload.externalUrl,
+          status: payload.status,
+          featured: payload.featured,
+          cover_asset_id: payload.coverAssetId,
+          meta_title: payload.metaTitle,
+          meta_description: payload.metaDescription,
+          canonical_url: payload.canonicalUrl,
+          category_id: categoryId,
+        })
+        .select("id")
+        .single();
 
-  if (mutation.error) {
-    throw new Error(mutation.error.message);
+  if (mutation.error || !mutation.data) {
+    throw new Error(mutation.error?.message ?? "Unable to save recommendation.");
   }
 
   await revalidatePublicContent();
-  redirect("/admin/content/recommendations?saved=1");
+  redirect(`/admin/content/recommendations?edit=${mutation.data.id}&saved=1`);
 }
 
 export async function archiveRecommendationAction(formData: FormData) {
@@ -533,7 +555,7 @@ export async function archiveRecommendationAction(formData: FormData) {
 }
 
 export async function uploadMediaAssetAction(formData: FormData) {
-  await requireAdminSession();
+  const { profile } = await requireAdminSession();
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
@@ -547,6 +569,15 @@ export async function uploadMediaAssetAction(formData: FormData) {
   const label = optionalText(formData.get("label"));
   const altText = optionalText(formData.get("altText"));
   const bucketName = normalizeText(formData.get("bucketName")) || "site-public";
+
+  if (!ALLOWED_MEDIA_BUCKETS.has(bucketName)) {
+    throw new Error("Choose a valid upload bucket.");
+  }
+
+  if (!ALLOWED_MEDIA_MIME_TYPES.has(file.type)) {
+    throw new Error("Unsupported file type. Upload a PNG, JPEG, WebP, AVIF, GIF, or SVG.");
+  }
+
   const extension = file.name.includes(".")
     ? file.name.split(".").pop()?.toLowerCase()
     : "bin";
@@ -572,6 +603,7 @@ export async function uploadMediaAssetAction(formData: FormData) {
       object_path: objectPath,
       mime_type: file.type,
       file_size: file.size,
+      uploaded_by: profile.id,
       is_public: bucketName === "site-public",
     });
 

@@ -18,22 +18,28 @@ export function SignalCard({
   className,
 }: SignalCardProps) {
   return (
-    <div className={cn("signal-card", inverse && "signal-card-inverse", className)}>
+    <div
+      className={cn(
+        "signal-card",
+        inverse && "signal-card-inverse",
+        className,
+      )}
+    >
       <p
         className={cn(
-          "font-mono text-[0.66rem] uppercase tracking-[0.24em]",
-          inverse ? "text-cyan-200/90" : "text-accent-strong",
+          "font-mono text-[0.7rem] uppercase tracking-[0.24em]",
+          inverse ? "text-sky-200" : "text-slate-400",
         )}
       >
         {eyebrow}
       </p>
       <p
         className={cn(
-          "mt-4 font-display tracking-[-0.05em] text-balance",
-          inverse ? "text-white" : "text-foreground",
+          "mt-4 font-display tracking-[-0.04em] text-balance",
+          inverse ? "text-white" : "text-slate-50",
           emphasis === "display"
-            ? "text-3xl font-semibold md:text-4xl"
-            : "text-xl font-semibold leading-tight md:text-[1.7rem]",
+            ? "text-[1.8rem] font-semibold md:text-[2.15rem]"
+            : "text-[1.65rem] font-semibold leading-tight",
         )}
       >
         {title}
@@ -41,8 +47,8 @@ export function SignalCard({
       {description ? (
         <p
           className={cn(
-            "mt-3 text-sm leading-7",
-            inverse ? "text-slate-300" : "text-muted",
+            "mt-2.5 text-[0.93rem] leading-7",
+            inverse ? "text-slate-300" : "text-slate-400",
           )}
         >
           {description}

@@ -39,6 +39,30 @@ export function optionalText(value: FormDataEntryValue | string | null | undefin
   return normalized.length > 0 ? normalized : null;
 }
 
+export function normalizeEmailAddress(
+  value: FormDataEntryValue | string | null | undefined,
+) {
+  const normalized = normalizeText(value)
+    .replace(/^mailto:/i, "")
+    .replace(/^www\./i, "")
+    .replace(/\/+$/, "")
+    .toLowerCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) ? normalized : null;
+}
+
+export function normalizeLegacyBrandCopy(value: string | null | undefined) {
+  if (typeof value !== "string") {
+    return value ?? null;
+  }
+
+  return value.replace(/Arian's Lab Notes/gi, "Tusher's Blog");
+}
+
 export function toBoolean(value: FormDataEntryValue | string | null | undefined) {
   if (typeof value !== "string") {
     return false;
@@ -116,6 +140,33 @@ export function excerptFromMarkdown(markdown: string, length = 180) {
   }
 
   return `${plainText.slice(0, length).trim()}...`;
+}
+
+export function countWords(value: string | null | undefined) {
+  if (!value) {
+    return 0;
+  }
+
+  const plainText = stripMarkdown(value);
+  if (!plainText) {
+    return 0;
+  }
+
+  return plainText.split(/\s+/).filter(Boolean).length;
+}
+
+export function estimateReadingTime(value: string | null | undefined, wordsPerMinute = 200) {
+  const wordCount = countWords(value);
+
+  if (wordCount === 0) {
+    return "1 min read";
+  }
+
+  return `${Math.max(1, Math.ceil(wordCount / wordsPerMinute))} min read`;
+}
+
+export function formatCompactNumber(value: number) {
+  return new Intl.NumberFormat("en-US").format(value);
 }
 
 export function getSiteUrl() {

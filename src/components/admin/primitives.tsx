@@ -12,20 +12,25 @@ export function AdminPageIntro({
   eyebrow,
   title,
   description,
+  actions,
 }: {
   eyebrow: string;
   title: string;
   description: string;
+  actions?: ReactNode;
 }) {
   return (
-    <div>
-      <p className="font-mono text-xs uppercase tracking-[0.28em] text-accent">
-        {eyebrow}
-      </p>
-      <h1 className="mt-4 font-display text-3xl font-semibold tracking-[-0.04em]">
-        {title}
-      </h1>
-      <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">{description}</p>
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <p className="font-mono text-xs uppercase tracking-[0.28em] text-accent">
+          {eyebrow}
+        </p>
+        <h1 className="mt-4 font-display text-3xl font-semibold tracking-[-0.04em]">
+          {title}
+        </h1>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">{description}</p>
+      </div>
+      {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
     </div>
   );
 }
@@ -142,7 +147,11 @@ export function StatusPill({
 export function SubmitButton({
   children,
   variant = "primary",
-}: PropsWithChildren<{ variant?: "primary" | "secondary" | "danger" }>) {
+  className,
+}: PropsWithChildren<{
+  variant?: "primary" | "secondary" | "danger";
+  className?: string;
+}>) {
   const styles =
     variant === "secondary"
       ? "border border-border-strong bg-white/60 text-foreground hover:bg-white"
@@ -156,6 +165,7 @@ export function SubmitButton({
       className={cn(
         "inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-medium transition",
         styles,
+        className,
       )}
     >
       {children}

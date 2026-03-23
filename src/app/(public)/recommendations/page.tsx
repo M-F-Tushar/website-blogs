@@ -1,14 +1,11 @@
 import { notFound, permanentRedirect } from "next/navigation";
 
-import { ContentCard } from "@/components/site/content-card";
 import { DetailCard } from "@/components/site/detail-card";
 import { Markdown } from "@/components/site/markdown";
-import { SignalCard } from "@/components/site/signal-card";
-import { SectionHeading } from "@/components/ui/section-heading";
+import { RecommendationsDirectory } from "@/components/site/recommendations-directory";
 import { getRecommendationsPageData } from "@/lib/content/queries";
 import {
   getPrimarySection,
-  getSectionPanelItems,
   getSectionSettingString,
 } from "@/lib/content/section-settings";
 import {
@@ -25,18 +22,6 @@ export async function generateMetadata() {
   });
 }
 
-function getCollectionGridClasses(count: number) {
-  if (count <= 1) {
-    return "mt-12 max-w-4xl";
-  }
-
-  return "mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3";
-}
-
-function isFeaturedCollectionCard(count: number, index: number) {
-  return count === 1 || (count >= 3 && index === 0);
-}
-
 export async function RecommendationsPageContent({
   data,
 }: {
@@ -46,76 +31,62 @@ export async function RecommendationsPageContent({
   const { page, sections, recommendations } = resolvedData;
   const heroSection = getPrimarySection(sections, ["hero", "intro"], ["hero"]);
   const supportingSections = sections.filter((section) => section.id !== heroSection?.id);
-  const panelLabel = getSectionSettingString(heroSection, "panelLabel") ?? "Curated stack";
-  const panelItems = getSectionPanelItems(heroSection, "panelItems", [
-    {
-      label: "Saved resources",
-      value: String(recommendations.length).padStart(2, "0"),
-      description: "Published recommendations",
-    },
-    {
-      label: "Filter",
-      value: "Useful in practice",
-      description:
-        "Books, tools, and references that actually hold up in practice.",
-    },
-  ]);
-  const emptyState =
-    getSectionSettingString(heroSection, "emptyState") ??
-    "No published recommendations yet. Add your first recommendation from the admin panel.";
+  const categoryCount = new Set(
+    recommendations.map((item) => item.category).filter(Boolean),
+  ).size;
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-16 md:py-24">
-      <section className="grid-backdrop overflow-hidden rounded-[2.15rem] border border-white/45">
-        <div className="grid gap-8 px-6 py-10 md:px-10 md:py-12 lg:grid-cols-[1.05fr_0.95fr]">
-          <div>
-            <SectionHeading
-              eyebrow={
-                getSectionSettingString(heroSection, "eyebrow") ??
-                page?.title ??
-                "Recommendations"
-              }
-              title={
-                heroSection?.heading ??
-                page?.title ??
-                "Resources I'd recommend because they support real progress"
-              }
-              description={
-                heroSection?.subheading ??
-                page?.metaDescription ??
-                "Books, tools, and learning assets filtered through actual use, not generic listicle energy."
-              }
-            />
-            {heroSection?.bodyMarkdown ? (
-              <Markdown className="mt-8" content={heroSection.bodyMarkdown} />
-            ) : null}
-          </div>
-          <div className="editorial-panel rounded-[1.75rem] p-6 md:p-8">
-            <p className="signal-label">{panelLabel}</p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {panelItems.map((item) => (
-                <SignalCard
-                  key={`${item.label}-${item.value}`}
-                  eyebrow={item.label}
-                  title={item.value}
-                  description={item.description}
-                  emphasis="display"
-                />
-              ))}
-            </div>
-          </div>
+    <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
+      <section className="mx-auto max-w-4xl text-center">
+        <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
+          <span className="text-sky-400">✦</span>
+          {getSectionSettingString(heroSection, "eyebrow") ?? "Curated Resources"}
+        </p>
+        <h1 className="mt-6 font-display text-[3.9rem] font-semibold leading-[0.92] tracking-[-0.06em] text-white md:text-[5.2rem]">
+          {page?.title?.includes("Recommendation") ? (
+            <>
+              My <span className="accent-gradient-text">Recommendations</span>
+            </>
+          ) : (
+            <span className="accent-gradient-text">{page?.title ?? "Recommendations"}</span>
+          )}
+        </h1>
+        <p className="mx-auto mt-5 max-w-3xl text-[1.04rem] leading-8 text-slate-300 md:text-[1.14rem]">
+          {heroSection?.subheading ??
+            page?.metaDescription ??
+            "A hand-picked collection of tools, books, courses, and resources that have helped me on my journey."}
+        </p>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <span className="signal-pill">{recommendations.length} resources</span>
+          <span className="signal-pill">{categoryCount} categories</span>
         </div>
       </section>
 
+      {heroSection?.bodyMarkdown ? (
+        <section className="mx-auto mt-10 max-w-6xl">
+          <DetailCard
+            eyebrow="Curation note"
+            title={heroSection.heading}
+            description="Everything here should be something worth returning to, not filler."
+          >
+            <Markdown content={heroSection.bodyMarkdown} />
+          </DetailCard>
+        </section>
+      ) : null}
+
       {supportingSections.length > 0 ? (
-        <section className="mt-12 grid gap-6 lg:grid-cols-2">
+        <section
+          className={cn(
+            "mt-10 gap-5",
+            supportingSections.length === 1 ? "mx-auto max-w-3xl" : "grid lg:grid-cols-2",
+          )}
+        >
           {supportingSections.map((section) => (
             <DetailCard
               key={section.id}
               eyebrow={getSectionSettingString(section, "eyebrow") ?? section.sectionKey}
               title={section.heading}
               description={section.subheading}
-              className="md:p-8"
             >
               <Markdown content={section.bodyMarkdown} />
             </DetailCard>
@@ -123,41 +94,7 @@ export async function RecommendationsPageContent({
         </section>
       ) : null}
 
-      {recommendations.length > 0 ? (
-        <div className={getCollectionGridClasses(recommendations.length)}>
-          {recommendations.map((recommendation, index) => (
-            <ContentCard
-              key={recommendation.id}
-              href={`/recommendations/${recommendation.slug}`}
-              eyebrow={recommendation.category ?? "Recommendation"}
-              title={recommendation.title}
-              description={recommendation.summary}
-              meta={recommendation.level}
-              imageUrl={recommendation.coverUrl}
-              imageAlt={recommendation.coverAlt}
-              size={
-                isFeaturedCollectionCard(recommendations.length, index)
-                  ? "feature"
-                  : "default"
-              }
-              className={cn(
-                recommendations.length >= 3 &&
-                  index === 0 &&
-                  "md:col-span-2 xl:col-span-2",
-              )}
-            />
-          ))}
-        </div>
-      ) : null}
-
-      {recommendations.length === 0 ? (
-        <DetailCard
-          className="mt-10 md:p-8"
-          eyebrow="Archive status"
-          title="No published recommendations yet"
-          description={emptyState}
-        />
-      ) : null}
+      <RecommendationsDirectory recommendations={recommendations} />
     </div>
   );
 }

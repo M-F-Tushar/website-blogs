@@ -10,7 +10,7 @@ export function NebulaBackground() {
           opacity: [0.3, 0.5, 0.3],
         }}
         transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-        className="absolute -top-[20%] -left-[10%] h-[70%] w-[70%] rounded-full bg-blue-700/20 blur-[120px]"
+        className="absolute -left-[10%] -top-[20%] h-[70%] w-[70%] rounded-full bg-sky-600/18 blur-[120px]"
       />
       <motion.div
         animate={{
@@ -18,9 +18,9 @@ export function NebulaBackground() {
           opacity: [0.2, 0.4, 0.2],
         }}
         transition={{ duration: 25, repeat: Infinity, ease: "linear", delay: 2 }}
-        className="absolute -bottom-[20%] -right-[10%] h-[60%] w-[60%] rounded-full bg-purple-700/20 blur-[100px]"
+        className="absolute -bottom-[20%] -right-[10%] h-[60%] w-[60%] rounded-full bg-blue-700/18 blur-[100px]"
       />
-      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] [mask-image:linear-gradient(180deg,white,transparent)]" />
+      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.025] [mask-image:linear-gradient(180deg,white,transparent)]" />
     </div>
   );
 }
