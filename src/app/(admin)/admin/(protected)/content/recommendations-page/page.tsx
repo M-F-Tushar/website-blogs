@@ -22,6 +22,9 @@ export default function AdminRecommendationsPageManager({
       settingsHint='Hero supports {"eyebrow":"Recommendations","panelLabel":"Curated stack","panelItems":[{"label":"Saved resources","value":"05","description":"Published recommendations"}]}. Other sections can use {"eyebrow":"Curation rule"}.'
       searchParams={searchParams}
       adminRoute="/admin/content/recommendations-page"
+      collectionActions={[
+        { href: "/admin/content/recommendations", label: "Manage recommendations" },
+      ]}
       allowImage
       imageHint="Choose an optional public image for any supporting section."
     />

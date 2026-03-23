@@ -22,6 +22,7 @@ export default function AdminBlogsPageManager({
       settingsHint='Hero supports {"eyebrow":"Blogs","panelLabel":"Writing system","panelItems":[{"label":"Published nodes","value":"07","description":"Published posts"}]}. Other sections can use {"eyebrow":"Why it matters"}.'
       searchParams={searchParams}
       adminRoute="/admin/content/blogs"
+      collectionActions={[{ href: "/admin/content/posts", label: "Manage posts" }]}
       allowImage
       imageHint="Choose an optional public image for any supporting section."
     />

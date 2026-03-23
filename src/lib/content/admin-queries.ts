@@ -118,6 +118,20 @@ interface MessageRow {
   handled_at: string | null;
 }
 
+interface NamedRelationRow {
+  name?: string | null;
+}
+
+interface PostCategoryRow {
+  post_id: string;
+  categories: NamedRelationRow | null;
+}
+
+interface PostTagRow {
+  post_id: string;
+  tags: NamedRelationRow | null;
+}
+
 function mapMediaAsset(row: MediaAssetRow): MediaAsset {
   return {
     id: row.id,
@@ -136,6 +150,43 @@ function mapMediaAsset(row: MediaAssetRow): MediaAsset {
         : null,
     createdAt: row.created_at,
   };
+}
+
+async function hydrateAdminPostTaxonomy(posts: PostSummary[]) {
+  if (posts.length === 0) {
+    return posts;
+  }
+
+  const postIds = posts.map((post) => post.id);
+  const supabase = createServiceRoleClient();
+  const [{ data: categories }, { data: tags }] = await Promise.all([
+    supabase.from("post_categories").select("post_id, categories(name)").in("post_id", postIds),
+    supabase.from("post_tags").select("post_id, tags(name)").in("post_id", postIds),
+  ]);
+
+  const categoriesByPost = new Map<string, string[]>();
+  ((categories ?? []) as PostCategoryRow[]).forEach((item) => {
+    const list = categoriesByPost.get(item.post_id) ?? [];
+    if (item.categories?.name) {
+      list.push(item.categories.name);
+    }
+    categoriesByPost.set(item.post_id, list);
+  });
+
+  const tagsByPost = new Map<string, string[]>();
+  ((tags ?? []) as PostTagRow[]).forEach((item) => {
+    const list = tagsByPost.get(item.post_id) ?? [];
+    if (item.tags?.name) {
+      list.push(item.tags.name);
+    }
+    tagsByPost.set(item.post_id, list);
+  });
+
+  return posts.map((post) => ({
+    ...post,
+    categories: categoriesByPost.get(post.id) ?? [],
+    tags: tagsByPost.get(post.id) ?? [],
+  }));
 }
 
 export const getAdminSiteSettings = cache(async (): Promise<SiteSettings | null> => {
@@ -260,7 +311,7 @@ export const getAdminPosts = cache(async (): Promise<PostSummary[]> => {
     )
     .order("created_at", { ascending: false });
 
-  return (data ?? []).map(mapPost);
+  return hydrateAdminPostTaxonomy((data ?? []).map(mapPost));
 });
 
 export const getAdminAcademicEntries = cache(async (): Promise<AcademicEntry[]> => {

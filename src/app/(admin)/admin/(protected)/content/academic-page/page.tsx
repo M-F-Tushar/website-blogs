@@ -22,6 +22,7 @@ export default function AdminAcademicPageManager({
       settingsHint='Hero supports {"eyebrow":"Academic","panelLabel":"Research continuity","panelItems":[{"label":"Indexed entries","value":"03","description":"Published work"}]}. Other sections can use {"eyebrow":"Research habit"}.'
       searchParams={searchParams}
       adminRoute="/admin/content/academic-page"
+      collectionActions={[{ href: "/admin/content/academic", label: "Manage entries" }]}
       allowImage
       imageHint="Choose an optional public image for any supporting section."
     />

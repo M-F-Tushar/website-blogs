@@ -38,6 +38,10 @@ interface AdminManagedPageWorkspaceProps {
   settingsHint: string;
   searchParams: Promise<{ edit?: string }>;
   adminRoute: string;
+  collectionActions?: readonly {
+    href: string;
+    label: string;
+  }[];
   allowImage?: boolean;
   imageHint?: string;
 }
@@ -50,6 +54,7 @@ export async function AdminManagedPageWorkspace({
   settingsHint,
   searchParams,
   adminRoute,
+  collectionActions = [],
   allowImage = false,
   imageHint,
 }: AdminManagedPageWorkspaceProps) {
@@ -70,6 +75,19 @@ export async function AdminManagedPageWorkspace({
         eyebrow="Page workspace"
         title={`${pageTitle} page`}
         description={description}
+        actions={
+          collectionActions.length > 0
+            ? collectionActions.map((action) => (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="inline-flex items-center justify-center rounded-full border border-border-strong px-5 py-3 text-sm font-medium text-foreground transition hover:bg-white/60"
+                >
+                  {action.label}
+                </Link>
+              ))
+            : undefined
+        }
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
