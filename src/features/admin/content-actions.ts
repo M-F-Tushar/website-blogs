@@ -554,7 +554,7 @@ export async function archiveRecommendationAction(formData: FormData) {
   redirect("/admin/content/recommendations?deleted=1");
 }
 
-export async function uploadMediaAssetAction(formData: FormData) {
+async function uploadMediaAsset(formData: FormData) {
   const { profile } = await requireAdminSession();
 
   const file = formData.get("file");
@@ -621,6 +621,33 @@ export async function uploadMediaAssetAction(formData: FormData) {
   }
 
   revalidatePath("/admin/media");
+}
+
+export async function uploadMediaAssetAction(formData: FormData) {
+  await uploadMediaAsset(formData);
+  redirect("/admin/media?uploaded=1");
+}
+
+export async function uploadMediaAssetFormAction(
+  _previousState: {
+    status: "idle" | "error";
+    message: string | null;
+  },
+  formData: FormData,
+): Promise<{
+  status: "idle" | "error";
+  message: string | null;
+}> {
+  try {
+    await uploadMediaAsset(formData);
+  } catch (error) {
+    return {
+      status: "error",
+      message:
+        error instanceof Error ? error.message : "Unable to upload the selected media asset.",
+    };
+  }
+
   redirect("/admin/media?uploaded=1");
 }
 

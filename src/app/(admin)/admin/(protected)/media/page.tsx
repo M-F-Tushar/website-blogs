@@ -1,10 +1,27 @@
-import { AdminField, AdminInput, AdminPageIntro, AdminPanel, AdminSelect } from "@/components/admin/primitives";
+import { MediaUploadForm } from "@/components/admin/media-upload-form";
+import { AdminPageIntro, AdminPanel } from "@/components/admin/primitives";
 import { getAdminMediaAssets } from "@/lib/content/admin-queries";
 import { formatDisplayDate } from "@/lib/utils";
-import { uploadMediaAssetAction } from "@/features/admin/content-actions";
+import type { MediaAsset } from "@/types/content";
 
-export default async function AdminMediaPage() {
-  const assets = await getAdminMediaAssets();
+export default async function AdminMediaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ uploaded?: string }>;
+}) {
+  const { uploaded } = await searchParams;
+
+  let assets: MediaAsset[] = [];
+  let assetsError: string | null = null;
+
+  try {
+    assets = await getAdminMediaAssets();
+  } catch (error) {
+    assetsError =
+      error instanceof Error
+        ? error.message
+        : "The media library could not be loaded right now.";
+  }
 
   return (
     <div className="space-y-8">
@@ -19,63 +36,62 @@ export default async function AdminMediaPage() {
           <h2 className="font-display text-2xl font-semibold tracking-[-0.04em]">
             Upload asset
           </h2>
-          <form action={uploadMediaAssetAction} className="mt-6 grid gap-5">
-            <AdminField label="File">
-              <AdminInput name="file" type="file" required />
-            </AdminField>
-            <AdminField label="Label">
-              <AdminInput name="label" placeholder="Homepage portrait" />
-            </AdminField>
-            <AdminField label="Alt text">
-              <AdminInput name="altText" placeholder="Describe the image accessibly" />
-            </AdminField>
-            <AdminField label="Bucket">
-              <AdminSelect name="bucketName" defaultValue="site-public">
-                <option value="site-public">site-public</option>
-                <option value="site-admin">site-admin</option>
-              </AdminSelect>
-            </AdminField>
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center rounded-full bg-surface-dark px-5 py-3 text-sm font-medium text-white transition hover:bg-surface-dark/92"
-            >
-              Upload asset
-            </button>
-          </form>
+          {uploaded === "1" ? (
+            <p className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              Media asset uploaded successfully.
+            </p>
+          ) : null}
+          <MediaUploadForm />
         </AdminPanel>
 
         <AdminPanel>
           <h2 className="font-display text-2xl font-semibold tracking-[-0.04em]">
             Stored assets
           </h2>
-          <div className="mt-6 space-y-3">
-            {assets.map((asset) => (
-              <div
-                key={asset.id}
-                className="rounded-[1.25rem] border border-border bg-white/55 p-4"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-foreground">{asset.label ?? asset.objectPath}</p>
-                    <p className="mt-1 break-all text-sm text-muted">{asset.id}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted">
-                      {asset.bucketName} · {formatDisplayDate(asset.createdAt)}
-                    </p>
-                  </div>
-                  {asset.publicUrl ? (
-                    <a
-                      href={asset.publicUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm text-accent"
-                    >
-                      Open
-                    </a>
-                  ) : null}
+          {assetsError ? (
+            <div className="mt-6 rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+              The upload form is still available, but the existing media list could not be
+              loaded right now.
+              <p className="mt-2 break-words text-amber-700">{assetsError}</p>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-3">
+              {assets.length === 0 ? (
+                <div className="rounded-[1.25rem] border border-dashed border-border bg-white/40 p-4 text-sm text-muted">
+                  No media assets have been uploaded yet.
                 </div>
-              </div>
-            ))}
-          </div>
+              ) : null}
+
+              {assets.map((asset) => (
+                <div
+                  key={asset.id}
+                  className="rounded-[1.25rem] border border-border bg-white/55 p-4"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {asset.label ?? asset.objectPath}
+                      </p>
+                      <p className="mt-1 break-all text-sm text-muted">{asset.id}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted">
+                        {asset.bucketName} | {formatDisplayDate(asset.createdAt)}
+                      </p>
+                    </div>
+                    {asset.publicUrl ? (
+                      <a
+                        href={asset.publicUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-accent"
+                      >
+                        Open
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </AdminPanel>
       </div>
     </div>
