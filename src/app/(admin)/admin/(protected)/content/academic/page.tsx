@@ -114,7 +114,11 @@ export default async function AdminAcademicPage({
             ) : null}
           </div>
 
-          <form action={saveAcademicEntryAction} className="mt-6 grid gap-5">
+          <form
+            key={selectedEntry?.id ?? "new-academic-entry"}
+            action={saveAcademicEntryAction}
+            className="mt-6 grid gap-5"
+          >
             <input type="hidden" name="id" defaultValue={selectedEntry?.id ?? ""} />
 
             <AdminField label="Title">
@@ -174,6 +178,7 @@ export default async function AdminAcademicPage({
             </div>
 
             <MediaAssetPicker
+              key={`academic-cover-${selectedEntry?.id ?? "new"}`}
               label="Cover image"
               name="coverAssetId"
               assets={assets}
@@ -195,6 +200,7 @@ export default async function AdminAcademicPage({
             </AdminField>
 
             <MarkdownEditorField
+              key={`academic-markdown-${selectedEntry?.id ?? "new"}`}
               name="bodyMarkdown"
               label="Entry markdown"
               defaultValue={selectedEntry?.bodyMarkdown ?? ""}

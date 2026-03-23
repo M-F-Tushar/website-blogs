@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Eye, FileCode2, ImageIcon, ListChecks, PencilLine, Table2 } from "lucide-react";
 
 import { Markdown } from "@/components/site/markdown";
@@ -86,6 +86,10 @@ export function MarkdownEditorField({
   );
   const selectedAsset =
     publicAssets.find((asset) => asset.id === selectedAssetId) ?? null;
+
+  useEffect(() => {
+    setContent(defaultValue);
+  }, [defaultValue]);
 
   function updateContent(
     builder: (current: string, start: number, end: number, selected: string) => {

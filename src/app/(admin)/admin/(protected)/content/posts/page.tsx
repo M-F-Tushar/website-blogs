@@ -105,7 +105,11 @@ export default async function AdminPostsPage({
             ) : null}
           </div>
 
-          <form action={savePostAction} className="mt-6 grid gap-5">
+          <form
+            key={selectedPost?.id ?? "new-post"}
+            action={savePostAction}
+            className="mt-6 grid gap-5"
+          >
             <input type="hidden" name="id" defaultValue={selectedPost?.id ?? ""} />
 
             <AdminField label="Title">
@@ -134,6 +138,7 @@ export default async function AdminPostsPage({
                 />
               </AdminField>
               <MediaAssetPicker
+                key={`post-cover-${selectedPost?.id ?? "new"}`}
                 label="Cover image"
                 name="coverAssetId"
                 assets={assets}
@@ -168,6 +173,7 @@ export default async function AdminPostsPage({
             </AdminField>
 
             <MarkdownEditorField
+              key={`post-markdown-${selectedPost?.id ?? "new"}`}
               name="bodyMarkdown"
               label="Article markdown"
               defaultValue={selectedPost?.bodyMarkdown ?? ""}

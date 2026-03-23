@@ -115,7 +115,11 @@ export default async function AdminRecommendationsPage({
             ) : null}
           </div>
 
-          <form action={saveRecommendationAction} className="mt-6 grid gap-5">
+          <form
+            key={selectedItem?.id ?? "new-recommendation"}
+            action={saveRecommendationAction}
+            className="mt-6 grid gap-5"
+          >
             <input type="hidden" name="id" defaultValue={selectedItem?.id ?? ""} />
 
             <AdminField label="Title">
@@ -169,6 +173,7 @@ export default async function AdminRecommendationsPage({
             </AdminField>
 
             <MediaAssetPicker
+              key={`recommendation-cover-${selectedItem?.id ?? "new"}`}
               label="Cover image"
               name="coverAssetId"
               assets={assets}
@@ -198,6 +203,7 @@ export default async function AdminRecommendationsPage({
             </AdminField>
 
             <MarkdownEditorField
+              key={`recommendation-markdown-${selectedItem?.id ?? "new"}`}
               name="bodyMarkdown"
               label="Recommendation markdown"
               defaultValue={selectedItem?.bodyMarkdown ?? ""}
