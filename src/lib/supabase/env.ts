@@ -15,6 +15,17 @@ export type AppRuntimeStage = "local" | "staging" | "production";
 
 export function getAppRuntimeStage(): AppRuntimeStage {
   const explicitStage = process.env.APP_ENV?.toLowerCase();
+  const vercelStage = process.env.VERCEL_ENV?.toLowerCase();
+
+  // Hosted Vercel environments should never behave like local, even if APP_ENV
+  // was copied from a developer machine.
+  if (vercelStage === "preview") {
+    return "staging";
+  }
+
+  if (vercelStage === "production") {
+    return "production";
+  }
 
   if (explicitStage === "local" || explicitStage === "development") {
     return "local";
@@ -25,15 +36,6 @@ export function getAppRuntimeStage(): AppRuntimeStage {
   }
 
   if (explicitStage === "production") {
-    return "production";
-  }
-
-  const vercelStage = process.env.VERCEL_ENV?.toLowerCase();
-  if (vercelStage === "preview") {
-    return "staging";
-  }
-
-  if (vercelStage === "production") {
     return "production";
   }
 
