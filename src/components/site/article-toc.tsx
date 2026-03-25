@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { MarkdownHeading } from "@/lib/markdown-outline";
@@ -12,12 +12,20 @@ interface ArticleTocProps {
 export function ArticleToc({ headings }: ArticleTocProps) {
   const [activeId, setActiveId] = useState(headings[0]?.id ?? "");
 
+  // Reset active heading when the article changes without a full remount.
+  // Updating state during render (state-derivation pattern) avoids calling
+  // setState synchronously inside an effect body.
+  const prevFirstIdRef = useRef(headings[0]?.id ?? "");
+  const firstHeadingId = headings[0]?.id ?? "";
+  if (prevFirstIdRef.current !== firstHeadingId) {
+    prevFirstIdRef.current = firstHeadingId;
+    setActiveId(firstHeadingId);
+  }
+
   useEffect(() => {
     if (headings.length === 0) {
       return;
     }
-
-    setActiveId(headings[0]?.id ?? "");
 
     const elements = headings
       .map((heading) => document.getElementById(heading.id))
