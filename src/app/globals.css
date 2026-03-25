@@ -1140,6 +1140,115 @@ body:has(.theme-nebula)::after {
   border-top-color: rgba(255, 255, 255, 0.1);
 }
 
+[data-reading-heading="true"] {
+  scroll-margin-top: 7rem;
+}
+
+.reading-markdown > * + * {
+  margin-top: 1.15rem;
+}
+
+.reading-markdown h2,
+.reading-markdown h3,
+.reading-markdown h4 {
+  position: relative;
+}
+
+.reading-markdown h2 {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 3.4rem;
+  padding-top: 1.2rem;
+}
+
+.reading-markdown h2::before,
+.reading-markdown h3::before {
+  background: linear-gradient(180deg, #7dd3fc, #0ea5e9);
+  border-radius: 9999px;
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+  content: "";
+  display: inline-block;
+  flex-shrink: 0;
+  height: 0.48rem;
+  margin-right: 0.8rem;
+  vertical-align: middle;
+  width: 0.48rem;
+}
+
+.reading-markdown h3 {
+  margin-top: 2.5rem;
+}
+
+.reading-markdown blockquote {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid rgba(125, 211, 252, 0.45);
+  border-radius: 1rem;
+  padding: 1.1rem 1.2rem;
+}
+
+.reading-markdown pre {
+  border-radius: 1.2rem;
+  padding: 1.15rem 1.2rem;
+}
+
+.reading-toc-link {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  display: block;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  padding: 0.55rem 0 0.55rem 0.95rem;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.reading-toc-link:hover {
+  border-left-color: rgba(125, 211, 252, 0.38);
+  color: #e2e8f0;
+  transform: translateX(2px);
+}
+
+.reading-toc-link-nested {
+  font-size: 0.88rem;
+  padding-left: 1.4rem;
+}
+
+.reading-toc-link-deep {
+  font-size: 0.84rem;
+  padding-left: 1.8rem;
+}
+
+.reading-toc-link-active {
+  border-left-color: #38bdf8;
+  color: white;
+}
+
+.reading-info-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.2rem;
+  padding: 0.95rem 1rem;
+}
+
+.reading-info-label {
+  color: #7dd3fc;
+  display: inline-block;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.reading-info-value {
+  color: #f8fafc;
+  display: block;
+  font-size: 0.98rem;
+  line-height: 1.75;
+  margin-top: 0.65rem;
+}
+
 body:has(.theme-blogsite) {
   background:
     radial-gradient(circle at 14% 14%, rgba(14, 165, 233, 0.12), transparent 20%),

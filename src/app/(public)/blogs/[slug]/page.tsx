@@ -1,10 +1,10 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 
-import { Markdown } from "@/components/site/markdown";
+import { LongformArticleLayout } from "@/components/site/longform-layout";
 import { getPostBySlug } from "@/lib/content/queries";
 import { buildSiteMetadata } from "@/lib/content/seo";
-import { formatDisplayDate } from "@/lib/utils";
+import { extractMarkdownHeadings } from "@/lib/markdown-outline";
+import { estimateReadingTime, formatDisplayDate } from "@/lib/utils";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -39,35 +39,73 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
+  const headings = extractMarkdownHeadings(post.bodyMarkdown);
+  const readingTime = estimateReadingTime(post.bodyMarkdown);
+  const categories = post.categories.filter(Boolean);
+  const tags = post.tags.filter(Boolean);
+
   return (
-    <article className="mx-auto max-w-4xl px-6 py-16 md:py-24">
-      <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent">
-        {post.categories.join(" / ") || "Blog"}
-      </p>
-      <h1 className="mt-6 font-display text-4xl font-semibold tracking-[-0.05em] text-balance md:text-6xl">
-        {post.title}
-      </h1>
-      <div className="mt-6 flex flex-wrap gap-4 text-sm text-muted">
-        <span>{formatDisplayDate(post.publishedAt)}</span>
-        {post.tags.length > 0 ? <span>{post.tags.join(" - ")}</span> : null}
-      </div>
-      <p className="mt-8 text-lg leading-8 text-muted">{post.excerpt}</p>
-      {post.coverUrl ? (
-        <div className="editorial-panel mt-10 overflow-hidden rounded-[2rem] p-3">
-          <div className="relative aspect-[16/9] overflow-hidden rounded-[1.5rem]">
-            <Image
-              src={post.coverUrl}
-              alt={post.coverAlt ?? post.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 80vw"
-              className="object-cover"
-            />
+    <LongformArticleLayout
+      taxonomy={categories.length > 0 ? categories : ["Blog"]}
+      title={post.title}
+      summary={post.excerpt}
+      heroMeta={
+        <>
+          <span className="signal-pill">{formatDisplayDate(post.publishedAt)}</span>
+          <span className="signal-pill">{readingTime}</span>
+          {tags.slice(0, 3).map((tag) => (
+            <span key={tag} className="signal-pill">
+              {tag}
+            </span>
+          ))}
+        </>
+      }
+      coverUrl={post.coverUrl}
+      coverAlt={post.coverAlt}
+      bodyMarkdown={post.bodyMarkdown}
+      headings={headings}
+      railSummary="Use the outline to jump between sections while the reading column stays focused and distraction-light."
+      railContent={
+        <div className="surface-panel rounded-[1.8rem] p-5">
+          <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sky-300">
+            Reading snapshot
+          </p>
+          <div className="mt-4 grid gap-3">
+            <div className="reading-info-card">
+              <span className="reading-info-label">Published</span>
+              <span className="reading-info-value">{formatDisplayDate(post.publishedAt)}</span>
+            </div>
+            <div className="reading-info-card">
+              <span className="reading-info-label">Cadence</span>
+              <span className="reading-info-value">{readingTime}</span>
+            </div>
+            {categories.length > 0 ? (
+              <div className="reading-info-card">
+                <span className="reading-info-label">Filed under</span>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {categories.map((category) => (
+                    <span key={category} className="signal-pill !px-3 !py-2">
+                      {category}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {tags.length > 0 ? (
+              <div className="reading-info-card">
+                <span className="reading-info-label">Tags</span>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <span key={tag} className="signal-pill !px-3 !py-2">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
-      ) : null}
-      <div className="editorial-panel mt-12 rounded-[2rem] px-6 py-8 md:px-10 md:py-12">
-        <Markdown content={post.bodyMarkdown} />
-      </div>
-    </article>
+      }
+    />
   );
 }
