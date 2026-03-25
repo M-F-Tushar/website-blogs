@@ -1,10 +1,10 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 
-import { Markdown } from "@/components/site/markdown";
+import { LongformArticleLayout } from "@/components/site/longform-layout";
 import { getAcademicEntryBySlug } from "@/lib/content/queries";
 import { buildSiteMetadata } from "@/lib/content/seo";
-import { formatDisplayDate } from "@/lib/utils";
+import { extractMarkdownHeadings } from "@/lib/markdown-outline";
+import { estimateReadingTime, formatDisplayDate } from "@/lib/utils";
 
 interface AcademicDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -41,39 +41,76 @@ export default async function AcademicDetailPage({
     notFound();
   }
 
+  const headings = extractMarkdownHeadings(entry.bodyMarkdown);
+  const readingTime = estimateReadingTime(entry.bodyMarkdown);
+  const completedOrStarted = entry.completedAt ?? entry.startedAt;
+
   return (
-    <article className="mx-auto max-w-4xl px-6 py-16 md:py-24">
-      <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent">
-        {entry.entryType.replace(/_/g, " ")}
-      </p>
-      <h1 className="mt-6 font-display text-4xl leading-tight font-semibold tracking-[-0.05em] text-balance md:text-6xl">
-        {entry.title}
-      </h1>
-      <div className="mt-6 flex flex-wrap gap-4 text-sm text-muted">
-        <span>{formatDisplayDate(entry.completedAt ?? entry.startedAt)}</span>
-        {entry.externalUrl ? (
-          <a href={entry.externalUrl} target="_blank" rel="noreferrer">
-            External reference
-          </a>
-        ) : null}
-      </div>
-      <p className="mt-8 text-lg leading-8 text-muted">{entry.summary}</p>
-      {entry.coverUrl ? (
-        <div className="editorial-panel mt-10 overflow-hidden rounded-[2rem] p-3">
-          <div className="relative aspect-[16/9] overflow-hidden rounded-[1.5rem]">
-            <Image
-              src={entry.coverUrl}
-              alt={entry.coverAlt ?? entry.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 80vw"
-              className="object-cover"
-            />
+    <LongformArticleLayout
+      taxonomy={[entry.entryType.replace(/_/g, " ")]}
+      title={entry.title}
+      summary={entry.summary}
+      heroMeta={
+        <>
+          <span className="signal-pill">
+            {completedOrStarted ? formatDisplayDate(completedOrStarted) : "In progress"}
+          </span>
+          <span className="signal-pill">{readingTime}</span>
+          {entry.externalUrl ? (
+            <a
+              href={entry.externalUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="signal-pill transition hover:border-sky-300 hover:text-white"
+            >
+              External reference
+            </a>
+          ) : null}
+        </>
+      }
+      coverUrl={entry.coverUrl}
+      coverAlt={entry.coverAlt}
+      bodyMarkdown={entry.bodyMarkdown}
+      headings={headings}
+      railSummary="A structured reading rail for research notes, coursework, and experiments so the material feels indexed, not buried."
+      railContent={
+        <div className="surface-panel rounded-[1.8rem] p-5">
+          <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sky-300">
+            Academic context
+          </p>
+          <div className="mt-4 grid gap-3">
+            <div className="reading-info-card">
+              <span className="reading-info-label">Entry type</span>
+              <span className="reading-info-value">
+                {entry.entryType.replace(/_/g, " ")}
+              </span>
+            </div>
+            <div className="reading-info-card">
+              <span className="reading-info-label">Timeline</span>
+              <span className="reading-info-value">
+                {completedOrStarted ? formatDisplayDate(completedOrStarted) : "In progress"}
+              </span>
+            </div>
+            <div className="reading-info-card">
+              <span className="reading-info-label">Depth</span>
+              <span className="reading-info-value">{readingTime}</span>
+            </div>
+            {entry.externalUrl ? (
+              <div className="reading-info-card">
+                <span className="reading-info-label">Reference</span>
+                <a
+                  href={entry.externalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-200 transition hover:border-sky-300 hover:text-white"
+                >
+                  Open source material
+                </a>
+              </div>
+            ) : null}
           </div>
         </div>
-      ) : null}
-      <div className="editorial-panel mt-12 rounded-[2rem] px-6 py-8 md:px-10 md:py-12">
-        <Markdown content={entry.bodyMarkdown} />
-      </div>
-    </article>
+      }
+    />
   );
 }
