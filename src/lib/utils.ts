@@ -44,7 +44,6 @@ export function normalizeEmailAddress(
 ) {
   const normalized = normalizeText(value)
     .replace(/^mailto:/i, "")
-    .replace(/^www\./i, "")
     .replace(/\/+$/, "")
     .toLowerCase();
 

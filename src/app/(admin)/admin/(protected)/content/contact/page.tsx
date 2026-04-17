@@ -17,9 +17,9 @@ export default function AdminContactPageManager({
     <AdminManagedPageWorkspace
       pageKey="contact"
       pageTitle="Contact"
-      description="Control the public contact page intro, supporting cards, and form copy from admin."
+      description="Control the public contact page intro, live contact cards, and form copy from admin."
       sectionTypes={CONTACT_SECTION_TYPES}
-      settingsHint='Hero supports {"eyebrow":"Contact","tracks":["Research conversations"]}. Form supports {"eyebrow":"Secure intake","badge":"Thoughtful replies over volume"}. Detail cards can use {"eyebrow":"Email"}.'
+      settingsHint='Hero supports {"eyebrow":"Contact","tracks":["Research conversations"],"availabilityTitle":"Currently Available","availabilityDescription":"Reply timing or expectations"}. Form supports {"eyebrow":"Secure intake","badge":"Thoughtful replies over volume"}. Detail cards use Heading as the visible value and Subheading as supporting copy. For the email card, keep Section key as "email" and the public mailto link will follow the Heading automatically. Other cards can use Settings JSON like {"eyebrow":"GitHub","href":"https://github.com/username","icon":"github"}.'
       searchParams={searchParams}
       adminRoute="/admin/content/contact"
     />

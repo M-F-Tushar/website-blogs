@@ -1,4 +1,15 @@
-import { Mail, Github, Linkedin, Clock3 } from "lucide-react";
+import {
+  Clock3,
+  FileText,
+  Github,
+  Globe,
+  Linkedin,
+  Link2,
+  Mail,
+  MapPin,
+  Phone,
+  type LucideIcon,
+} from "lucide-react";
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { ContactForm } from "@/components/site/contact-form";
@@ -13,6 +24,7 @@ import {
   DEFAULT_TOP_LEVEL_PAGE_PATHS,
 } from "@/lib/content/page-routing";
 import { getContactBotProtectionConfig } from "@/lib/supabase/env";
+import type { PageSection } from "@/types/content";
 
 export async function generateMetadata() {
   return buildTopLevelPageMetadata("contact", {
@@ -46,6 +58,82 @@ function parseFaqs(value: unknown) {
     .filter((item): item is { question: string; answer: string } => Boolean(item));
 }
 
+function resolveContactCardIcon(
+  section: Pick<PageSection, "sectionKey" | "settings">,
+  href: string | null,
+): LucideIcon {
+  const configuredIcon = getSectionSettingString(section, "icon")?.toLowerCase();
+
+  switch (configuredIcon) {
+    case "mail":
+    case "email":
+      return Mail;
+    case "github":
+      return Github;
+    case "linkedin":
+      return Linkedin;
+    case "location":
+    case "map":
+    case "mappin":
+      return MapPin;
+    case "phone":
+    case "tel":
+      return Phone;
+    case "resume":
+    case "file":
+      return FileText;
+    case "globe":
+    case "website":
+      return Globe;
+    case "link":
+      return Link2;
+    default:
+      break;
+  }
+
+  const normalizedKey = section.sectionKey.toLowerCase();
+  if (normalizedKey.includes("email") || href?.startsWith("mailto:")) {
+    return Mail;
+  }
+  if (normalizedKey.includes("github")) {
+    return Github;
+  }
+  if (normalizedKey.includes("linkedin")) {
+    return Linkedin;
+  }
+  if (normalizedKey.includes("location")) {
+    return MapPin;
+  }
+  if (normalizedKey.includes("phone") || href?.startsWith("tel:")) {
+    return Phone;
+  }
+  if (normalizedKey.includes("resume")) {
+    return FileText;
+  }
+
+  return Globe;
+}
+
+function resolveDetailSectionHref(
+  section: Pick<PageSection, "heading" | "sectionKey" | "settings">,
+) {
+  const title = section.heading.trim();
+  if (section.sectionKey.toLowerCase() === "email" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(title)) {
+    return `mailto:${title}`;
+  }
+
+  const explicitHref = getSectionSettingString(section, "href");
+  if (explicitHref) {
+    return explicitHref;
+  }
+
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(title)) {
+    return `mailto:${title}`;
+  }
+
+  return null;
+}
+
 export async function ContactPageContent({
   data,
 }: {
@@ -54,6 +142,7 @@ export async function ContactPageContent({
   const resolvedData = data ?? (await getContactPageData());
   const { siteSettings, page, sections } = resolvedData;
   const heroSection = getPrimarySection(sections, ["hero", "intro"], ["hero"]);
+  const detailSections = sections.filter((section) => section.sectionType === "detail");
   const formSection =
     sections.find((section) => section.sectionKey === "form") ??
     sections.find((section) => section.sectionType === "form") ??
@@ -84,17 +173,47 @@ export async function ContactPageContent({
         "The best outreach explains the problem, the current stage, and what kind of collaboration you have in mind.",
     },
   ];
-  const socialCards = [
-    {
-      key: "email",
-      eyebrow: "Email",
-      title: siteSettings.contactEmail,
-      description: "Best for professional inquiries",
-      href: `mailto:${siteSettings.contactEmail}`,
-      icon: Mail,
-      featured: true,
-    },
-    siteSettings.githubUrl
+  const detailCards = detailSections.map((section) => {
+    const href = resolveDetailSectionHref(section);
+
+    return {
+      key: section.id,
+      eyebrow: getSectionSettingString(section, "eyebrow") ?? section.sectionKey,
+      title: section.heading,
+      description:
+        section.subheading ??
+        (section.bodyMarkdown.trim().length > 0 ? section.bodyMarkdown : null) ??
+        "Update this card from the admin contact page.",
+      href,
+      icon: resolveContactCardIcon(section, href),
+      featured: section.featured,
+    };
+  });
+  const detailKeys = new Set(detailSections.map((section) => section.sectionKey.toLowerCase()));
+  const fallbackCards = [
+    !detailKeys.has("email")
+      ? {
+          key: "email",
+          eyebrow: "Email",
+          title: siteSettings.contactEmail,
+          description: "Best for professional inquiries",
+          href: `mailto:${siteSettings.contactEmail}`,
+          icon: Mail,
+          featured: true,
+        }
+      : null,
+    siteSettings.locationLabel && !detailKeys.has("location")
+      ? {
+          key: "location",
+          eyebrow: "Location",
+          title: siteSettings.locationLabel,
+          description: "Available for thoughtful remote collaboration.",
+          href: null,
+          icon: MapPin,
+          featured: false,
+        }
+      : null,
+    siteSettings.githubUrl && !detailKeys.has("github")
       ? {
           key: "github",
           eyebrow: "GitHub",
@@ -105,7 +224,7 @@ export async function ContactPageContent({
           featured: false,
         }
       : null,
-    siteSettings.linkedinUrl
+    siteSettings.linkedinUrl && !detailKeys.has("linkedin")
       ? {
           key: "linkedin",
           eyebrow: "LinkedIn",
@@ -121,10 +240,11 @@ export async function ContactPageContent({
     eyebrow: string;
     title: string;
     description: string;
-    href: string;
-    icon: typeof Mail;
+    href: string | null;
+    icon: LucideIcon;
     featured: boolean;
   }>;
+  const socialCards = detailCards.length > 0 ? [...detailCards, ...fallbackCards] : fallbackCards;
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
@@ -189,32 +309,54 @@ export async function ContactPageContent({
           <div className="space-y-4">
             {socialCards.map((card) => {
               const Icon = card.icon;
+              const cardClassName = `block overflow-hidden rounded-[1.45rem] border p-5 transition ${
+                card.href ? "hover:-translate-y-0.5" : ""
+              } ${
+                card.featured
+                  ? "border-sky-400/20 bg-[linear-gradient(90deg,rgba(14,165,233,0.9),rgba(79,70,229,0.8))]"
+                  : "border-white/8 bg-white/4"
+              }`;
+              const cardContent = (
+                <div className="flex items-start gap-4">
+                  <div className="rounded-[1rem] bg-white/10 p-3 text-white">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-display text-[2rem] font-semibold tracking-[-0.04em] text-white">
+                      {card.title}
+                    </p>
+                    <p className="mt-1 text-[0.98rem] leading-7 text-white/80">
+                      {card.description}
+                    </p>
+                  </div>
+                </div>
+              );
+
+              if (!card.href) {
+                return (
+                  <div key={card.key} className={cardClassName}>
+                    {cardContent}
+                  </div>
+                );
+              }
 
               return (
                 <a
                   key={card.key}
                   href={card.href}
-                  target={card.href.startsWith("mailto:") ? undefined : "_blank"}
-                  rel={card.href.startsWith("mailto:") ? undefined : "noreferrer"}
-                  className={`block overflow-hidden rounded-[1.45rem] border p-5 transition hover:-translate-y-0.5 ${
-                    card.featured
-                      ? "border-sky-400/20 bg-[linear-gradient(90deg,rgba(14,165,233,0.9),rgba(79,70,229,0.8))]"
-                      : "border-white/8 bg-white/4"
-                  }`}
+                  target={
+                    card.href.startsWith("mailto:") || card.href.startsWith("tel:")
+                      ? undefined
+                      : "_blank"
+                  }
+                  rel={
+                    card.href.startsWith("mailto:") || card.href.startsWith("tel:")
+                      ? undefined
+                      : "noreferrer"
+                  }
+                  className={cardClassName}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-[1rem] bg-white/10 p-3 text-white">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="font-display text-[2rem] font-semibold tracking-[-0.04em] text-white">
-                        {card.title}
-                      </p>
-                      <p className="mt-1 text-[0.98rem] leading-7 text-white/80">
-                        {card.description}
-                      </p>
-                    </div>
-                  </div>
+                  {cardContent}
                 </a>
               );
             })}
