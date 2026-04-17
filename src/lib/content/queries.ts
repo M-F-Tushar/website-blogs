@@ -664,15 +664,15 @@ export async function getHomePageData() {
     siteSettings,
     pageContent,
     featuredPosts,
-    featuredAcademic,
-    featuredRecommendations,
+    recentAcademic,
+    recentRecommendations,
     recentPosts,
   ] = await Promise.all([
     fetchSiteSettings(),
     getPageContent("home"),
     getPublishedPosts({ featuredOnly: true, limit: 3 }),
-    getPublishedAcademicEntries({ featuredOnly: true, limit: 3 }),
-    getPublishedRecommendations({ featuredOnly: true, limit: 3 }),
+    getPublishedAcademicEntries({ limit: 3 }),
+    getPublishedRecommendations({ limit: 3 }),
     getPublishedPosts({ limit: 5 }),
   ]);
 
@@ -681,8 +681,8 @@ export async function getHomePageData() {
     page: pageContent.page,
     sections: pageContent.sections,
     featuredPosts,
-    featuredAcademic,
-    featuredRecommendations,
+    recentAcademic,
+    recentRecommendations,
     recentPosts,
   };
 }

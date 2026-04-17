@@ -131,9 +131,13 @@ export function SiteFooter({
           <div>
             <p className="footer-column-title">Stay Connected</p>
             <p className="mt-5 text-[0.96rem] leading-7 text-slate-400">
-              Subscribe to get notified about new posts.
+              The newsletter is not live yet, so these are the real ways to follow the work.
             </p>
-            <NewsletterSignup compact className="mt-5" />
+            <NewsletterSignup
+              compact
+              className="mt-5"
+              contactEmail={siteSettings.contactEmail}
+            />
           </div>
         </div>
 

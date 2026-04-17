@@ -1,0 +1,43 @@
+import { defineConfig, devices } from "@playwright/test";
+
+const port = Number(process.env.PORT ?? "3205");
+const host = process.env.HOST ?? "127.0.0.1";
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://${host}:${port}`;
+
+export default defineConfig({
+  testDir: "./tests/e2e",
+  fullyParallel: false,
+  workers: 1,
+  forbidOnly: Boolean(process.env.CI),
+  retries: process.env.CI ? 2 : 0,
+  reporter: process.env.CI ? "github" : "list",
+  timeout: 60_000,
+  expect: {
+    timeout: 10_000,
+  },
+  use: {
+    baseURL,
+    trace: "retain-on-failure",
+  },
+  projects: [
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+      },
+    },
+  ],
+  webServer: {
+    command: `npm run build && npm run start -- --hostname ${host} --port ${port}`,
+    url: baseURL,
+    reuseExistingServer: false,
+    timeout: 600_000,
+    stdout: "pipe",
+    stderr: "pipe",
+    env: {
+      ...process.env,
+      APP_ENV: process.env.APP_ENV ?? "local",
+      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? baseURL,
+    },
+  },
+});

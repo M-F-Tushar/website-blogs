@@ -159,6 +159,10 @@ npm run lint
 npm run typecheck
 npm run build
 npm run verify
+npm run smoke:install
+npm run smoke
+npm run e2e:flows
+npm run verify:smoke
 npm run start
 npm run bootstrap-admin -- admin@example.com strong-password "Admin Name"
 ```
@@ -172,15 +176,43 @@ It runs on pushes to `main` and on pull requests, and it verifies:
 - `npm run lint`
 - `npm run typecheck`
 - `npm run build`
+- `npm run smoke`
 
 Important note:
 - CI runs with `APP_ENV=local` so the build gate can use local fallback content without requiring live Supabase credentials.
+- smoke tests build and run the public app with isolated local-style environment values so the pipeline does not depend on live Supabase or Turnstile credentials
 - This is intentional for the minimum code-quality/build gate.
 - Real staged backend verification belongs in the staging smoke checklist below.
+- No GitHub Actions secrets or repository variables are required for the current CI workflow.
+
+## Optional Authenticated E2E Check
+
+Use this when you want to verify the admin publishing path against a real local or staging backend:
+
+```bash
+npm run bootstrap-admin -- admin@example.com strong-password "Admin Name"
+$env:E2E_ADMIN_EMAIL="admin@example.com"
+$env:E2E_ADMIN_PASSWORD="strong-password"
+npm run e2e:flows
+```
+
+What it proves:
+- the public contact form stores a message
+- rapid repeat contact submissions are throttled
+- the new message appears in `/admin/messages`
+- admin login works
+- a post can be created from `/admin/content/posts`
+- the saved post appears on the public blog
 
 ## Staging Smoke Checklist
 
 Use the repeatable checklist in [`docs/staging-smoke-checklist.md`](./docs/staging-smoke-checklist.md) after staging deploys and before production release.
+
+## Execution Guides
+
+For the current improvement and rollout sequence, use:
+- [`docs/execution-roadmap.md`](./docs/execution-roadmap.md)
+- [`docs/manual-operator-guide.md`](./docs/manual-operator-guide.md)
 
 ## Deployment
 

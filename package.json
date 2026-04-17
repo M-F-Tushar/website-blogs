@@ -12,6 +12,10 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "verify": "npm run lint && npm run typecheck && npm run build",
+    "smoke:install": "playwright install chromium",
+    "smoke": "playwright test",
+    "e2e:flows": "playwright test --config=playwright.e2e.config.ts",
+    "verify:smoke": "npm run verify && npm run smoke",
     "bootstrap-admin": "node scripts/bootstrap-admin.mjs"
   },
   "dependencies": {
@@ -31,6 +35,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

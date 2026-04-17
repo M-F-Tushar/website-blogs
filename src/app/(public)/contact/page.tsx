@@ -12,6 +12,7 @@ import {
   buildTopLevelPageMetadata,
   DEFAULT_TOP_LEVEL_PAGE_PATHS,
 } from "@/lib/content/page-routing";
+import { getContactBotProtectionConfig } from "@/lib/supabase/env";
 
 export async function generateMetadata() {
   return buildTopLevelPageMetadata("contact", {
@@ -60,6 +61,7 @@ export async function ContactPageContent({
   const formFaqs = parseFaqs(formSection?.settings.faqs);
   const heroFaqs = parseFaqs(heroSection?.settings.faqs);
   const faqItems = formFaqs.length > 0 ? formFaqs : heroFaqs;
+  const botProtection = getContactBotProtectionConfig();
   const fallbackFaqs = [
     {
       question: "What’s the best way to reach you?",
@@ -173,6 +175,8 @@ export async function ContactPageContent({
               "Tell me about your project, research interest, or the kind of conversation you want to have."
             }
             badge={getSectionSettingString(formSection, "badge") ?? "Thoughtful replies over volume"}
+            botProtectionMode={botProtection.mode}
+            turnstileSiteKey={botProtection.siteKey}
           />
         </div>
 

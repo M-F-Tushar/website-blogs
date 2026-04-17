@@ -3,6 +3,8 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
 
+import type { ContactBotProtectionMode } from "@/lib/supabase/env";
+
 declare global {
   interface Window {
     turnstile?: {
@@ -27,6 +29,8 @@ interface ContactFormProps {
   title?: string;
   description?: string;
   badge?: string;
+  botProtectionMode?: ContactBotProtectionMode;
+  turnstileSiteKey?: string | null;
 }
 
 export function ContactForm({
@@ -34,6 +38,8 @@ export function ContactForm({
   title = "Start the conversation",
   description = "Use this channel for collaboration, research questions, project ideas, or thoughtful technical discussion.",
   badge = "Thoughtful replies over volume",
+  botProtectionMode = "disabled",
+  turnstileSiteKey = null,
 }: ContactFormProps) {
   const [state, setState] = useState<{
     status: "idle" | "submitting" | "success" | "error";
@@ -43,12 +49,14 @@ export function ContactForm({
   const [captchaReady, setCaptchaReady] = useState(false);
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const requiresBotProtection =
+    botProtectionMode === "required" && Boolean(turnstileSiteKey);
+  const botProtectionMisconfigured = botProtectionMode === "misconfigured";
   const fieldClassName =
     "rounded-[1.2rem] border border-white/8 bg-white/4 px-4 py-3.5 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/30 focus:bg-white/7";
 
   useEffect(() => {
-    if (!turnstileSiteKey || !turnstileContainerRef.current) {
+    if (!requiresBotProtection || !turnstileSiteKey || !turnstileContainerRef.current) {
       return;
     }
 
@@ -116,7 +124,7 @@ export function ContactForm({
         widgetIdRef.current = null;
       }
     };
-  }, [turnstileSiteKey]);
+  }, [requiresBotProtection, turnstileSiteKey]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -126,7 +134,16 @@ export function ContactForm({
     const formData = new FormData(form);
     formData.set("captchaToken", captchaToken);
 
-    if (turnstileSiteKey && !captchaToken) {
+    if (botProtectionMisconfigured) {
+      setState({
+        status: "error",
+        message:
+          "This form is temporarily unavailable because bot protection is not configured correctly.",
+      });
+      return;
+    }
+
+    if (requiresBotProtection && !captchaToken) {
       setState({
         status: "error",
         message: "Complete the bot protection check before sending your message.",
@@ -231,7 +248,7 @@ export function ContactForm({
       />
       <input type="hidden" name="captchaToken" value={captchaToken} />
 
-      {turnstileSiteKey ? (
+      {requiresBotProtection ? (
         <div className="mt-5 rounded-[1.25rem] border border-white/8 bg-white/4 p-4">
           <p className="text-sm text-slate-400">
             Complete the bot protection check before sending your message.
@@ -245,12 +262,30 @@ export function ContactForm({
         </div>
       ) : null}
 
+      {botProtectionMode === "disabled" ? (
+        <div className="mt-5 rounded-[1.25rem] border border-emerald-400/18 bg-emerald-400/8 p-4 text-sm text-emerald-200">
+          Local development mode is active, so bot protection is disabled for testing.
+        </div>
+      ) : null}
+
+      {botProtectionMisconfigured ? (
+        <div className="mt-5 rounded-[1.25rem] border border-amber-400/20 bg-amber-400/10 p-4">
+          <p className="text-sm text-amber-200">
+            This form is temporarily unavailable because bot protection is not configured correctly.
+          </p>
+          <p className="mt-2 text-xs text-amber-100/80">
+            Add both `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` in non-local environments.
+          </p>
+        </div>
+      ) : null}
+
       <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <button
           type="submit"
           disabled={
             state.status === "submitting" ||
-            (Boolean(turnstileSiteKey) && !captchaToken)
+            botProtectionMisconfigured ||
+            (requiresBotProtection && !captchaToken)
           }
           className="inline-flex items-center justify-center gap-2 rounded-[1.15rem] bg-sky-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
         >

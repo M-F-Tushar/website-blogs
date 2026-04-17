@@ -11,7 +11,17 @@ function isValidHttpUrl(value: string | undefined) {
   }
 }
 
+function isLocalSiteUrl(value: string | undefined) {
+  if (!isValidHttpUrl(value)) {
+    return false;
+  }
+
+  const parsed = new URL(value as string);
+  return ["localhost", "127.0.0.1", "::1"].includes(parsed.hostname);
+}
+
 export type AppRuntimeStage = "local" | "staging" | "production";
+export type ContactBotProtectionMode = "disabled" | "required" | "misconfigured";
 
 export function getAppRuntimeStage(): AppRuntimeStage {
   const explicitStage = process.env.APP_ENV?.toLowerCase();
@@ -39,7 +49,48 @@ export function getAppRuntimeStage(): AppRuntimeStage {
     return "production";
   }
 
+  if (isLocalSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)) {
+    return "local";
+  }
+
   return process.env.NODE_ENV === "production" ? "production" : "local";
+}
+
+function readConfiguredEnvValue(value: string | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+export function getContactBotProtectionConfig(): {
+  mode: ContactBotProtectionMode;
+  siteKey: string | null;
+  stage: AppRuntimeStage;
+} {
+  const stage = getAppRuntimeStage();
+  const siteKey = readConfiguredEnvValue(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const secretKey = readConfiguredEnvValue(process.env.TURNSTILE_SECRET_KEY);
+
+  if (stage === "local") {
+    return {
+      mode: "disabled",
+      siteKey: null,
+      stage,
+    };
+  }
+
+  if (siteKey && secretKey) {
+    return {
+      mode: "required",
+      siteKey,
+      stage,
+    };
+  }
+
+  return {
+    mode: "misconfigured",
+    siteKey: null,
+    stage,
+  };
 }
 
 export function hasPublicSupabaseEnv() {

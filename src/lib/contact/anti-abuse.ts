@@ -160,13 +160,14 @@ export function extractClientIp(headers: Headers) {
 
 export async function verifyTurnstileToken(token: string | null, sourceIp: string | null) {
   const stage = getAppRuntimeStage();
+
+  if (stage === "local") {
+    return;
+  }
+
   const secret = getTurnstileSecretKey();
 
   if (!secret) {
-    if (stage === "local") {
-      return;
-    }
-
     throw new ContactRequestError(
       "Bot protection is not configured correctly.",
       500,

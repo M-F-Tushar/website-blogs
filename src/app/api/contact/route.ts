@@ -9,6 +9,7 @@ import {
   extractClientIp,
 } from "@/lib/contact/anti-abuse";
 import { submitContactMessage } from "@/features/admin/content-actions";
+import { getAppRuntimeStage } from "@/lib/supabase/env";
 
 export const runtime = "nodejs";
 
@@ -83,6 +84,14 @@ export async function POST(request: Request) {
       status = error.status;
       message = error.exposeMessage ? error.message : message;
     } else if (error instanceof Error) {
+      if (
+        getAppRuntimeStage() === "local" &&
+        error.message.includes("Supabase service role environment variables are missing")
+      ) {
+        message =
+          "Local contact storage is not configured. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to .env.local.";
+      }
+
       console.error("Unexpected contact submission failure", error);
     }
 

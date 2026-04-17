@@ -44,3 +44,9 @@ GEMINI.md
 
 # local agent output
 .superpowers/**/complete.html
+
+# automated browser test artifacts
+test-results/
+playwright-report/
+.playwright-cli/
+output/
