@@ -38,6 +38,7 @@ interface AdminManagedPageWorkspaceProps {
   settingsHint: string;
   searchParams: Promise<{ edit?: string }>;
   adminRoute: string;
+  showIntro?: boolean;
   collectionActions?: readonly {
     href: string;
     label: string;
@@ -54,6 +55,7 @@ export async function AdminManagedPageWorkspace({
   settingsHint,
   searchParams,
   adminRoute,
+  showIntro = true,
   collectionActions = [],
   allowImage = false,
   imageHint,
@@ -71,24 +73,26 @@ export async function AdminManagedPageWorkspace({
 
   return (
     <div className="space-y-8">
-      <AdminPageIntro
-        eyebrow="Page workspace"
-        title={`${pageTitle} page`}
-        description={description}
-        actions={
-          collectionActions.length > 0
-            ? collectionActions.map((action) => (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="inline-flex items-center justify-center rounded-full border border-border-strong px-5 py-3 text-sm font-medium text-foreground transition hover:bg-white/60"
-                >
-                  {action.label}
-                </Link>
-              ))
-            : undefined
-        }
-      />
+      {showIntro ? (
+        <AdminPageIntro
+          eyebrow="Page workspace"
+          title={`${pageTitle} page`}
+          description={description}
+          actions={
+            collectionActions.length > 0
+              ? collectionActions.map((action) => (
+                  <Link
+                    key={action.href}
+                    href={action.href}
+                    className="inline-flex items-center justify-center rounded-full border border-border-strong px-5 py-3 text-sm font-medium text-foreground transition hover:bg-white/60"
+                  >
+                    {action.label}
+                  </Link>
+                ))
+              : undefined
+          }
+        />
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
