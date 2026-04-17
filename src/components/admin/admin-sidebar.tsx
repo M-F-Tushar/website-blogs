@@ -39,7 +39,7 @@ const navigationGroups = [
         label: "Recommendations page",
         icon: Star,
       },
-      { href: "/admin/content/contact", label: "Contact page", icon: Mail },
+      { href: "/admin/content/contact", label: "Contact links", icon: Mail },
     ],
   },
   {

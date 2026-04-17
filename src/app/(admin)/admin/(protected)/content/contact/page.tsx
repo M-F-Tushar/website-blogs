@@ -1,38 +1,26 @@
-import { AdminManagedPageWorkspace } from "@/components/admin/admin-managed-page-workspace";
+import Link from "next/link";
+
 import {
   AdminField,
   AdminInput,
   AdminPageIntro,
   AdminPanel,
+  StatusPill,
   SubmitButton,
 } from "@/components/admin/primitives";
-import {
-  saveContactQuickLinksAction,
-} from "@/features/admin/actions";
+import { saveContactQuickLinksAction } from "@/features/admin/actions";
 import { fallbackSiteSettings } from "@/lib/content/fallback-data";
 import {
   getAdminPageSections,
   getAdminSiteSettings,
 } from "@/lib/content/admin-queries";
 
-const CONTACT_SECTION_TYPES = [
-  { value: "hero", label: "Hero" },
-  { value: "detail", label: "Detail card" },
-  { value: "form", label: "Form intro" },
-] as const;
-
-interface AdminContactPageManagerProps {
-  searchParams: Promise<{ edit?: string }>;
-}
-
 function getSectionHref(section: { settings: Record<string, unknown> } | null) {
   const href = section?.settings?.href;
   return typeof href === "string" && href.trim().length > 0 ? href.trim() : null;
 }
 
-export default async function AdminContactPageManager({
-  searchParams,
-}: AdminContactPageManagerProps) {
+export default async function AdminContactPageManager() {
   const [settings, sections] = await Promise.all([
     getAdminSiteSettings(),
     getAdminPageSections("contact"),
@@ -42,13 +30,27 @@ export default async function AdminContactPageManager({
   const githubSection = sections.find((section) => section.sectionKey === "github") ?? null;
   const linkedinSection = sections.find((section) => section.sectionKey === "linkedin") ?? null;
   const locationSection = sections.find((section) => section.sectionKey === "location") ?? null;
+  const visibleCards = [
+    emailSection ? "Email" : null,
+    githubSection?.isVisible ? "GitHub" : null,
+    linkedinSection?.isVisible ? "LinkedIn" : null,
+    locationSection?.isVisible ? "Location" : null,
+  ].filter(Boolean) as string[];
 
   return (
     <div className="space-y-8">
       <AdminPageIntro
-        eyebrow="Page workspace"
-        title="Contact page"
-        description="Use the quick editor below for the public contact cards. The larger section editor is still available underneath for advanced copy changes."
+        eyebrow="Contact"
+        title="Quick contact editor"
+        description="This page is now the simple control panel for the live contact cards. Update the values below and save. If you ever need the old section builder, use the advanced editor link."
+        actions={
+          <Link
+            href="/admin/content/contact/advanced"
+            className="inline-flex items-center justify-center rounded-full border border-border-strong px-5 py-3 text-sm font-medium text-foreground transition hover:bg-white/60"
+          >
+            Open advanced editor
+          </Link>
+        }
       />
 
       <AdminPanel className="admin-panel-quiet">
@@ -62,6 +64,13 @@ export default async function AdminContactPageManager({
               Change the values here and save. Leave GitHub, LinkedIn, or Location blank if
               you want that card hidden.
             </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {visibleCards.map((item) => (
+              <StatusPill key={item} tone="success">
+                {item}
+              </StatusPill>
+            ))}
           </div>
         </div>
 
@@ -130,16 +139,29 @@ export default async function AdminContactPageManager({
         </form>
       </AdminPanel>
 
-      <AdminManagedPageWorkspace
-        pageKey="contact"
-        pageTitle="Contact"
-        description="Control the public contact page intro, live contact cards, and form copy from admin."
-        sectionTypes={CONTACT_SECTION_TYPES}
-        settingsHint='Hero supports {"eyebrow":"Contact","tracks":["Research conversations"],"availabilityTitle":"Currently Available","availabilityDescription":"Reply timing or expectations"}. Form supports {"eyebrow":"Secure intake","badge":"Thoughtful replies over volume"}. Detail cards use Heading as the visible value and Subheading as supporting copy. For the email card, keep Section key as "email" and the public mailto link will follow the Heading automatically. Other cards can use Settings JSON like {"eyebrow":"GitHub","href":"https://github.com/username","icon":"github"}.'
-        searchParams={searchParams}
-        adminRoute="/admin/content/contact"
-        showIntro={false}
-      />
+      <AdminPanel className="admin-panel-quiet">
+        <p className="font-display text-xl font-semibold tracking-[-0.04em] text-foreground">
+          What each field does
+        </p>
+        <div className="mt-4 grid gap-3 text-sm leading-7 text-muted md:grid-cols-2">
+          <div className="rounded-[1.1rem] border border-border bg-white/60 p-4">
+            <p className="font-medium text-foreground">Public email</p>
+            <p className="mt-1">Main featured email card shown on the contact page.</p>
+          </div>
+          <div className="rounded-[1.1rem] border border-border bg-white/60 p-4">
+            <p className="font-medium text-foreground">GitHub URL</p>
+            <p className="mt-1">Shows or hides the GitHub card based on whether a URL is filled in.</p>
+          </div>
+          <div className="rounded-[1.1rem] border border-border bg-white/60 p-4">
+            <p className="font-medium text-foreground">LinkedIn URL</p>
+            <p className="mt-1">Shows or hides the LinkedIn card based on whether a URL is filled in.</p>
+          </div>
+          <div className="rounded-[1.1rem] border border-border bg-white/60 p-4">
+            <p className="font-medium text-foreground">Location</p>
+            <p className="mt-1">Optional location card for city, country, or remote availability.</p>
+          </div>
+        </div>
+      </AdminPanel>
     </div>
   );
 }

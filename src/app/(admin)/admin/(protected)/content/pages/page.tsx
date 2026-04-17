@@ -42,9 +42,9 @@ const pageWorkspaces = [
   },
   {
     pageKey: "contact",
-    title: "Contact page",
+    title: "Contact links",
     href: "/admin/content/contact",
-    description: "Intro copy, availability framing, and contact-form context.",
+    description: "Simple editor for email, GitHub, LinkedIn, and location cards.",
     icon: Mail,
   },
 ] as const;
