@@ -42,7 +42,7 @@ export default async function AdminRecommendationsPage({
       <AdminPageIntro
         eyebrow="Collections"
         title="Recommendations"
-        description="Curate books, tools, and resources with rationale, audience fit, and markdown-rich notes in one workflow."
+        description="Curate books, tools, and resources with the exact details the public recommendation page needs: what it offers, who it helps, why it is worth the time, and when someone should use it."
         actions={
           <Link
             href="/admin/content/recommendations"
@@ -130,7 +130,7 @@ export default async function AdminRecommendationsPage({
               <AdminField label="Slug">
                 <AdminInput name="slug" defaultValue={selectedItem?.slug ?? ""} />
               </AdminField>
-              <AdminField label="Category">
+              <AdminField label="Category" hint="Shown as the public recommendation type.">
                 <AdminInput
                   name="categoryName"
                   defaultValue={selectedItem?.category ?? ""}
@@ -157,11 +157,27 @@ export default async function AdminRecommendationsPage({
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
-              <AdminField label="Audience">
-                <AdminInput name="audience" defaultValue={selectedItem?.audience ?? ""} />
+              <AdminField
+                label="Audience"
+                hint="Required. This powers the public 'who gets the most from it' section."
+              >
+                <AdminInput
+                  name="audience"
+                  defaultValue={selectedItem?.audience ?? ""}
+                  placeholder="Students moving from fundamentals into applied ML work"
+                  required
+                />
               </AdminField>
-              <AdminField label="Use case">
-                <AdminInput name="useCase" defaultValue={selectedItem?.useCase ?? ""} />
+              <AdminField
+                label="Use case"
+                hint="Required. Explain when or how someone should use this recommendation."
+              >
+                <AdminInput
+                  name="useCase"
+                  defaultValue={selectedItem?.useCase ?? ""}
+                  placeholder="Building intuition while implementing end-to-end workflows"
+                  required
+                />
               </AdminField>
             </div>
 
@@ -178,6 +194,7 @@ export default async function AdminRecommendationsPage({
               name="coverAssetId"
               assets={assets}
               selectedAssetId={selectedItem?.coverAssetId ?? null}
+              hint="This image supports the recommendation hero. Upload it in Media with meaningful alt text first."
             />
 
             <AdminCheckbox
@@ -186,19 +203,29 @@ export default async function AdminRecommendationsPage({
               defaultChecked={selectedItem?.featured ?? false}
             />
 
-            <AdminField label="Summary">
+            <AdminField
+              label="Summary"
+              hint="Required. This is the main promise line in the recommendation hero."
+            >
               <AdminTextarea
                 name="summary"
                 rows={4}
                 defaultValue={selectedItem?.summary ?? ""}
+                placeholder="Explain what this recommendation offers and why someone should care in 1-2 sentences."
+                required
               />
             </AdminField>
 
-            <AdminField label="Why recommend it">
+            <AdminField
+              label="Why recommend it"
+              hint="Required. This powers the main value framing on the public recommendation page."
+            >
               <AdminTextarea
                 name="whyRecommend"
                 rows={4}
                 defaultValue={selectedItem?.whyRecommend ?? ""}
+                placeholder="Explain what makes this resource genuinely useful, trustworthy, or worth the time."
+                required
               />
             </AdminField>
 
@@ -207,7 +234,7 @@ export default async function AdminRecommendationsPage({
               name="bodyMarkdown"
               label="Recommendation markdown"
               defaultValue={selectedItem?.bodyMarkdown ?? ""}
-              hint="Use markdown for longer rationale, usage notes, comparisons, or implementation examples."
+              hint="Use this for longer rationale, comparisons, cautions, setup notes, or examples. Keep it supportive of the recommendation instead of turning it into a blog post."
               assets={assets}
               variant="recommendation"
               required
@@ -226,7 +253,7 @@ export default async function AdminRecommendationsPage({
               </AdminField>
             </div>
 
-            <AdminField label="Meta description">
+            <AdminField label="Meta description" hint="Used for search previews and social sharing.">
               <AdminTextarea
                 name="metaDescription"
                 rows={4}

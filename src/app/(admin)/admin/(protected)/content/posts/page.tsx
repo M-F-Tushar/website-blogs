@@ -32,7 +32,7 @@ export default async function AdminPostsPage({
       <AdminPageIntro
         eyebrow="Collections"
         title="Posts"
-        description="Write in markdown, preview the final rendering, insert embedded media, and keep publish metadata close to the actual draft."
+        description="Write the full post, intro, media, and SEO details here. The public blog page now pulls its opening statement from the excerpt and builds its table of contents from your markdown headings."
         actions={
           <Link
             href="/admin/content/posts"
@@ -130,7 +130,7 @@ export default async function AdminPostsPage({
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
-              <AdminField label="Published at">
+            <AdminField label="Published at" hint="Used for the public post metadata line.">
                 <AdminInput
                   name="publishedAt"
                   type="datetime-local"
@@ -143,6 +143,7 @@ export default async function AdminPostsPage({
                 name="coverAssetId"
                 assets={assets}
                 selectedAssetId={selectedPost?.coverAssetId ?? null}
+                hint="This image becomes the visual preface on the public post. Upload it in Media with strong alt text first."
               />
             </div>
 
@@ -164,11 +165,16 @@ export default async function AdminPostsPage({
               defaultChecked={selectedPost?.featured ?? false}
             />
 
-            <AdminField label="Excerpt">
+            <AdminField
+              label="Excerpt"
+              hint="Required. This powers the public intro and the caption overlay on the cover image."
+            >
               <AdminTextarea
                 name="excerpt"
                 rows={4}
                 defaultValue={selectedPost?.excerpt ?? ""}
+                placeholder="Write a clear 1-2 sentence opening that tells readers what they will get from this post."
+                required
               />
             </AdminField>
 
@@ -177,7 +183,7 @@ export default async function AdminPostsPage({
               name="bodyMarkdown"
               label="Article markdown"
               defaultValue={selectedPost?.bodyMarkdown ?? ""}
-              hint="The preview uses the same markdown renderer as the public site."
+              hint="Use H2/H3 headings for section structure. Those headings become the public table of contents automatically."
               assets={assets}
               variant="post"
               required
@@ -196,7 +202,7 @@ export default async function AdminPostsPage({
               </AdminField>
             </div>
 
-            <AdminField label="Meta description">
+              <AdminField label="Meta description" hint="Used for search previews and social sharing.">
               <AdminTextarea
                 name="metaDescription"
                 rows={4}

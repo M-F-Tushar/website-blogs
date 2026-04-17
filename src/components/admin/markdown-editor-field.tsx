@@ -28,7 +28,19 @@ const guideItems = [
   "Embedded images use standard markdown image syntax and can be inserted from the media library.",
   "Diagrams can be written with ```mermaid fenced blocks and render on the public site.",
   "Raw HTML embeds are intentionally not supported for production safety.",
+  "Use H2 and H3 headings to create section anchors. Blog and academic detail pages turn those headings into the public table of contents automatically.",
 ];
+
+const guideNotesByVariant: Record<ComposerVariant, string> = {
+  post:
+    "Posts now use a reading rail and table of contents, so a strong excerpt and clear H2 sectioning will make the public page feel complete.",
+  academic:
+    "Academic entries benefit from H2-based structure, concise summaries, and sections that map to context, evidence, method, or follow-up work.",
+  recommendation:
+    "Recommendation pages work best when the markdown expands on value, cautions, comparisons, and real usage notes instead of repeating the summary.",
+  section:
+    "Managed sections should stay concise and structured so public page builders can reuse the copy cleanly.",
+};
 
 const templatesByVariant: Record<ComposerVariant, Array<{ label: string; snippet: string }>> = {
   post: [
@@ -185,6 +197,7 @@ export function MarkdownEditorField({
   }
 
   const templates = templatesByVariant[variant];
+  const guideNote = guideNotesByVariant[variant];
 
   return (
     <div className="flex flex-col gap-3 text-sm text-muted">
@@ -298,6 +311,7 @@ export function MarkdownEditorField({
                 <p className="font-display text-xl font-semibold tracking-[-0.04em] text-foreground">
                   Markdown features in this admin
                 </p>
+                <p className="mt-3 text-sm leading-7 text-muted">{guideNote}</p>
                 <ul className="mt-4 space-y-3 text-sm leading-7 text-muted">
                   {guideItems.map((item) => (
                     <li key={item}>{item}</li>

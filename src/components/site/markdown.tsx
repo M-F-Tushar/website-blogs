@@ -1,8 +1,10 @@
+import { Children, isValidElement, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 
+import { createArticleHeadingIdGenerator } from "@/lib/content/article-outline";
 import { MermaidDiagram } from "@/components/site/mermaid-diagram";
 import { cn } from "@/lib/utils";
 
@@ -11,7 +13,26 @@ interface MarkdownProps {
   className?: string;
 }
 
+function getNodeTextContent(children: ReactNode): string {
+  return Children.toArray(children)
+    .map((child) => {
+      if (typeof child === "string" || typeof child === "number") {
+        return String(child);
+      }
+
+      if (!isValidElement(child)) {
+        return "";
+      }
+
+      return getNodeTextContent((child.props as { children?: ReactNode }).children);
+    })
+    .join("")
+    .trim();
+}
+
 export function Markdown({ content, className }: MarkdownProps) {
+  const nextHeadingId = createArticleHeadingIdGenerator();
+
   const components: Components = {
     a(props) {
       const href = props.href ?? "";
@@ -66,6 +87,21 @@ export function Markdown({ content, className }: MarkdownProps) {
     },
     td(props) {
       return <td {...props} className="border-b border-white/6 px-3 py-2 align-top" />;
+    },
+    h2(props) {
+      const id = nextHeadingId(getNodeTextContent(props.children));
+
+      return <h2 {...props} id={id} className={cn("scroll-mt-32", props.className)} />;
+    },
+    h3(props) {
+      const id = nextHeadingId(getNodeTextContent(props.children));
+
+      return <h3 {...props} id={id} className={cn("scroll-mt-32", props.className)} />;
+    },
+    h4(props) {
+      const id = nextHeadingId(getNodeTextContent(props.children));
+
+      return <h4 {...props} id={id} className={cn("scroll-mt-32", props.className)} />;
     },
   };
 

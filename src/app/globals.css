@@ -595,6 +595,156 @@ a {
   padding: 0;
 }
 
+.article-markdown {
+  font-size: 1.04rem;
+}
+
+.article-markdown > *:first-child {
+  margin-top: 0;
+}
+
+.article-markdown > p:first-of-type {
+  color: #d9e4f0;
+  font-size: 1.18rem;
+  line-height: 1.95;
+}
+
+.article-markdown > p:first-of-type::first-letter {
+  color: white;
+  float: left;
+  font-family: var(--font-display), serif;
+  font-size: 4.9rem;
+  line-height: 0.86;
+  margin-right: 0.65rem;
+  margin-top: 0.3rem;
+}
+
+.article-markdown h2,
+.article-markdown h3,
+.article-markdown h4 {
+  position: relative;
+}
+
+.article-markdown h2 {
+  margin-top: 4.4rem;
+  padding-top: 1rem;
+}
+
+.article-markdown h2::before {
+  background: linear-gradient(90deg, rgba(125, 211, 252, 0.8), rgba(125, 211, 252, 0.08), transparent);
+  content: "";
+  height: 1px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.article-markdown h3 {
+  margin-top: 3rem;
+}
+
+.article-markdown p,
+.article-markdown li,
+.article-markdown blockquote {
+  max-width: 42rem;
+}
+
+.article-markdown ul,
+.article-markdown ol {
+  max-width: 38rem;
+}
+
+.article-markdown li + li {
+  margin-top: 0.65rem;
+}
+
+.article-markdown hr {
+  margin: 3rem 0;
+}
+
+.article-markdown blockquote {
+  border-left: 0;
+  color: #e2ecf6;
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  letter-spacing: -0.03em;
+  line-height: 1.55;
+  margin-left: 0;
+  padding-left: 0;
+  position: relative;
+}
+
+.article-markdown blockquote::before {
+  color: rgba(125, 211, 252, 0.6);
+  content: "\201c";
+  font-size: 4rem;
+  left: -0.45rem;
+  line-height: 1;
+  position: absolute;
+  top: -0.45rem;
+}
+
+.article-markdown img,
+.article-markdown .mermaid-shell,
+.article-markdown pre,
+.article-markdown > div:has(> table) {
+  max-width: 100%;
+}
+
+.article-markdown img {
+  margin: 2.25rem 0;
+}
+
+.recommendation-markdown {
+  font-size: 1rem;
+}
+
+.recommendation-markdown > *:first-child {
+  margin-top: 0;
+}
+
+.recommendation-markdown h2,
+.recommendation-markdown h3,
+.recommendation-markdown h4 {
+  margin-top: 2.8rem;
+}
+
+.recommendation-markdown h2 {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+}
+
+.recommendation-markdown p,
+.recommendation-markdown li {
+  color: #cbd5e1;
+  line-height: 1.95;
+  max-width: 44rem;
+}
+
+.recommendation-markdown ul,
+.recommendation-markdown ol {
+  max-width: 40rem;
+}
+
+.recommendation-markdown li + li {
+  margin-top: 0.6rem;
+}
+
+.recommendation-markdown blockquote {
+  border-left-color: rgba(125, 211, 252, 0.45);
+  color: #dbeafe;
+  font-size: 1.08rem;
+  max-width: 42rem;
+}
+
+.recommendation-markdown pre,
+.recommendation-markdown .mermaid-shell,
+.recommendation-markdown img,
+.recommendation-markdown > div:has(> table) {
+  max-width: 100%;
+}
+
 .mermaid-shell {
   background:
     linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.96)),
@@ -828,6 +978,24 @@ a {
   .signal-card,
   .detail-card {
     padding: 1rem 1rem 1.1rem;
+  }
+
+  .article-markdown {
+    font-size: 1rem;
+  }
+
+  .article-markdown > p:first-of-type {
+    font-size: 1.06rem;
+    line-height: 1.85;
+  }
+
+  .article-markdown > p:first-of-type::first-letter {
+    font-size: 3.8rem;
+    margin-right: 0.45rem;
+  }
+
+  .article-markdown h2 {
+    margin-top: 3.25rem;
   }
 }
 

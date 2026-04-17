@@ -41,7 +41,7 @@ export default async function AdminAcademicPage({
       <AdminPageIntro
         eyebrow="Collections"
         title="Academic entries"
-        description="Write research notes, coursework reflections, experiments, and paper summaries with the same markdown workflow used on the public site."
+        description="Author the full academic entry here, including its summary, timeline, external reference, media, and structured markdown. The public academic page now uses your summary as the opening frame and your headings as the table of contents."
         actions={
           <Link
             href="/admin/content/academic"
@@ -152,7 +152,7 @@ export default async function AdminAcademicPage({
                   <option value="archived">archived</option>
                 </AdminSelect>
               </AdminField>
-              <AdminField label="External URL">
+              <AdminField label="External URL" hint="Optional. Shows as an external reference on the public page.">
                 <AdminInput
                   name="externalUrl"
                   defaultValue={selectedEntry?.externalUrl ?? ""}
@@ -183,6 +183,7 @@ export default async function AdminAcademicPage({
               name="coverAssetId"
               assets={assets}
               selectedAssetId={selectedEntry?.coverAssetId ?? null}
+              hint="This becomes the academic page visual anchor. Upload it in Media with accurate alt text first."
             />
 
             <AdminCheckbox
@@ -191,11 +192,16 @@ export default async function AdminAcademicPage({
               defaultChecked={selectedEntry?.featured ?? false}
             />
 
-            <AdminField label="Summary">
+            <AdminField
+              label="Summary"
+              hint="Required. This appears in the opening frame of the academic page and should explain the note in 1-2 sentences."
+            >
               <AdminTextarea
                 name="summary"
                 rows={4}
                 defaultValue={selectedEntry?.summary ?? ""}
+                placeholder="Summarize the project, paper, experiment, or coursework note and what readers will learn from it."
+                required
               />
             </AdminField>
 
@@ -204,7 +210,7 @@ export default async function AdminAcademicPage({
               name="bodyMarkdown"
               label="Entry markdown"
               defaultValue={selectedEntry?.bodyMarkdown ?? ""}
-              hint="Preview matches the public academic renderer."
+              hint="Use H2/H3 headings for sections like context, method, observations, and follow-up. Those headings become the public table of contents."
               assets={assets}
               variant="academic"
               required
@@ -223,7 +229,7 @@ export default async function AdminAcademicPage({
               </AdminField>
             </div>
 
-            <AdminField label="Meta description">
+            <AdminField label="Meta description" hint="Used for search previews and social sharing.">
               <AdminTextarea
                 name="metaDescription"
                 rows={4}
