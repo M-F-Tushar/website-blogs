@@ -100,7 +100,7 @@ export const postSchema = z.object({
   id: z.string().uuid().nullable(),
   title: z.string().trim().min(4),
   slug: slugSchema,
-  excerpt: z.string().trim().min(24, "Add an excerpt so the post intro feels complete."),
+  excerpt: z.string().trim().nullable(),
   bodyMarkdown: z.string().trim().min(20),
   status: z.enum(["draft", "published", "archived"]),
   featured: z.boolean(),
@@ -117,7 +117,7 @@ export const academicEntrySchema = z.object({
   id: z.string().uuid().nullable(),
   title: z.string().trim().min(4),
   slug: slugSchema,
-  summary: z.string().trim().min(24, "Add a summary so the academic intro can orient the reader."),
+  summary: z.string().trim().nullable(),
   bodyMarkdown: z.string().trim().min(20),
   entryType: z.enum([
     "coursework",
@@ -142,20 +142,11 @@ export const recommendationSchema = z.object({
   id: z.string().uuid().nullable(),
   title: z.string().trim().min(4),
   slug: slugSchema,
-  summary: z.string().trim().min(24, "Add a summary to explain what the recommendation offers."),
+  summary: z.string().trim().nullable(),
   bodyMarkdown: z.string().trim().min(20),
-  whyRecommend: z
-    .string()
-    .trim()
-    .min(24, "Explain why this recommendation is worth someone's time."),
-  audience: z
-    .string()
-    .trim()
-    .min(12, "Name who benefits most from this recommendation."),
-  useCase: z
-    .string()
-    .trim()
-    .min(16, "Describe how someone should use this recommendation in practice."),
+  whyRecommend: z.string().trim().nullable(),
+  audience: z.string().trim().nullable(),
+  useCase: z.string().trim().nullable(),
   level: z.enum(["beginner", "intermediate", "advanced"]),
   externalUrl: nullableUrlSchema.nullable(),
   status: z.enum(["draft", "published", "archived"]),

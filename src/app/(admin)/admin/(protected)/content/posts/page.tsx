@@ -174,7 +174,6 @@ export default async function AdminPostsPage({
                 rows={4}
                 defaultValue={selectedPost?.excerpt ?? ""}
                 placeholder="Write a clear 1-2 sentence opening that tells readers what they will get from this post."
-                required
               />
             </AdminField>
 

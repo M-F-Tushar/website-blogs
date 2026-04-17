@@ -165,7 +165,6 @@ export default async function AdminRecommendationsPage({
                   name="audience"
                   defaultValue={selectedItem?.audience ?? ""}
                   placeholder="Students moving from fundamentals into applied ML work"
-                  required
                 />
               </AdminField>
               <AdminField
@@ -176,7 +175,6 @@ export default async function AdminRecommendationsPage({
                   name="useCase"
                   defaultValue={selectedItem?.useCase ?? ""}
                   placeholder="Building intuition while implementing end-to-end workflows"
-                  required
                 />
               </AdminField>
             </div>
@@ -212,7 +210,6 @@ export default async function AdminRecommendationsPage({
                 rows={4}
                 defaultValue={selectedItem?.summary ?? ""}
                 placeholder="Explain what this recommendation offers and why someone should care in 1-2 sentences."
-                required
               />
             </AdminField>
 
@@ -225,7 +222,6 @@ export default async function AdminRecommendationsPage({
                 rows={4}
                 defaultValue={selectedItem?.whyRecommend ?? ""}
                 placeholder="Explain what makes this resource genuinely useful, trustworthy, or worth the time."
-                required
               />
             </AdminField>
 

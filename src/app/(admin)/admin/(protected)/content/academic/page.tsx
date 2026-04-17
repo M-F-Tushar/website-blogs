@@ -201,7 +201,6 @@ export default async function AdminAcademicPage({
                 rows={4}
                 defaultValue={selectedEntry?.summary ?? ""}
                 placeholder="Summarize the project, paper, experiment, or coursework note and what readers will learn from it."
-                required
               />
             </AdminField>
 
