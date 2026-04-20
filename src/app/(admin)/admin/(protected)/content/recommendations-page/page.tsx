@@ -19,7 +19,7 @@ export default function AdminRecommendationsPageManager({
       pageTitle="Recommendations"
       description="Control the recommendations landing page intro and supporting curation context from admin."
       sectionTypes={RECOMMENDATIONS_PAGE_SECTION_TYPES}
-      settingsHint='Hero supports {"eyebrow":"Recommendations","panelLabel":"Curated stack","panelItems":[{"label":"Saved resources","value":"05","description":"Published recommendations"}]}. Other sections can use {"eyebrow":"Curation rule"}.'
+      settingsHint="Optional advanced settings for intro badges, archive labels, and recommendation metrics. Leave this as {} for normal editing."
       searchParams={searchParams}
       adminRoute="/admin/content/recommendations-page"
       collectionActions={[

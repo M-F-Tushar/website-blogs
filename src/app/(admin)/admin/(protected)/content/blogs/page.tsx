@@ -19,7 +19,7 @@ export default function AdminBlogsPageManager({
       pageTitle="Blogs"
       description="Edit the writing index page intro and supporting context so the public blog landing page reflects admin content."
       sectionTypes={BLOGS_SECTION_TYPES}
-      settingsHint='Hero supports {"eyebrow":"Blogs","panelLabel":"Writing system","panelItems":[{"label":"Published nodes","value":"07","description":"Published posts"}]}. Other sections can use {"eyebrow":"Why it matters"}.'
+      settingsHint="Optional advanced settings for intro badges, archive labels, and small page metrics. Leave this as {} for normal editing."
       searchParams={searchParams}
       adminRoute="/admin/content/blogs"
       collectionActions={[{ href: "/admin/content/posts", label: "Manage posts" }]}

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowUpRight,
@@ -116,7 +117,7 @@ export default async function RecommendationDetailPage({
                     href={item.externalUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-slate-950 transition hover:bg-sky-100"
+                    className="inline-flex items-center gap-2 rounded-full border border-sky-300/25 bg-sky-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_36px_rgba(14,165,233,0.22)] transition hover:border-sky-200/40 hover:bg-sky-400"
                   >
                     Open resource
                     <ArrowUpRight className="h-4 w-4" />
@@ -207,6 +208,25 @@ export default async function RecommendationDetailPage({
             <div className="recommendation-markdown mt-10 max-w-4xl border-t border-white/8 pt-8 md:pt-10">
               <Markdown content={item.bodyMarkdown} />
             </div>
+
+            <footer className="mt-14 border-t border-white/8 pt-8">
+              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sky-200/72">
+                    Keep curating
+                  </p>
+                  <h2 className="mt-3 font-display text-[1.8rem] font-semibold leading-tight tracking-[-0.04em] text-white">
+                    Compare this with the full resource shelf
+                  </h2>
+                </div>
+                <Link
+                  href="/recommendations"
+                  className="inline-flex shrink-0 items-center justify-center rounded-full bg-sky-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-400"
+                >
+                  Back to resources
+                </Link>
+              </div>
+            </footer>
           </div>
 
           <aside className="xl:block">

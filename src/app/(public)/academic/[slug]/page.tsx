@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
@@ -56,6 +57,7 @@ export default async function AcademicDetailPage({
     entry.externalUrl ? "reference-linked" : null,
   ].filter(Boolean) as string[];
   const academicDate = formatDisplayDate(entry.completedAt ?? entry.startedAt);
+  const mainSectionCount = headings.filter((heading) => heading.level === 2).length;
 
   return (
     <article className="relative">
@@ -125,7 +127,7 @@ export default async function AcademicDetailPage({
                 Sections
               </p>
               <p className="mt-2 text-base text-white">
-                {Math.max(headings.filter((heading) => heading.level === 2).length, 1)}
+                {mainSectionCount > 0 ? mainSectionCount : "Opening note"}
               </p>
             </div>
           </div>
@@ -223,6 +225,27 @@ export default async function AcademicDetailPage({
             >
               <Markdown content={entry.bodyMarkdown} />
             </div>
+            <footer className="mt-14 border-t border-white/8 pt-8">
+              <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sky-200/72">
+                Continue the evidence trail
+              </p>
+              <div className="mt-4 flex flex-col gap-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="font-display text-[1.8rem] font-semibold leading-tight tracking-[-0.04em] text-white">
+                    More academic records and research notes
+                  </h2>
+                  <p className="mt-2 text-sm leading-7 text-slate-400">
+                    Return to the academic archive for coursework, experiments, and deeper study.
+                  </p>
+                </div>
+                <Link
+                  href="/academic"
+                  className="inline-flex shrink-0 items-center justify-center rounded-full bg-sky-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-400"
+                >
+                  Back to academic
+                </Link>
+              </div>
+            </footer>
           </div>
 
           <ArticleTableOfContents headings={headings} />

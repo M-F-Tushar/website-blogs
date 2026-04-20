@@ -247,20 +247,33 @@ export async function ContactPageContent({
   const socialCards = detailCards.length > 0 ? [...detailCards, ...fallbackCards] : fallbackCards;
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
-      <section className="mx-auto max-w-4xl text-center">
-        <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
-          <span className="text-sky-400">✦</span>
-          {getSectionSettingString(heroSection, "eyebrow") ?? page?.title ?? "Get in touch"}
-        </p>
-        <h1 className="mt-6 font-display text-[3.9rem] font-semibold leading-[0.92] tracking-[-0.06em] text-white md:text-[5.2rem]">
-          Let&apos;s <span className="accent-gradient-text">Connect</span>
-        </h1>
-        <p className="mx-auto mt-5 max-w-3xl text-[1.04rem] leading-8 text-slate-300 md:text-[1.14rem]">
-          {heroSection?.subheading ??
-            page?.metaDescription ??
-            "I’m always open to discussing new projects, creative ideas, or opportunities to be part of an amazing team."}
-        </p>
+    <div className="mx-auto max-w-7xl px-6 py-10 md:py-14">
+      <section className="redesign-hero rounded-[2rem] border border-white/8 px-6 py-8 md:px-8 md:py-10">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
+          <div>
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
+              <span className="text-sky-400">✦</span>
+              {getSectionSettingString(heroSection, "eyebrow") ?? page?.title ?? "Get in touch"}
+            </p>
+            <h1 className="mt-6 max-w-4xl font-display text-[3.7rem] font-semibold leading-[0.92] tracking-[-0.06em] text-white md:text-[5.2rem]">
+              Let&apos;s <span className="accent-gradient-text">Connect</span>
+            </h1>
+            <p className="mt-5 max-w-3xl text-[1.04rem] leading-8 text-slate-300 md:text-[1.14rem]">
+              {heroSection?.subheading ??
+                page?.metaDescription ??
+                "I’m always open to discussing new projects, creative ideas, or opportunities to be part of an amazing team."}
+            </p>
+          </div>
+          <div className="page-rail">
+            <p className="font-mono text-[0.66rem] uppercase tracking-[0.24em] text-slate-500">
+              Best messages include
+            </p>
+            <div className="space-y-3 text-sm leading-7 text-slate-400">
+              <p>Context, current stage, and the kind of collaboration you have in mind.</p>
+              <p className="text-sky-200">AI, ML, LLM systems, research, and technical writing fit best.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="mt-10 rounded-[1.7rem] border border-emerald-400/18 bg-emerald-400/6 px-6 py-5 text-slate-200">
@@ -283,7 +296,7 @@ export async function ContactPageContent({
       <section className="mt-10 grid gap-8 lg:grid-cols-[1fr_0.95fr]">
         <div className="space-y-8">
           <div>
-            <h2 className="font-display text-[2.5rem] font-semibold tracking-[-0.04em] text-white">
+            <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.5rem]">
               Send a Message
             </h2>
           </div>
@@ -302,7 +315,7 @@ export async function ContactPageContent({
 
         <div className="space-y-8">
           <div>
-            <h2 className="font-display text-[2.5rem] font-semibold tracking-[-0.04em] text-white">
+            <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.5rem]">
               Connect Elsewhere
             </h2>
           </div>
@@ -363,7 +376,7 @@ export async function ContactPageContent({
           </div>
 
           <div>
-            <h2 className="font-display text-[2.5rem] font-semibold tracking-[-0.04em] text-white">
+            <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.5rem]">
               Frequently Asked Questions
             </h2>
             <div className="mt-5">

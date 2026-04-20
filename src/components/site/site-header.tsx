@@ -125,8 +125,8 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
         </div>
       </div>
 
-      <div className="overflow-x-auto border-t border-white/6 px-6 pb-4 pt-3 lg:hidden">
-        <nav className="flex min-w-max items-center gap-4 text-sm text-slate-300">
+      <div className="border-t border-white/6 px-6 pb-4 pt-3 lg:hidden">
+        <nav className="grid grid-cols-2 gap-3 text-sm text-slate-300 min-[430px]:grid-cols-3">
           {headerItems.map((item) => {
             const isActive = !item.isExternal && isActivePath(pathname, item.href);
 
@@ -137,7 +137,7 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
                 target={item.isExternal ? "_blank" : undefined}
                 rel={item.isExternal ? "noreferrer" : undefined}
                 className={cn(
-                  "rounded-full border px-4 py-2 transition",
+                  "rounded-full border px-4 py-2 text-center transition",
                   isActive
                     ? "border-sky-400/30 bg-sky-400/10 text-white"
                     : "border-white/8 bg-white/4 text-slate-300",

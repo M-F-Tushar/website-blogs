@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
@@ -49,6 +50,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const wordCount = countWords(post.bodyMarkdown);
   const railQuote = post.excerpt ?? headings[0]?.text ?? null;
   const coverMeta = post.tags.length > 0 ? post.tags.slice(0, 3) : post.categories.slice(0, 3);
+  const mainSectionCount = headings.filter((heading) => heading.level === 2).length;
 
   return (
     <article className="relative">
@@ -109,7 +111,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 Sections
               </p>
               <p className="mt-2 text-base text-white">
-                {Math.max(headings.filter((heading) => heading.level === 2).length, 1)}
+                {mainSectionCount > 0 ? mainSectionCount : "Opening note"}
               </p>
             </div>
           </div>
@@ -207,6 +209,27 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             >
               <Markdown content={post.bodyMarkdown} />
             </div>
+            <footer className="mt-14 border-t border-white/8 pt-8">
+              <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sky-200/72">
+                Continue the archive
+              </p>
+              <div className="mt-4 flex flex-col gap-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="font-display text-[1.8rem] font-semibold leading-tight tracking-[-0.04em] text-white">
+                    More notes from the same learning system
+                  </h2>
+                  <p className="mt-2 text-sm leading-7 text-slate-400">
+                    Browse the full blog archive for project filters, study notes, and technical reflections.
+                  </p>
+                </div>
+                <Link
+                  href="/blogs"
+                  className="inline-flex shrink-0 items-center justify-center rounded-full bg-sky-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-400"
+                >
+                  Back to blog
+                </Link>
+              </div>
+            </footer>
           </div>
           <ArticleTableOfContents headings={headings} />
         </div>

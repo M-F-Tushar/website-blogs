@@ -262,12 +262,6 @@ export function ContactForm({
         </div>
       ) : null}
 
-      {botProtectionMode === "disabled" ? (
-        <div className="mt-5 rounded-[1.25rem] border border-emerald-400/18 bg-emerald-400/8 p-4 text-sm text-emerald-200">
-          Local development mode is active, so bot protection is disabled for testing.
-        </div>
-      ) : null}
-
       {botProtectionMisconfigured ? (
         <div className="mt-5 rounded-[1.25rem] border border-amber-400/20 bg-amber-400/10 p-4">
           <p className="text-sm text-amber-200">

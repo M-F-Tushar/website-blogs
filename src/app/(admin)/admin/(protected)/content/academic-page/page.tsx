@@ -19,7 +19,7 @@ export default function AdminAcademicPageManager({
       pageTitle="Academic"
       description="Manage the academic landing page narrative, supporting cards, and research positioning from admin."
       sectionTypes={ACADEMIC_PAGE_SECTION_TYPES}
-      settingsHint='Hero supports {"eyebrow":"Academic","panelLabel":"Research continuity","panelItems":[{"label":"Indexed entries","value":"03","description":"Published work"}]}. Other sections can use {"eyebrow":"Research habit"}.'
+      settingsHint="Optional advanced settings for intro badges, archive labels, and small academic metrics. Leave this as {} for normal editing."
       searchParams={searchParams}
       adminRoute="/admin/content/academic-page"
       collectionActions={[{ href: "/admin/content/academic", label: "Manage entries" }]}
