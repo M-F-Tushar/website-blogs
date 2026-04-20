@@ -48,6 +48,25 @@ function getTrendingTopics(
   return derivedTopics.length > 0 ? derivedTopics : fallbackTopics.slice(0, 6);
 }
 
+function getCurrentStageFocusLabels(tags: string[]) {
+  const replacements = new Map([
+    ["llm systems", "Learning notes"],
+    ["mlops discipline", "Build logs"],
+    ["model evaluation", "Study roadmap"],
+    ["research practice", "Reading notes"],
+    ["artificial intelligence", "AI basics"],
+    ["machine learning", "Coursework notes"],
+    ["tech careers", "Career notes"],
+  ]);
+
+  const labels = tags.map((tag) => replacements.get(tag.trim().toLowerCase()) ?? tag);
+  const uniqueLabels = Array.from(new Set(labels.filter(Boolean)));
+
+  return uniqueLabels.length > 0
+    ? uniqueLabels
+    : ["Learning notes", "Project logs", "Study roadmap", "Resource notes"];
+}
+
 interface HomeCollectionItem {
   href: string;
   title: string;
@@ -172,10 +191,11 @@ export async function HomePageContent({
   const latestPosts = recentPosts
     .filter((post) => post.id !== featuredStory?.id)
     .slice(0, 3);
-  const focusTags =
+  const configuredFocusTags =
     getSectionSettingStringArray(heroSection, "focusTags").length > 0
       ? getSectionSettingStringArray(heroSection, "focusTags")
-      : ["AI", "Artificial Intelligence", "Machine Learning", "Tech Careers"];
+      : ["Learning notes", "Project logs", "Study roadmap", "Resource notes"];
+  const focusTags = getCurrentStageFocusLabels(configuredFocusTags);
   const trendingTopics = getTrendingTopics(recentPosts, focusTags);
   const subscribeHeading =
     connectSection?.heading ?? "Stay Updated";
@@ -206,37 +226,83 @@ export async function HomePageContent({
 
   return (
     <div className="pb-16">
-      <section className="mx-auto flex min-h-[44svh] max-w-5xl flex-col items-center justify-start px-6 pb-10 pt-14 text-center md:min-h-[48svh] md:pb-12 md:pt-20">
-        <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
-          <span className="text-sky-400">✦</span>
-          {heroBadge}
-        </p>
-        <h1 className="mt-6 max-w-4xl font-display text-5xl font-semibold leading-[0.95] tracking-[-0.04em] text-white md:text-7xl xl:text-[5.5rem]">
-          {heroLead} <span className="accent-gradient-text">{displayName}</span>
-        </h1>
-        <p className="mt-6 max-w-2xl text-[1.08rem] leading-8 text-slate-300 md:text-xl">
-          {heroDescription}
-        </p>
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link
-            href={primaryCtaHref}
-            className="rounded-full bg-sky-500 px-8 py-4 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(14,165,233,0.3)] transition hover:bg-sky-400"
-          >
-            {primaryCtaLabel}
-          </Link>
-          <Link
-            href={secondaryCtaHref}
-            className="rounded-full border border-white/10 bg-white/4 px-8 py-4 text-sm font-semibold text-white transition hover:bg-white/8"
-          >
-            {secondaryCtaLabel}
-          </Link>
-        </div>
-        <div className="mt-8 flex max-w-3xl flex-wrap items-center justify-center gap-2.5">
-          {focusTags.slice(0, 4).map((tag) => (
-            <span key={tag} className="signal-pill px-3 py-1.5 text-[0.66rem]">
-              {tag}
-            </span>
-          ))}
+      <section className="redesign-hero px-6 py-10 md:py-12 lg:min-h-[calc(78svh-5.6rem)]">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(420px,1fr)] lg:items-center">
+          <div className="max-w-3xl">
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
+              <span className="text-sky-400">✦</span>
+              {heroBadge}
+            </p>
+            <h1 className="mt-7 font-display text-5xl font-semibold leading-[0.94] tracking-[-0.04em] text-white md:text-7xl xl:text-[5.7rem]">
+              {heroLead} <span className="accent-gradient-text">{displayName}</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-[1.08rem] leading-8 text-slate-300 md:text-xl">
+              {heroDescription}
+            </p>
+            <div className="mt-9 flex flex-wrap items-center gap-4">
+              <Link
+                href={primaryCtaHref}
+                className="rounded-full bg-sky-500 px-8 py-4 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(14,165,233,0.3)] transition hover:bg-sky-400"
+              >
+                {primaryCtaLabel}
+              </Link>
+              <Link
+                href={secondaryCtaHref}
+                className="rounded-full border border-white/10 bg-white/4 px-8 py-4 text-sm font-semibold text-white transition hover:bg-white/8"
+              >
+                {secondaryCtaLabel}
+              </Link>
+            </div>
+            <div className="mt-9 hidden max-w-xl gap-3 sm:grid sm:grid-cols-2">
+              {focusTags.slice(0, 4).map((tag) => (
+                <span key={tag} className="signal-pill px-3 py-1.5 text-[0.66rem]">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative mx-auto hidden w-full max-w-[36rem] lg:block">
+            <div className="systems-map">
+              <span className="systems-map-line" />
+              <span className="systems-map-line" />
+              <span className="systems-map-line" />
+              <span className="systems-map-line" />
+              <span className="systems-map-node left-[2%] top-[20%]">Writing</span>
+              <span className="systems-map-node right-[1%] top-[22%]">Research</span>
+              <span className="systems-map-node bottom-[16%] left-[8%]">Builds</span>
+              <span className="systems-map-node bottom-[14%] right-[3%]">MLOps</span>
+              <div className="systems-map-core">
+                <p className="font-mono text-[0.64rem] uppercase tracking-[0.28em] text-sky-200/80">
+                  Public record
+                </p>
+                <p className="mt-3 font-display text-[2.4rem] font-semibold leading-none tracking-[-0.05em] text-white">
+                  {recentPosts.length + recentAcademic.length + recentRecommendations.length}
+                </p>
+                <p className="mt-2 text-sm text-slate-400">visible signals</p>
+              </div>
+            </div>
+            <div className="absolute -bottom-5 left-8 right-8 grid grid-cols-3 gap-3">
+              <div className="rounded-[1.15rem] border border-white/8 bg-slate-950/70 px-4 py-3 backdrop-blur">
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">
+                  Posts
+                </p>
+                <p className="mt-1 font-display text-2xl text-white">{recentPosts.length}</p>
+              </div>
+              <div className="rounded-[1.15rem] border border-white/8 bg-slate-950/70 px-4 py-3 backdrop-blur">
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">
+                  Study
+                </p>
+                <p className="mt-1 font-display text-2xl text-white">{recentAcademic.length}</p>
+              </div>
+              <div className="rounded-[1.15rem] border border-white/8 bg-slate-950/70 px-4 py-3 backdrop-blur">
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">
+                  Curated
+                </p>
+                <p className="mt-1 font-display text-2xl text-white">{recentRecommendations.length}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

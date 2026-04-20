@@ -241,6 +241,15 @@ function getDisplayName(siteName: string, explicitName: string | undefined) {
   return siteName.replace(/'?s\s+blog/i, "").trim() || siteName;
 }
 
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
 function calculateYearsActive(dates: Array<string | null>) {
   const timestamps = dates
     .filter((value): value is string => Boolean(value))
@@ -400,8 +409,21 @@ export async function AboutPageContent({
                   className="object-cover"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-center text-slate-400">
-                  Add a portrait in admin or place `public/portrait.jpg`.
+                <div className="relative flex h-full items-center justify-center overflow-hidden text-center">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_20%,rgba(56,189,248,0.28),transparent_24%),radial-gradient(circle_at_80%_70%,rgba(129,140,248,0.22),transparent_28%),linear-gradient(135deg,rgba(15,23,42,0.72),rgba(2,6,23,0.98))]" />
+                  <div className="absolute inset-10 rounded-full border border-sky-300/16" />
+                  <div className="absolute inset-20 rounded-full border border-sky-300/10" />
+                  <div className="relative">
+                    <p className="font-mono text-[0.7rem] uppercase tracking-[0.32em] text-sky-200/72">
+                      Identity signal
+                    </p>
+                    <p className="mt-6 font-display text-[6rem] font-semibold leading-none tracking-[-0.08em] text-white md:text-[8rem]">
+                      {getInitials(displayName)}
+                    </p>
+                    <p className="mx-auto mt-5 max-w-xs text-sm leading-7 text-slate-400">
+                      Student builder, research-minded, and documenting the path in public.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

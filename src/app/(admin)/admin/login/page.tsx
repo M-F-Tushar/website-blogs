@@ -11,22 +11,35 @@ export default async function AdminLoginPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl items-center px-6 py-12">
-      <div className="grid w-full gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+    <div className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-12">
+      <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1fr)] lg:items-center">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent">
             Admin access
           </p>
-          <h1 className="mt-6 font-display text-5xl leading-[0.96] font-semibold tracking-[-0.06em] text-balance">
-            Sign in to manage the platform.
+          <h1 className="mt-6 max-w-xl font-display text-5xl font-semibold leading-[0.96] tracking-[-0.06em] text-balance md:text-6xl">
+            Publishing control, without the noise.
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-muted">
-            The admin panel is intentionally focused on content, structure, SEO,
-            media, and operational control. Design system and security logic stay in code.
+            Sign in to manage pages, posts, media, messages, SEO, and operational settings from one focused workspace.
           </p>
+          <div className="mt-8 grid max-w-xl gap-3 sm:grid-cols-3">
+            {["Content", "Media", "SEO"].map((item) => (
+              <div key={item} className="rounded-[1.1rem] border border-border bg-white/55 px-4 py-3">
+                <p className="font-mono text-[0.66rem] uppercase tracking-[0.22em] text-muted">
+                  Workspace
+                </p>
+                <p className="mt-1 font-display text-xl font-semibold tracking-[-0.04em]">
+                  {item}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <LoginForm />
+        <div>
+          <LoginForm />
+        </div>
       </div>
     </div>
   );

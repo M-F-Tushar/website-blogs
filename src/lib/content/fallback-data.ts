@@ -176,10 +176,10 @@ export const fallbackPageSections: PageSection[] = [
     settings: {
       eyebrow: "AI engineering platform",
       focusTags: [
-        "LLM systems",
-        "MLOps discipline",
-        "Model evaluation",
-        "Research practice",
+        "Learning notes",
+        "Project logs",
+        "Study roadmap",
+        "Resource notes",
       ],
       primaryCtaLabel: "Read the journey",
       primaryCtaHref: "/blogs",

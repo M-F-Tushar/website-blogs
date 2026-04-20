@@ -135,7 +135,7 @@ export function ArticleReadingRail({
                 Main sections
               </dt>
               <dd className="mt-1 text-base text-slate-100">
-                {Math.max(topLevelSectionCount, headings.length > 0 ? 1 : 0)}
+                {topLevelSectionCount > 0 ? topLevelSectionCount : "Opening note"}
               </dd>
             </div>
           </dl>

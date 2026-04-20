@@ -20,7 +20,7 @@ export default function AdminAboutPageManager({
       pageTitle="About"
       description="Manage the identity page from one workspace so profile framing, supporting sections, portrait usage, and metadata stay aligned."
       sectionTypes={ABOUT_SECTION_TYPES}
-      settingsHint='Identity supports {"signals":["AI engineering trajectory"],"metrics":[{"label":"Base","value":"CSE and software systems"}]}. Timeline can use {"timelineItems":[{"phase":"01","status":"Foundation","title":"Computer science grounding","description":"Core engineering habits, systems thinking, and implementation discipline.","tags":["CSE","systems"],"align":"left"}]}. Supporting blocks can use custom notes or metric arrays.'
+      settingsHint="Optional advanced settings for profile signals, timeline items, and small metrics. Leave this as {} for normal editing."
       searchParams={searchParams}
       adminRoute="/admin/content/about"
       allowImage
