@@ -1,3 +1,4 @@
+import { SystemsMap } from "@/components/site/systems-map";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
@@ -262,47 +263,11 @@ export async function HomePageContent({
             </div>
           </div>
 
-          <div className="relative mx-auto hidden w-full max-w-[36rem] lg:block">
-            <div className="systems-map">
-              <span className="systems-map-line" />
-              <span className="systems-map-line" />
-              <span className="systems-map-line" />
-              <span className="systems-map-line" />
-              <span className="systems-map-node left-[2%] top-[20%]">Writing</span>
-              <span className="systems-map-node right-[1%] top-[22%]">Research</span>
-              <span className="systems-map-node bottom-[16%] left-[8%]">Builds</span>
-              <span className="systems-map-node bottom-[14%] right-[3%]">MLOps</span>
-              <div className="systems-map-core">
-                <p className="font-mono text-[0.64rem] uppercase tracking-[0.28em] text-sky-200/80">
-                  Public record
-                </p>
-                <p className="mt-3 font-display text-[2.4rem] font-semibold leading-none tracking-[-0.05em] text-white">
-                  {recentPosts.length + recentAcademic.length + recentRecommendations.length}
-                </p>
-                <p className="mt-2 text-sm text-slate-400">visible signals</p>
-              </div>
-            </div>
-            <div className="absolute -bottom-5 left-8 right-8 grid grid-cols-3 gap-3">
-              <div className="rounded-[1.15rem] border border-white/8 bg-slate-950/70 px-4 py-3 backdrop-blur">
-                <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">
-                  Posts
-                </p>
-                <p className="mt-1 font-display text-2xl text-white">{recentPosts.length}</p>
-              </div>
-              <div className="rounded-[1.15rem] border border-white/8 bg-slate-950/70 px-4 py-3 backdrop-blur">
-                <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">
-                  Study
-                </p>
-                <p className="mt-1 font-display text-2xl text-white">{recentAcademic.length}</p>
-              </div>
-              <div className="rounded-[1.15rem] border border-white/8 bg-slate-950/70 px-4 py-3 backdrop-blur">
-                <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">
-                  Curated
-                </p>
-                <p className="mt-1 font-display text-2xl text-white">{recentRecommendations.length}</p>
-              </div>
-            </div>
-          </div>
+          <SystemsMap
+            recentPostsCount={recentPosts.length}
+            recentAcademicCount={recentAcademic.length}
+            recentRecommendationsCount={recentRecommendations.length}
+          />
         </div>
       </section>
 
