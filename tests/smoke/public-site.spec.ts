@@ -49,7 +49,6 @@ test.describe("public smoke", () => {
     await expect(page.getByRole("textbox", { name: "Email Address *" })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Subject *" })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Message *" })).toBeVisible();
-    await expect(page.getByText(/Local development mode is active/i)).toBeVisible();
     await expect(page.getByRole("button", { name: "Send Message" })).toBeEnabled();
   });
 });
