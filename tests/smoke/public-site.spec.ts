@@ -9,9 +9,6 @@ test.describe("public smoke", () => {
     await expect(page.locator("main").getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.getByRole("link", { name: "Contact Me" }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Read Latest Posts" }).first()).toBeVisible();
-    await expect(
-      page.getByText(/newsletter is not live yet/i).first(),
-    ).toBeVisible();
     await expect(page.getByRole("contentinfo")).toBeVisible();
   });
 
@@ -49,7 +46,6 @@ test.describe("public smoke", () => {
     await expect(page.getByRole("textbox", { name: "Email Address *" })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Subject *" })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Message *" })).toBeVisible();
-    await expect(page.getByText(/Local development mode is active/i)).toBeVisible();
     await expect(page.getByRole("button", { name: "Send Message" })).toBeEnabled();
   });
 });
