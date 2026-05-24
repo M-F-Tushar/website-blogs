@@ -6,11 +6,16 @@ import { notFound, permanentRedirect } from "next/navigation";
 
 import { Markdown } from "@/components/site/markdown";
 import { SignalCard } from "@/components/site/signal-card";
-import { getAboutPageData } from "@/lib/content/queries";
+import {
+  getAboutPageData,
+  getDetailTemplateSection,
+} from "@/lib/content/queries";
+import { getSectionSettingString } from "@/lib/content/section-settings";
 import {
   buildTopLevelPageMetadata,
   DEFAULT_TOP_LEVEL_PAGE_PATHS,
 } from "@/lib/content/page-routing";
+import type { PageSection } from "@/types/content";
 import { countWords, formatCompactNumber, stripMarkdown } from "@/lib/utils";
 
 export async function generateMetadata() {
@@ -37,24 +42,25 @@ interface AboutSummaryItem {
 
 function AboutTimeline({
   items,
+  eyebrow,
   heading,
   description,
 }: {
   items: TimelineItem[];
-  heading?: string | null;
-  description?: string | null;
+  eyebrow: string;
+  heading: string;
+  description: string;
 }) {
   return (
     <div className="detail-card relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(56,189,248,0.14),transparent_24%),radial-gradient(circle_at_88%_12%,rgba(129,140,248,0.16),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_36%)]" />
       <div className="relative">
-        <p className="signal-label">Journey Timeline</p>
+        <p className="signal-label">{eyebrow}</p>
         <h3 className="mt-4 font-display text-[2rem] font-semibold leading-[1.02] tracking-[-0.04em] text-white md:text-[2.25rem]">
-          {heading ?? "The phases shaping the work"}
+          {heading}
         </h3>
         <p className="mt-3 max-w-xl text-[0.96rem] leading-7 text-slate-400">
-          {description ??
-            "A visual map of how the direction is forming, deepening, and turning into a more legible body of work."}
+          {description}
         </p>
 
         <div className="relative mt-8">
@@ -177,12 +183,14 @@ function parseTimelineItems(value: unknown): TimelineItem[] {
 
 function buildFallbackTimelineItems({
   timelineSection,
+  template,
   posts,
   academicEntries,
   recommendations,
   focusAreas,
 }: {
-  timelineSection: Awaited<ReturnType<typeof getAboutPageData>>["sections"][number] | null;
+  timelineSection: PageSection | null;
+  template: PageSection | null;
   posts: Awaited<ReturnType<typeof getAboutPageData>>["posts"];
   academicEntries: Awaited<ReturnType<typeof getAboutPageData>>["academicEntries"];
   recommendations: Awaited<ReturnType<typeof getAboutPageData>>["recommendations"];
@@ -191,7 +199,8 @@ function buildFallbackTimelineItems({
   const roadmapDescription =
     timelineSection?.bodyMarkdown
       ? stripMarkdown(timelineSection.bodyMarkdown)
-      : "Moving from fundamentals into practical AI systems, research literacy, and dependable engineering habits.";
+      : getSectionSettingString(template, "timelineRoadmapFallback") ??
+        "Moving from fundamentals into practical AI systems, research literacy, and dependable engineering habits.";
 
   return [
     {
@@ -296,7 +305,10 @@ export async function AboutPageContent({
 }: {
   data?: Awaited<ReturnType<typeof getAboutPageData>>;
 } = {}) {
-  const resolvedData = data ?? (await getAboutPageData());
+  const [resolvedData, template] = await Promise.all([
+    data ? Promise.resolve(data) : getAboutPageData(),
+    getDetailTemplateSection("about", "about-template"),
+  ]);
   const { siteSettings, sections, posts, academicEntries, recommendations } =
     resolvedData;
   const identitySection =
@@ -328,15 +340,89 @@ export async function AboutPageContent({
       ? configuredTimelineItems
       : buildFallbackTimelineItems({
           timelineSection,
+          template,
           posts,
           academicEntries,
           recommendations,
           focusAreas,
         });
+
+  const heroEyebrow =
+    getSectionSettingString(identitySection, "eyebrow") ??
+    getSectionSettingString(template, "heroEyebrow") ??
+    "About Me";
+  const heroGreeting =
+    getSectionSettingString(template, "heroGreeting") ?? "Hi, I’m";
+  const taglineFallback =
+    getSectionSettingString(template, "taglineFallback") ??
+    "AI & ML Enthusiast • Aspiring AI Agent Developer • LLM Explorer • Lifelong Learner";
+  const focusCardEyebrow =
+    getSectionSettingString(template, "focusCardEyebrow") ?? "Current Focus";
+  const focusCardTitle =
+    getSectionSettingString(template, "focusCardTitle") ??
+    "What I am actively deepening";
+  const focusCardDescription =
+    getSectionSettingString(template, "focusCardDescription") ??
+    "The public work clusters around a few themes that I want to study seriously and connect across projects.";
+  const platformCardEyebrow =
+    getSectionSettingString(template, "platformCardEyebrow") ?? "Platform Logic";
+  const platformCardTitle =
+    getSectionSettingString(template, "platformCardTitle") ??
+    "One record, several layers";
+  const platformCardDescription =
+    getSectionSettingString(template, "platformCardDescription") ??
+    "Writing, academic notes, and recommendations all feed the same long-horizon technical identity.";
+  const summaryWritingLabel =
+    getSectionSettingString(template, "summaryWritingLabel") ?? "Writing";
+  const summaryAcademicLabel =
+    getSectionSettingString(template, "summaryAcademicLabel") ?? "Academic";
+  const summaryCurationLabel =
+    getSectionSettingString(template, "summaryCurationLabel") ?? "Curation";
+  const summaryWritingUnit =
+    getSectionSettingString(template, "summaryWritingUnit") ?? "published notes";
+  const summaryAcademicUnit =
+    getSectionSettingString(template, "summaryAcademicUnit") ?? "tracked records";
+  const summaryCurationUnit =
+    getSectionSettingString(template, "summaryCurationUnit") ?? "recommendations";
+  const signalArticlesLabel =
+    getSectionSettingString(template, "signalArticlesLabel") ?? "Articles Written";
+  const signalWordsLabel =
+    getSectionSettingString(template, "signalWordsLabel") ?? "Total Words";
+  const signalYearsLabel =
+    getSectionSettingString(template, "signalYearsLabel") ?? "Years Active";
+  const signalTopicsLabel =
+    getSectionSettingString(template, "signalTopicsLabel") ?? "Topics Covered";
+  const storyHeading =
+    getSectionSettingString(template, "storyHeading") ?? "My Story";
+  const storyFallback =
+    getSectionSettingString(template, "storyFallback") ??
+    "I am building this platform as a public record of learning, experimentation, and long-term technical growth.";
+  const timelineEyebrow =
+    getSectionSettingString(template, "timelineEyebrow") ?? "Journey Timeline";
+  const timelineHeading =
+    timelineSection?.heading ??
+    getSectionSettingString(template, "timelineHeadingFallback") ??
+    "The phases shaping the work";
+  const timelineDescription =
+    timelineSection?.subheading ??
+    getSectionSettingString(template, "timelineDescriptionFallback") ??
+    "A visual map of how the direction is forming, deepening, and turning into a more legible body of work.";
+  const portraitInitialsEyebrow =
+    getSectionSettingString(template, "portraitInitialsEyebrow") ?? "Identity signal";
+  const portraitInitialsCaption =
+    getSectionSettingString(template, "portraitInitialsCaption") ??
+    "Student builder, research-minded, and documenting the path in public.";
+
   const aboutSummary: AboutSummaryItem[] = [
-    { label: "Writing", value: `${posts.length} published notes` },
-    { label: "Academic", value: `${academicEntries.length} tracked records` },
-    { label: "Curation", value: `${recommendations.length} recommendations` },
+    { label: summaryWritingLabel, value: `${posts.length} ${summaryWritingUnit}` },
+    {
+      label: summaryAcademicLabel,
+      value: `${academicEntries.length} ${summaryAcademicUnit}`,
+    },
+    {
+      label: summaryCurationLabel,
+      value: `${recommendations.length} ${summaryCurationUnit}`,
+    },
   ];
 
   return (
@@ -344,25 +430,25 @@ export async function AboutPageContent({
       <section className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
         <div>
           <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
-            <span className="text-sky-400">✦</span>
-            About Me
+            <span className="text-sky-400" aria-hidden>✦</span>
+            {heroEyebrow}
           </p>
           <h1 className="mt-6 font-display text-[4rem] font-semibold leading-[0.92] tracking-[-0.06em] text-white md:text-[5.6rem]">
-            Hi, I&apos;m <span className="accent-gradient-text">{displayName}</span>
+            {heroGreeting} <span className="accent-gradient-text">{displayName}</span>
           </h1>
           <p className="mt-5 max-w-3xl text-[1.08rem] leading-8 text-slate-300 md:text-[1.18rem]">
             {identitySection?.subheading ??
               siteSettings.siteTagline ??
-              "AI & ML Enthusiast • Aspiring AI Agent Developer • LLM Explorer • Lifelong Learner"}
+              taglineFallback}
           </p>
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             <div className="detail-card h-full">
-              <p className="signal-label">Current Focus</p>
+              <p className="signal-label">{focusCardEyebrow}</p>
               <h2 className="mt-4 font-display text-[1.8rem] font-semibold leading-[1.06] tracking-[-0.04em] text-white md:text-[1.95rem]">
-                What I am actively deepening
+                {focusCardTitle}
               </h2>
               <p className="mt-3 text-[0.96rem] leading-7 text-slate-400">
-                The public work clusters around a few themes that I want to study seriously and connect across projects.
+                {focusCardDescription}
               </p>
               <div className="mt-5 flex flex-wrap gap-2.5">
                 {focusAreas.map((area) => (
@@ -374,12 +460,12 @@ export async function AboutPageContent({
             </div>
 
             <div className="detail-card h-full">
-              <p className="signal-label">Platform Logic</p>
+              <p className="signal-label">{platformCardEyebrow}</p>
               <h2 className="mt-4 font-display text-[1.8rem] font-semibold leading-[1.06] tracking-[-0.04em] text-white md:text-[1.95rem]">
-                One record, several layers
+                {platformCardTitle}
               </h2>
               <p className="mt-3 text-[0.96rem] leading-7 text-slate-400">
-                Writing, academic notes, and recommendations all feed the same long-horizon technical identity.
+                {platformCardDescription}
               </p>
               <div className="mt-5 space-y-3">
                 {aboutSummary.map((item) => (
@@ -415,13 +501,13 @@ export async function AboutPageContent({
                   <div className="absolute inset-20 rounded-full border border-sky-300/10" />
                   <div className="relative">
                     <p className="font-mono text-[0.7rem] uppercase tracking-[0.32em] text-sky-200/72">
-                      Identity signal
+                      {portraitInitialsEyebrow}
                     </p>
                     <p className="mt-6 font-display text-[6rem] font-semibold leading-none tracking-[-0.08em] text-white md:text-[8rem]">
                       {getInitials(displayName)}
                     </p>
                     <p className="mx-auto mt-5 max-w-xs text-sm leading-7 text-slate-400">
-                      Student builder, research-minded, and documenting the path in public.
+                      {portraitInitialsCaption}
                     </p>
                   </div>
                 </div>
@@ -432,28 +518,25 @@ export async function AboutPageContent({
       </section>
 
       <section className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <SignalCard eyebrow="Articles Written" title={String(posts.length)} emphasis="display" />
+        <SignalCard eyebrow={signalArticlesLabel} title={String(posts.length)} emphasis="display" />
         <SignalCard
-          eyebrow="Total Words"
+          eyebrow={signalWordsLabel}
           title={formatCompactNumber(totalWords)}
           emphasis="display"
         />
-        <SignalCard eyebrow="Years Active" title={yearsActive} emphasis="display" />
-        <SignalCard eyebrow="Topics Covered" title={String(topicCount)} emphasis="display" />
+        <SignalCard eyebrow={signalYearsLabel} title={yearsActive} emphasis="display" />
+        <SignalCard eyebrow={signalTopicsLabel} title={String(topicCount)} emphasis="display" />
       </section>
 
       <section className="mt-14 border-t border-white/8 pt-10">
         <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
           <div>
             <h2 className="font-display text-[2.8rem] font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-[3.6rem]">
-              My Story
+              {storyHeading}
             </h2>
             <div className="mt-5 space-y-5 text-[1rem] leading-8 text-slate-300">
               <Markdown
-                content={
-                  identitySection?.bodyMarkdown ??
-                  "I am building this platform as a public record of learning, experimentation, and long-term technical growth."
-                }
+                content={identitySection?.bodyMarkdown ?? storyFallback}
               />
             </div>
           </div>
@@ -461,8 +544,9 @@ export async function AboutPageContent({
           <div className="lg:sticky lg:top-24">
             <AboutTimeline
               items={timelineItems}
-              heading={timelineSection?.heading}
-              description={timelineSection?.subheading}
+              eyebrow={timelineEyebrow}
+              heading={timelineHeading}
+              description={timelineDescription}
             />
           </div>
         </div>

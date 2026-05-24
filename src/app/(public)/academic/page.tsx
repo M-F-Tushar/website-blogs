@@ -1,7 +1,10 @@
 import { notFound, permanentRedirect } from "next/navigation";
 
-import { AcademicDirectory } from "@/components/site/academic-directory";
-import { getAcademicPageData } from "@/lib/content/queries";
+import {
+  AcademicDirectory,
+  type AcademicDirectoryCopy,
+} from "@/components/site/academic-directory";
+import { getAcademicPageData, getDetailTemplateSection } from "@/lib/content/queries";
 import {
   getPrimarySection,
   getSectionSettingString,
@@ -24,9 +27,60 @@ export async function AcademicPageContent({
 }: {
   data?: Awaited<ReturnType<typeof getAcademicPageData>>;
 } = {}) {
-  const resolvedData = data ?? (await getAcademicPageData());
+  const [resolvedData, template] = await Promise.all([
+    data ? Promise.resolve(data) : getAcademicPageData(),
+    getDetailTemplateSection("academic", "academic-list"),
+  ]);
   const { page, sections, entries } = resolvedData;
   const heroSection = getPrimarySection(sections, ["hero", "intro"], ["hero"]);
+
+  const heroEyebrow =
+    getSectionSettingString(heroSection, "eyebrow") ??
+    getSectionSettingString(template, "heroEyebrow") ??
+    "Academic trail";
+  const heroTitle =
+    getSectionSettingString(heroSection, "heroTitle") ??
+    page?.title ??
+    getSectionSettingString(template, "heroTitleFallback") ??
+    "Academic";
+  const heroDescription =
+    heroSection?.subheading ??
+    page?.metaDescription ??
+    getSectionSettingString(template, "heroDescriptionFallback") ??
+    "Coursework, research notes, experiments, and evidence of deeper study.";
+  const railLabel = getSectionSettingString(template, "railLabel") ?? "Evidence log";
+  const railUnitLabel = getSectionSettingString(template, "railUnitLabel") ?? "records";
+  const railDescription =
+    getSectionSettingString(template, "railDescription") ??
+    "Coursework, experiments, and research notes organized as proof of depth.";
+
+  const copy: AcademicDirectoryCopy = {
+    searchPlaceholder:
+      getSectionSettingString(template, "searchPlaceholder") ??
+      "Search research notes, experiments, or coursework...",
+    filterAllLabel: getSectionSettingString(template, "filterAllLabel") ?? "All",
+    countLabel:
+      getSectionSettingString(template, "countLabel") ??
+      "Showing {count} academic records",
+    sortNewestLabel:
+      getSectionSettingString(template, "sortNewestLabel") ?? "Most Recent",
+    sortOldestLabel:
+      getSectionSettingString(template, "sortOldestLabel") ?? "Oldest First",
+    sortAlphabeticalLabel:
+      getSectionSettingString(template, "sortAlphabeticalLabel") ?? "Alphabetical",
+    cardActionLabel:
+      getSectionSettingString(template, "cardActionLabel") ?? "Open Entry",
+    cardEyebrowFallback:
+      getSectionSettingString(template, "cardEyebrowFallback") ?? "Academic",
+    emptyEyebrow:
+      getSectionSettingString(template, "emptyEyebrow") ?? "Academic archive",
+    emptyHeading:
+      getSectionSettingString(template, "emptyHeading") ??
+      "No academic entries match that search",
+    emptyDescription:
+      getSectionSettingString(template, "emptyDescription") ??
+      "Change the search term or type filter to surface more records.",
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10 md:py-14">
@@ -34,38 +88,32 @@ export async function AcademicPageContent({
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
-              <span className="text-sky-400">✦</span>
-              {getSectionSettingString(heroSection, "eyebrow") ?? "Academic trail"}
+              <span className="text-sky-400" aria-hidden>✦</span>
+              {heroEyebrow}
             </p>
             <h1 className="mt-6 max-w-4xl font-display text-[3.9rem] font-semibold leading-[0.92] tracking-[-0.06em] text-white md:text-[5.2rem]">
-              <span className="accent-gradient-text">
-                {getSectionSettingString(heroSection, "heroTitle") ?? page?.title ?? "Academic"}
-              </span>
+              <span className="accent-gradient-text">{heroTitle}</span>
             </h1>
             <p className="mt-5 max-w-3xl text-[1.04rem] leading-8 text-slate-300 md:text-[1.14rem]">
-              {heroSection?.subheading ??
-                page?.metaDescription ??
-                "Coursework, research notes, experiments, and evidence of deeper study."}
+              {heroDescription}
             </p>
           </div>
           <div className="page-rail">
             <div>
               <p className="font-mono text-[0.66rem] uppercase tracking-[0.24em] text-slate-500">
-                Evidence log
+                {railLabel}
               </p>
               <p className="mt-2 font-display text-3xl font-semibold tracking-[-0.05em] text-white">
-                {entries.length} records
+                {entries.length} {railUnitLabel}
               </p>
             </div>
             <div className="editorial-divider" />
-            <p className="text-sm leading-7 text-slate-400">
-              Coursework, experiments, and research notes organized as proof of depth.
-            </p>
+            <p className="text-sm leading-7 text-slate-400">{railDescription}</p>
           </div>
         </div>
       </section>
 
-      <AcademicDirectory entries={entries} />
+      <AcademicDirectory entries={entries} copy={copy} />
     </div>
   );
 }

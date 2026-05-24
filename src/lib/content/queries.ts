@@ -331,6 +331,53 @@ const fetchPageSections = cache(async (pageKey: PageKey): Promise<PageSection[]>
   }));
 });
 
+export const getDetailTemplateSection = cache(
+  async (pageKey: PageKey, sectionKey: string): Promise<PageSection | null> => {
+    const supabase = createPublicServerClient();
+    if (!supabase) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("page_sections")
+      .select(
+        "*, image:media_assets!page_sections_image_asset_id_fkey(bucket_name, object_path, alt_text), pages!inner(page_key)",
+      )
+      .eq("pages.page_key", pageKey)
+      .eq("section_key", sectionKey)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    const section = data as PageSectionRow;
+
+    return {
+      id: section.id,
+      pageKey,
+      pageId: section.page_id,
+      sectionKey: section.section_key,
+      sectionType: section.section_type,
+      heading: section.heading,
+      subheading: section.subheading,
+      bodyMarkdown: section.body_markdown,
+      sortOrder: section.sort_order,
+      isVisible: section.is_visible,
+      featured: section.featured,
+      imageAssetId: section.image_asset_id,
+      imageUrl:
+        section.image?.bucket_name && section.image.object_path
+          ? getSupabaseStoragePublicUrl(
+              section.image.bucket_name,
+              section.image.object_path,
+            )
+          : null,
+      settings: section.settings_json ?? {},
+    };
+  },
+);
+
 type EmbeddedPostRow = PostRow & {
   post_categories?: { categories: { name: string } | null }[] | null;
   post_tags?: { tags: { name: string } | null }[] | null;

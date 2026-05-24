@@ -12,9 +12,12 @@ import {
 } from "lucide-react";
 import { notFound, permanentRedirect } from "next/navigation";
 
-import { ContactForm } from "@/components/site/contact-form";
+import { ContactForm, type ContactFormCopy } from "@/components/site/contact-form";
 import { FaqAccordion } from "@/components/site/faq-accordion";
-import { getContactPageData } from "@/lib/content/queries";
+import {
+  getContactPageData,
+  getDetailTemplateSection,
+} from "@/lib/content/queries";
 import {
   getPrimarySection,
   getSectionSettingString,
@@ -44,15 +47,16 @@ function parseFaqs(value: unknown) {
       if (
         typeof item !== "object" ||
         item === null ||
-        typeof item.question !== "string" ||
-        typeof item.answer !== "string"
+        typeof (item as { question?: unknown }).question !== "string" ||
+        typeof (item as { answer?: unknown }).answer !== "string"
       ) {
         return null;
       }
 
+      const candidate = item as { question: string; answer: string };
       return {
-        question: item.question.trim(),
-        answer: item.answer.trim(),
+        question: candidate.question.trim(),
+        answer: candidate.answer.trim(),
       };
     })
     .filter((item): item is { question: string; answer: string } => Boolean(item));
@@ -139,7 +143,10 @@ export async function ContactPageContent({
 }: {
   data?: Awaited<ReturnType<typeof getContactPageData>>;
 } = {}) {
-  const resolvedData = data ?? (await getContactPageData());
+  const [resolvedData, template] = await Promise.all([
+    data ? Promise.resolve(data) : getContactPageData(),
+    getDetailTemplateSection("contact", "contact-template"),
+  ]);
   const { siteSettings, page, sections } = resolvedData;
   const heroSection = getPrimarySection(sections, ["hero", "intro"], ["hero"]);
   const detailSections = sections.filter((section) => section.sectionType === "detail");
@@ -149,30 +156,118 @@ export async function ContactPageContent({
     null;
   const formFaqs = parseFaqs(formSection?.settings.faqs);
   const heroFaqs = parseFaqs(heroSection?.settings.faqs);
-  const faqItems = formFaqs.length > 0 ? formFaqs : heroFaqs;
+  const templateFaqs = parseFaqs(template?.settings.fallbackFaqs);
+  const faqItems =
+    formFaqs.length > 0
+      ? formFaqs
+      : heroFaqs.length > 0
+        ? heroFaqs
+        : templateFaqs;
   const botProtection = getContactBotProtectionConfig();
-  const fallbackFaqs = [
-    {
-      question: "What’s the best way to reach you?",
-      answer:
-        "Email or the contact form both work well. If the message is specific and thoughtful, I can usually respond faster.",
-    },
-    {
-      question: "Do you offer consulting services?",
-      answer:
-        "I’m most open to collaborations, research discussions, and technically meaningful projects rather than generic consulting requests.",
-    },
-    {
-      question: "Can you help with my project?",
-      answer:
-        "If the project aligns with AI, ML, LLM systems, learning infrastructure, or technical writing, send context and I’ll tell you honestly whether it’s a fit.",
-    },
-    {
-      question: "How can I collaborate with you?",
-      answer:
-        "The best outreach explains the problem, the current stage, and what kind of collaboration you have in mind.",
-    },
-  ];
+
+  const heroEyebrow =
+    getSectionSettingString(heroSection, "eyebrow") ??
+    getSectionSettingString(template, "heroEyebrow") ??
+    page?.title ??
+    "Get in touch";
+  const heroTitleLead =
+    getSectionSettingString(template, "heroTitleLead") ?? "Let’s";
+  const heroTitleAccent =
+    getSectionSettingString(template, "heroTitleAccent") ?? "Connect";
+  const heroDescription =
+    heroSection?.subheading ??
+    page?.metaDescription ??
+    getSectionSettingString(template, "heroDescriptionFallback") ??
+    "I’m always open to discussing new projects, creative ideas, or opportunities to be part of an amazing team.";
+  const railLabel =
+    getSectionSettingString(template, "railLabel") ?? "Best messages include";
+  const railLine1 =
+    getSectionSettingString(template, "railLine1") ??
+    "Context, current stage, and the kind of collaboration you have in mind.";
+  const railLine2 =
+    getSectionSettingString(template, "railLine2") ??
+    "AI, ML, LLM systems, research, and technical writing fit best.";
+  const availabilityTitle =
+    getSectionSettingString(heroSection, "availabilityTitle") ??
+    getSectionSettingString(template, "availabilityTitle") ??
+    "Currently Available";
+  const availabilityDescription =
+    getSectionSettingString(heroSection, "availabilityDescription") ??
+    getSectionSettingString(template, "availabilityDescription") ??
+    "I usually respond within 24-48 hours during business days. For urgent matters, mention “URGENT” in the subject line.";
+  const formSectionHeading =
+    getSectionSettingString(template, "formSectionHeading") ?? "Send a Message";
+  const socialSectionHeading =
+    getSectionSettingString(template, "socialSectionHeading") ?? "Connect Elsewhere";
+  const faqSectionHeading =
+    getSectionSettingString(template, "faqSectionHeading") ??
+    "Frequently Asked Questions";
+  const detailCardFallbackDescription =
+    getSectionSettingString(template, "detailCardFallbackDescription") ??
+    "Update this card from the admin contact page.";
+
+  const contactFormCopy: ContactFormCopy = {
+    eyebrow:
+      getSectionSettingString(formSection, "eyebrow") ??
+      getSectionSettingString(template, "formEyebrowFallback") ??
+      "Direct form",
+    title:
+      formSection?.heading ??
+      getSectionSettingString(template, "formTitleFallback") ??
+      "Start the conversation",
+    description:
+      formSection?.subheading ??
+      getSectionSettingString(template, "formDescriptionFallback") ??
+      "Tell me about your project, research interest, or the kind of conversation you want to have.",
+    badge:
+      getSectionSettingString(formSection, "badge") ??
+      getSectionSettingString(template, "formBadgeFallback") ??
+      "Thoughtful replies over volume",
+    nameLabel:
+      getSectionSettingString(template, "formNameLabel") ?? "Your Name",
+    namePlaceholder:
+      getSectionSettingString(template, "formNamePlaceholder") ?? "John Doe",
+    emailLabel:
+      getSectionSettingString(template, "formEmailLabel") ?? "Email Address",
+    emailPlaceholder:
+      getSectionSettingString(template, "formEmailPlaceholder") ??
+      "john@example.com",
+    subjectLabel:
+      getSectionSettingString(template, "formSubjectLabel") ?? "Subject",
+    subjectPlaceholder:
+      getSectionSettingString(template, "formSubjectPlaceholder") ??
+      "Project inquiry",
+    messageLabel:
+      getSectionSettingString(template, "formMessageLabel") ?? "Message",
+    messagePlaceholder:
+      getSectionSettingString(template, "formMessagePlaceholder") ??
+      "Tell me about your project or inquiry...",
+    requiredMarker:
+      getSectionSettingString(template, "formRequiredMarker") ?? "*",
+    submitLabel:
+      getSectionSettingString(template, "formSubmitLabel") ?? "Send Message",
+    submittingLabel:
+      getSectionSettingString(template, "formSubmittingLabel") ?? "Sending...",
+    captchaPrompt:
+      getSectionSettingString(template, "formCaptchaPrompt") ??
+      "Complete the bot protection check before sending your message.",
+    captchaRequired:
+      getSectionSettingString(template, "formCaptchaRequired") ??
+      "Bot protection is required for public submissions.",
+    captchaMissingError:
+      getSectionSettingString(template, "formCaptchaMissingError") ??
+      "Complete the bot protection check before sending your message.",
+    misconfiguredError:
+      getSectionSettingString(template, "formMisconfiguredError") ??
+      "This form is temporarily unavailable because bot protection is not configured correctly.",
+    genericError:
+      getSectionSettingString(template, "formGenericError") ??
+      "Something went wrong while sending the message.",
+    successFallback:
+      getSectionSettingString(template, "formSuccessFallback") ??
+      "Message sent successfully.",
+  };
+
   const detailCards = detailSections.map((section) => {
     const href = resolveDetailSectionHref(section);
 
@@ -183,7 +278,7 @@ export async function ContactPageContent({
       description:
         section.subheading ??
         (section.bodyMarkdown.trim().length > 0 ? section.bodyMarkdown : null) ??
-        "Update this card from the admin contact page.",
+        detailCardFallbackDescription,
       href,
       icon: resolveContactCardIcon(section, href),
       featured: section.featured,
@@ -194,9 +289,12 @@ export async function ContactPageContent({
     !detailKeys.has("email")
       ? {
           key: "email",
-          eyebrow: "Email",
+          eyebrow:
+            getSectionSettingString(template, "fallbackEmailEyebrow") ?? "Email",
           title: siteSettings.contactEmail,
-          description: "Best for professional inquiries",
+          description:
+            getSectionSettingString(template, "fallbackEmailDescription") ??
+            "Best for professional inquiries.",
           href: `mailto:${siteSettings.contactEmail}`,
           icon: Mail,
           featured: true,
@@ -205,9 +303,13 @@ export async function ContactPageContent({
     siteSettings.locationLabel && !detailKeys.has("location")
       ? {
           key: "location",
-          eyebrow: "Location",
+          eyebrow:
+            getSectionSettingString(template, "fallbackLocationEyebrow") ??
+            "Location",
           title: siteSettings.locationLabel,
-          description: "Available for thoughtful remote collaboration.",
+          description:
+            getSectionSettingString(template, "fallbackLocationDescription") ??
+            "Available for thoughtful remote collaboration.",
           href: null,
           icon: MapPin,
           featured: false,
@@ -216,9 +318,14 @@ export async function ContactPageContent({
     siteSettings.githubUrl && !detailKeys.has("github")
       ? {
           key: "github",
-          eyebrow: "GitHub",
-          title: "GitHub",
-          description: "Check out my open-source work",
+          eyebrow:
+            getSectionSettingString(template, "fallbackGithubEyebrow") ??
+            "GitHub",
+          title:
+            getSectionSettingString(template, "fallbackGithubTitle") ?? "GitHub",
+          description:
+            getSectionSettingString(template, "fallbackGithubDescription") ??
+            "Check out my open-source work.",
           href: siteSettings.githubUrl,
           icon: Github,
           featured: false,
@@ -227,9 +334,15 @@ export async function ContactPageContent({
     siteSettings.linkedinUrl && !detailKeys.has("linkedin")
       ? {
           key: "linkedin",
-          eyebrow: "LinkedIn",
-          title: "LinkedIn",
-          description: "Connect professionally",
+          eyebrow:
+            getSectionSettingString(template, "fallbackLinkedinEyebrow") ??
+            "LinkedIn",
+          title:
+            getSectionSettingString(template, "fallbackLinkedinTitle") ??
+            "LinkedIn",
+          description:
+            getSectionSettingString(template, "fallbackLinkedinDescription") ??
+            "Connect professionally.",
           href: siteSettings.linkedinUrl,
           icon: Linkedin,
           featured: false,
@@ -252,25 +365,23 @@ export async function ContactPageContent({
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
-              <span className="text-sky-400">✦</span>
-              {getSectionSettingString(heroSection, "eyebrow") ?? page?.title ?? "Get in touch"}
+              <span className="text-sky-400" aria-hidden>✦</span>
+              {heroEyebrow}
             </p>
             <h1 className="mt-6 max-w-4xl font-display text-[3.7rem] font-semibold leading-[0.92] tracking-[-0.06em] text-white md:text-[5.2rem]">
-              Let&apos;s <span className="accent-gradient-text">Connect</span>
+              {heroTitleLead} <span className="accent-gradient-text">{heroTitleAccent}</span>
             </h1>
             <p className="mt-5 max-w-3xl text-[1.04rem] leading-8 text-slate-300 md:text-[1.14rem]">
-              {heroSection?.subheading ??
-                page?.metaDescription ??
-                "I’m always open to discussing new projects, creative ideas, or opportunities to be part of an amazing team."}
+              {heroDescription}
             </p>
           </div>
           <div className="page-rail">
             <p className="font-mono text-[0.66rem] uppercase tracking-[0.24em] text-slate-500">
-              Best messages include
+              {railLabel}
             </p>
             <div className="space-y-3 text-sm leading-7 text-slate-400">
-              <p>Context, current stage, and the kind of collaboration you have in mind.</p>
-              <p className="text-sky-200">AI, ML, LLM systems, research, and technical writing fit best.</p>
+              <p>{railLine1}</p>
+              <p className="text-sky-200">{railLine2}</p>
             </div>
           </div>
         </div>
@@ -279,15 +390,14 @@ export async function ContactPageContent({
       <section className="mt-10 rounded-[1.7rem] border border-emerald-400/18 bg-emerald-400/6 px-6 py-5 text-slate-200">
         <div className="flex items-start gap-4">
           <div className="rounded-[1rem] bg-emerald-400/12 p-3 text-emerald-300">
-            <Clock3 className="h-5 w-5" />
+            <Clock3 className="h-5 w-5" aria-hidden />
           </div>
           <div>
             <h2 className="font-display text-[1.8rem] font-semibold tracking-[-0.04em] text-white">
-              {getSectionSettingString(heroSection, "availabilityTitle") ?? "Currently Available"}
+              {availabilityTitle}
             </h2>
             <p className="mt-2 text-[0.98rem] leading-8 text-slate-300">
-              {getSectionSettingString(heroSection, "availabilityDescription") ??
-                "I usually respond within 24-48 hours during business days. For urgent matters, mention “URGENT” in the subject line."}
+              {availabilityDescription}
             </p>
           </div>
         </div>
@@ -297,17 +407,11 @@ export async function ContactPageContent({
         <div className="space-y-8">
           <div>
             <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.5rem]">
-              Send a Message
+              {formSectionHeading}
             </h2>
           </div>
           <ContactForm
-            eyebrow={getSectionSettingString(formSection, "eyebrow") ?? "Direct form"}
-            title={formSection?.heading ?? "Start the conversation"}
-            description={
-              formSection?.subheading ??
-              "Tell me about your project, research interest, or the kind of conversation you want to have."
-            }
-            badge={getSectionSettingString(formSection, "badge") ?? "Thoughtful replies over volume"}
+            copy={contactFormCopy}
             botProtectionMode={botProtection.mode}
             turnstileSiteKey={botProtection.siteKey}
           />
@@ -316,13 +420,13 @@ export async function ContactPageContent({
         <div className="space-y-8">
           <div>
             <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.5rem]">
-              Connect Elsewhere
+              {socialSectionHeading}
             </h2>
           </div>
           <div className="space-y-4">
             {socialCards.map((card) => {
               const Icon = card.icon;
-              const cardClassName = `block overflow-hidden rounded-[1.45rem] border p-5 transition ${
+              const cardClassName = `block overflow-hidden rounded-[1.45rem] border p-5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
                 card.href ? "hover:-translate-y-0.5" : ""
               } ${
                 card.featured
@@ -332,7 +436,7 @@ export async function ContactPageContent({
               const cardContent = (
                 <div className="flex items-start gap-4">
                   <div className="rounded-[1rem] bg-white/10 p-3 text-white">
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-5 w-5" aria-hidden />
                   </div>
                   <div>
                     <p className="font-display text-[2rem] font-semibold tracking-[-0.04em] text-white">
@@ -377,10 +481,10 @@ export async function ContactPageContent({
 
           <div>
             <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.5rem]">
-              Frequently Asked Questions
+              {faqSectionHeading}
             </h2>
             <div className="mt-5">
-              <FaqAccordion items={faqItems.length > 0 ? faqItems : fallbackFaqs} />
+              <FaqAccordion items={faqItems} />
             </div>
           </div>
         </div>

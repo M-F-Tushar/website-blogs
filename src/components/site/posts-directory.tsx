@@ -1,14 +1,29 @@
 "use client";
 
-import { startTransition, useDeferredValue, useState } from "react";
+import { startTransition, useDeferredValue, useMemo, useState } from "react";
 import { Grid2x2, List, Search, SlidersHorizontal } from "lucide-react";
 
 import { ContentCard } from "@/components/site/content-card";
 import type { PostSummary } from "@/types/content";
 import { cn, estimateReadingTime } from "@/lib/utils";
 
+export interface PostsDirectoryCopy {
+  searchPlaceholder: string;
+  filterAllLabel: string;
+  countLabel: string;
+  sortNewestLabel: string;
+  sortOldestLabel: string;
+  sortAlphabeticalLabel: string;
+  cardActionLabel: string;
+  cardEyebrowFallback: string;
+  emptyEyebrow: string;
+  emptyHeading: string;
+  emptyDescription: string;
+}
+
 interface PostsDirectoryProps {
   posts: PostSummary[];
+  copy: PostsDirectoryCopy;
 }
 
 type PostSort = "newest" | "oldest" | "alphabetical";
@@ -31,14 +46,32 @@ function sortPosts(posts: PostSummary[], sort: PostSort) {
   return sortedPosts;
 }
 
-export function PostsDirectory({ posts }: PostsDirectoryProps) {
+export function PostsDirectory({ posts, copy }: PostsDirectoryProps) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<PostSort>("newest");
   const [view, setView] = useState<DirectoryView>("grid");
+  const [activeCategory, setActiveCategory] = useState(copy.filterAllLabel);
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const post of posts) {
+      for (const cat of post.categories) {
+        if (cat) set.add(cat);
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [posts]);
 
   const filteredPosts = sortPosts(
     posts.filter((post) => {
+      const matchesCategory =
+        activeCategory === copy.filterAllLabel || post.categories.includes(activeCategory);
+
+      if (!matchesCategory) {
+        return false;
+      }
+
       if (!deferredQuery) {
         return true;
       }
@@ -56,27 +89,58 @@ export function PostsDirectory({ posts }: PostsDirectoryProps) {
     sort,
   );
 
+  const countText = copy.countLabel.replace("{count}", String(filteredPosts.length));
+
   return (
     <section className="mt-12">
       <div className="page-filter-shell">
         <div className="page-search-wrap" id="search">
-          <Search className="h-5 w-5 text-slate-500" />
+          <Search className="h-5 w-5 text-slate-500" aria-hidden />
           <input
             value={query}
             onChange={(event) => {
               const value = event.target.value;
               startTransition(() => setQuery(value));
             }}
-            placeholder="Search articles..."
+            placeholder={copy.searchPlaceholder}
+            aria-label={copy.searchPlaceholder}
             className="page-search-input"
           />
         </div>
       </div>
 
-      <div className="archive-toolbar mt-10">
+      {categories.length > 0 ? (
+        <div className="mt-8 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setActiveCategory(copy.filterAllLabel)}
+            className={cn(
+              "filter-pill",
+              activeCategory === copy.filterAllLabel && "filter-pill-active",
+            )}
+          >
+            {copy.filterAllLabel}
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setActiveCategory(category)}
+              className={cn(
+                "filter-pill",
+                activeCategory === category && "filter-pill-active",
+              )}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="archive-toolbar mt-8">
         <div className="flex items-center gap-3 text-slate-400">
-          <SlidersHorizontal className="h-4 w-4" />
-          <span>Showing {filteredPosts.length} posts</span>
+          <SlidersHorizontal className="h-4 w-4" aria-hidden />
+          <span>{countText}</span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="inline-flex items-center rounded-[1rem] border border-white/8 bg-white/4 p-1">
@@ -85,6 +149,7 @@ export function PostsDirectory({ posts }: PostsDirectoryProps) {
               onClick={() => setView("grid")}
               className={cn("archive-view-button", view === "grid" && "archive-view-button-active")}
               aria-label="Grid view"
+              aria-pressed={view === "grid"}
             >
               <Grid2x2 className="h-4 w-4" />
             </button>
@@ -93,12 +158,13 @@ export function PostsDirectory({ posts }: PostsDirectoryProps) {
               onClick={() => setView("list")}
               className={cn("archive-view-button", view === "list" && "archive-view-button-active")}
               aria-label="List view"
+              aria-pressed={view === "list"}
             >
               <List className="h-4 w-4" />
             </button>
           </div>
 
-          <label className="inline-flex items-center gap-3 rounded-[1rem] border border-white/8 bg-white/4 px-4 py-3 text-sm text-slate-300">
+          <label className="archive-sort-select">
             <span>Sort by</span>
             <select
               value={sort}
@@ -106,11 +172,10 @@ export function PostsDirectory({ posts }: PostsDirectoryProps) {
                 const value = event.target.value as PostSort;
                 startTransition(() => setSort(value));
               }}
-              className="bg-transparent text-white outline-none"
             >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="alphabetical">Alphabetical</option>
+              <option value="newest">{copy.sortNewestLabel}</option>
+              <option value="oldest">{copy.sortOldestLabel}</option>
+              <option value="alphabetical">{copy.sortAlphabeticalLabel}</option>
             </select>
           </label>
         </div>
@@ -120,14 +185,19 @@ export function PostsDirectory({ posts }: PostsDirectoryProps) {
         <div
           className={cn(
             "mt-8 gap-6",
-            view === "grid" ? "grid md:grid-cols-2 xl:grid-cols-3" : "flex flex-col gap-5",
+            view === "grid"
+              ? cn(
+                  "grid md:grid-cols-2",
+                  filteredPosts.length < 3 ? "mx-auto max-w-5xl" : "xl:grid-cols-3",
+                )
+              : "flex flex-col gap-5",
           )}
         >
           {filteredPosts.map((post) => (
             <ContentCard
               key={post.id}
               href={`/blogs/${post.slug}`}
-              eyebrow={post.categories[0] ?? "Article"}
+              eyebrow={post.categories[0] ?? copy.cardEyebrowFallback}
               title={post.title}
               description={post.excerpt}
               date={post.publishedAt}
@@ -136,18 +206,18 @@ export function PostsDirectory({ posts }: PostsDirectoryProps) {
               imageAlt={post.coverAlt}
               layout={view}
               tags={post.tags}
-              actionLabel="Read Article"
+              actionLabel={copy.cardActionLabel}
             />
           ))}
         </div>
       ) : (
         <div className="detail-card mt-10">
-          <p className="signal-label">Archive status</p>
+          <p className="signal-label">{copy.emptyEyebrow}</p>
           <h3 className="mt-5 font-display text-[2rem] font-semibold leading-[1.04] tracking-[-0.04em] text-white">
-            No articles match that search
+            {copy.emptyHeading}
           </h3>
           <p className="mt-4 text-[0.98rem] leading-8 text-slate-400">
-            Try a title keyword, a tag, or a category term to surface the post you want.
+            {copy.emptyDescription}
           </p>
         </div>
       )}

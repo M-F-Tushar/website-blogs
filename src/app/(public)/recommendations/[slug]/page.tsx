@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowUpRight,
@@ -10,7 +9,13 @@ import {
 } from "lucide-react";
 
 import { Markdown } from "@/components/site/markdown";
-import { getRecommendationBySlug, getPublishedRecommendations } from "@/lib/content/queries";
+import { RelatedContent } from "@/components/site/related-content";
+import {
+  getDetailTemplateSection,
+  getPublishedRecommendations,
+  getRecommendationBySlug,
+} from "@/lib/content/queries";
+import { getSectionSettingString } from "@/lib/content/section-settings";
 import { buildSiteMetadata } from "@/lib/content/seo";
 
 export const revalidate = 300;
@@ -53,41 +58,71 @@ export default async function RecommendationDetailPage({
   params,
 }: RecommendationDetailPageProps) {
   const { slug } = await params;
-  const item = await getRecommendationBySlug(slug);
+  const [item, template] = await Promise.all([
+    getRecommendationBySlug(slug),
+    getDetailTemplateSection("recommendations", "recommendation-detail"),
+  ]);
 
   if (!item) {
     notFound();
   }
 
-  const offerSummary =
-    item.summary ??
+  const eyebrowFallback =
+    getSectionSettingString(template, "eyebrowFallback") ?? "Recommendation";
+  const offerFallback =
+    getSectionSettingString(template, "offerFallback") ??
     "A focused recommendation selected for how clearly it helps someone make progress.";
-  const whyItMatters =
-    item.whyRecommend ??
+  const whyFallback =
+    getSectionSettingString(template, "whyFallback") ??
     "This stands out because it turns good intentions into a more useful learning or working loop.";
-  const useCase =
-    item.useCase ??
+  const useCaseFallback =
+    getSectionSettingString(template, "useCaseFallback") ??
     "Use it when you want something dependable enough to actually change how you learn or work.";
-  const audience =
-    item.audience ?? "Anyone looking for a practical next step rather than more random content.";
-  const categoryLabel = item.category ?? "Recommendation";
+  const audienceFallback =
+    getSectionSettingString(template, "audienceFallback") ??
+    "Anyone looking for a practical next step rather than more random content.";
+  const posterCaptionLabel =
+    getSectionSettingString(template, "posterCaptionLabel") ??
+    "Why this is worth your time";
+  const openLinkLabel =
+    getSectionSettingString(template, "openLinkLabel") ?? "Open resource";
+  const detailsAnchorLabel =
+    getSectionSettingString(template, "detailsAnchorLabel") ?? "See the details";
+  const detailsSectionEyebrow =
+    getSectionSettingString(template, "detailsSectionEyebrow") ?? "Closer look";
+  const detailsSectionHeading =
+    getSectionSettingString(template, "detailsSectionHeading") ??
+    "What this recommendation gives you when you actually use it";
+  const footerEyebrow =
+    getSectionSettingString(template, "footerEyebrow") ?? "Keep curating";
+  const footerHeading =
+    getSectionSettingString(template, "footerHeading") ??
+    "Compare this with the full resource shelf";
+  const footerCtaLabel =
+    getSectionSettingString(template, "footerCtaLabel") ?? "Back to resources";
+  const footerCtaHref =
+    getSectionSettingString(template, "footerCtaHref") ?? "/recommendations";
+  const quickFitLabel =
+    getSectionSettingString(template, "quickFitLabel") ?? "Quick fit";
+  const quickFitLevelLabel =
+    getSectionSettingString(template, "quickFitLevelLabel") ?? "Level";
+  const quickFitAudienceLabel =
+    getSectionSettingString(template, "quickFitAudienceLabel") ?? "Best for";
+  const quickFitValueLabel =
+    getSectionSettingString(template, "quickFitValueLabel") ?? "Value signal";
+  const secondaryCtaLabel =
+    getSectionSettingString(template, "secondaryCtaLabel") ?? "Go to the resource";
+
+  const offerSummary = item.summary ?? offerFallback;
+  const whyItMatters = item.whyRecommend ?? whyFallback;
+  const useCase = item.useCase ?? useCaseFallback;
+  const audience = item.audience ?? audienceFallback;
+  const categoryLabel = item.category ?? eyebrowFallback;
   const levelLabel = item.level.replace(/^\w/, (char) => char.toUpperCase());
   const benefitPoints = [
-    {
-      icon: Sparkles,
-      label: "What it offers",
-      value: offerSummary,
-    },
-    {
-      icon: Users,
-      label: "Who gets the most from it",
-      value: audience,
-    },
-    {
-      icon: Layers3,
-      label: "How it helps in practice",
-      value: useCase,
-    },
+    { icon: Sparkles, label: "What it offers", value: offerSummary },
+    { icon: Users, label: "Who gets the most from it", value: audience },
+    { icon: Layers3, label: "How it helps in practice", value: useCase },
   ];
 
   const recommendationJsonLd = {
@@ -110,10 +145,8 @@ export default async function RecommendationDetailPage({
         <section className="mx-auto max-w-[86rem]">
           <div className="grid gap-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)] xl:items-center">
             <div className="max-w-4xl">
-              <p className="font-mono text-xs uppercase tracking-[0.3em] text-sky-300">
-                {categoryLabel}
-              </p>
-              <h1 className="mt-6 font-display text-5xl font-semibold leading-[0.96] tracking-[-0.06em] text-balance text-white md:text-7xl">
+              <p className="detail-eyebrow">{categoryLabel}</p>
+              <h1 className="mt-6 font-display text-5xl font-semibold leading-[0.96] tracking-[-0.06em] text-balance text-white md:text-6xl xl:text-7xl">
                 {item.title}
               </h1>
               <p className="mt-8 max-w-3xl text-xl leading-9 text-slate-300 md:text-[1.42rem]">
@@ -140,24 +173,24 @@ export default async function RecommendationDetailPage({
                     href={item.externalUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-sky-300/25 bg-sky-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_36px_rgba(14,165,233,0.22)] transition hover:border-sky-200/40 hover:bg-sky-400"
+                    className="inline-flex items-center gap-2 rounded-full border border-sky-300/25 bg-sky-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_36px_rgba(14,165,233,0.22)] transition hover:border-sky-200/40 hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                   >
-                    Open resource
-                    <ArrowUpRight className="h-4 w-4" />
+                    {openLinkLabel}
+                    <ArrowUpRight className="h-4 w-4" aria-hidden />
                   </a>
                 ) : null}
                 <a
                   href="#recommendation-details"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/10 px-5 py-3 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:text-white"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 px-5 py-3 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 >
-                  See the details
+                  {detailsAnchorLabel}
                 </a>
               </div>
             </div>
 
             <div className="relative">
               {item.coverUrl ? (
-                <div className="relative overflow-hidden rounded-[2.4rem] border border-white/8">
+                <div className="relative overflow-hidden rounded-[2.4rem] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                   <div className="relative aspect-[4/5] overflow-hidden">
                     <Image
                       src={item.coverUrl}
@@ -168,8 +201,8 @@ export default async function RecommendationDetailPage({
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.04),rgba(2,6,23,0.15)_38%,rgba(2,6,23,0.82))]" />
                     <div className="absolute inset-x-0 bottom-0 p-6 md:p-7">
-                      <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sky-200/80">
-                        Why this is worth your time
+                      <p className="detail-eyebrow text-sky-200/80">
+                        {posterCaptionLabel}
                       </p>
                       <p className="mt-3 max-w-md text-base leading-7 text-slate-100/92">
                         {whyItMatters}
@@ -178,18 +211,16 @@ export default async function RecommendationDetailPage({
                   </div>
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-[2.4rem] border border-white/8 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.18),transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.94),rgba(2,6,23,0.98))] p-7 md:p-8">
-                  <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sky-200/80">
-                    Recommended because
+                <div className="overflow-hidden rounded-[2.4rem] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.18),transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.94),rgba(2,6,23,0.98))] p-7 md:p-8">
+                  <p className="detail-eyebrow text-sky-200/80">
+                    {posterCaptionLabel}
                   </p>
                   <p className="mt-5 font-display text-[2rem] leading-tight tracking-[-0.04em] text-white md:text-[2.5rem]">
                     {item.title}
                   </p>
                   <p className="mt-6 text-base leading-8 text-slate-300">{whyItMatters}</p>
                   <div className="mt-10 border-t border-white/10 pt-6">
-                    <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-slate-500">
-                      Best use
-                    </p>
+                    <p className="detail-eyebrow text-slate-500">Best use</p>
                     <p className="mt-3 text-base leading-7 text-slate-200">{useCase}</p>
                   </div>
                 </div>
@@ -206,10 +237,8 @@ export default async function RecommendationDetailPage({
             {benefitPoints.map(({ icon: Icon, label, value }) => (
               <div key={label} className="border-l border-white/10 pl-5">
                 <div className="flex items-center gap-3 text-sky-300">
-                  <Icon className="h-4 w-4" />
-                  <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em]">
-                    {label}
-                  </p>
+                  <Icon className="h-4 w-4" aria-hidden />
+                  <p className="detail-eyebrow">{label}</p>
                 </div>
                 <p className="mt-4 text-base leading-8 text-slate-300">{value}</p>
               </div>
@@ -220,11 +249,9 @@ export default async function RecommendationDetailPage({
         <section className="mx-auto mt-16 max-w-[86rem] grid gap-12 xl:grid-cols-[minmax(0,1fr)_18rem]">
           <div className="min-w-0">
             <div className="max-w-3xl">
-              <p className="font-mono text-[0.72rem] uppercase tracking-[0.3em] text-sky-200/72">
-                Closer look
-              </p>
+              <p className="detail-eyebrow text-sky-200/72">{detailsSectionEyebrow}</p>
               <h2 className="mt-4 font-display text-4xl tracking-[-0.05em] text-white md:text-5xl">
-                What this recommendation gives you when you actually use it
+                {detailsSectionHeading}
               </h2>
             </div>
 
@@ -232,51 +259,37 @@ export default async function RecommendationDetailPage({
               <Markdown content={item.bodyMarkdown} />
             </div>
 
-            <footer className="mt-14 border-t border-white/8 pt-8">
-              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sky-200/72">
-                    Keep curating
-                  </p>
-                  <h2 className="mt-3 font-display text-[1.8rem] font-semibold leading-tight tracking-[-0.04em] text-white">
-                    Compare this with the full resource shelf
-                  </h2>
-                </div>
-                <Link
-                  href="/recommendations"
-                  className="inline-flex shrink-0 items-center justify-center rounded-full bg-sky-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-400"
-                >
-                  Back to resources
-                </Link>
-              </div>
-            </footer>
+            <RelatedContent
+              eyebrow={footerEyebrow}
+              heading={footerHeading}
+              ctaLabel={footerCtaLabel}
+              ctaHref={footerCtaHref}
+            />
           </div>
 
           <aside className="xl:block">
             <div className="sticky top-28 space-y-8">
               <div className="border-l border-white/10 pl-5">
                 <div className="flex items-center gap-3 text-sky-300">
-                  <Compass className="h-4 w-4" />
-                  <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em]">
-                    Quick fit
-                  </p>
+                  <Compass className="h-4 w-4" aria-hidden />
+                  <p className="detail-eyebrow">{quickFitLabel}</p>
                 </div>
                 <dl className="mt-5 space-y-5 text-sm text-slate-300">
                   <div>
                     <dt className="text-[0.68rem] uppercase tracking-[0.24em] text-slate-500">
-                      Level
+                      {quickFitLevelLabel}
                     </dt>
                     <dd className="mt-1 text-base text-slate-100">{levelLabel}</dd>
                   </div>
                   <div>
                     <dt className="text-[0.68rem] uppercase tracking-[0.24em] text-slate-500">
-                      Best for
+                      {quickFitAudienceLabel}
                     </dt>
                     <dd className="mt-1 leading-7">{audience}</dd>
                   </div>
                   <div>
                     <dt className="text-[0.68rem] uppercase tracking-[0.24em] text-slate-500">
-                      Value signal
+                      {quickFitValueLabel}
                     </dt>
                     <dd className="mt-1 leading-7">{whyItMatters}</dd>
                   </div>
@@ -288,10 +301,10 @@ export default async function RecommendationDetailPage({
                   href={item.externalUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/10 px-5 py-3 text-sm font-medium text-white transition hover:border-white/20 hover:bg-white/[0.03]"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 px-5 py-3 text-sm font-medium text-white transition hover:border-white/20 hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 >
-                  Go to the resource
-                  <ArrowUpRight className="h-4 w-4" />
+                  {secondaryCtaLabel}
+                  <ArrowUpRight className="h-4 w-4" aria-hidden />
                 </a>
               ) : null}
             </div>

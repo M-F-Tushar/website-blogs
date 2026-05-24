@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ArticleHeading } from "@/lib/content/article-outline";
 import { cn } from "@/lib/utils";
@@ -21,13 +21,15 @@ interface ArticleReadingRailProps {
 function useArticleProgress(headings: ArticleHeading[]) {
   const [activeId, setActiveId] = useState(headings[0]?.id ?? "");
   const [progress, setProgress] = useState(0);
+  const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!headings.length) {
       return;
     }
 
-    const updateReadingState = () => {
+    const compute = () => {
+      frameRef.current = null;
       const articleElement = document.getElementById("article-body");
       if (!articleElement) {
         return;
@@ -62,13 +64,24 @@ function useArticleProgress(headings: ArticleHeading[]) {
       setActiveId(currentHeadingId);
     };
 
-    updateReadingState();
-    window.addEventListener("scroll", updateReadingState, { passive: true });
-    window.addEventListener("resize", updateReadingState);
+    const schedule = () => {
+      if (frameRef.current !== null) {
+        return;
+      }
+      frameRef.current = window.requestAnimationFrame(compute);
+    };
+
+    compute();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
 
     return () => {
-      window.removeEventListener("scroll", updateReadingState);
-      window.removeEventListener("resize", updateReadingState);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
     };
   }, [headings]);
 
@@ -76,6 +89,28 @@ function useArticleProgress(headings: ArticleHeading[]) {
     activeId,
     progress,
   };
+}
+
+function useSmoothHashScroll() {
+  return useCallback((event: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    const target = document.getElementById(id);
+    if (!target) {
+      return;
+    }
+    event.preventDefault();
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    target.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
+    if (typeof history.replaceState === "function") {
+      history.replaceState(null, "", `#${id}`);
+    }
+    target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+  }, []);
 }
 
 export function ArticleReadingRail({
@@ -156,6 +191,7 @@ export function ArticleTableOfContents({
   className,
 }: ArticleTableOfContentsProps) {
   const { activeId, progress } = useArticleProgress(headings);
+  const handleClick = useSmoothHashScroll();
 
   if (headings.length === 0) {
     return null;
@@ -179,8 +215,9 @@ export function ArticleTableOfContents({
                 <li key={heading.id}>
                   <a
                     href={`#${heading.id}`}
+                    onClick={(event) => handleClick(event, heading.id)}
                     className={cn(
-                      "group relative block py-1.5 pr-2 text-sm leading-6 text-slate-400 transition hover:text-white",
+                      "group relative block rounded-sm py-1.5 pr-2 text-sm leading-6 text-slate-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                       heading.level === 3 && "pl-4 text-[0.92rem]",
                       heading.level === 4 && "pl-8 text-[0.86rem]",
                       isActive && "text-white",

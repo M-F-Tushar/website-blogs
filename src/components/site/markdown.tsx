@@ -3,8 +3,10 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
+import { ExternalLink, Link2 } from "lucide-react";
 
 import { createArticleHeadingIdGenerator } from "@/lib/content/article-outline";
+import { CodeBlock } from "@/components/site/code-block";
 import { MermaidDiagram } from "@/components/site/mermaid-diagram";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +34,41 @@ function getNodeTextContent(children: ReactNode): string {
     .trim();
 }
 
+function findCodeChild(node: ReactNode): {
+  code: string;
+  language: string | null;
+} | null {
+  const arr = Children.toArray(node);
+  for (const child of arr) {
+    if (isValidElement(child)) {
+      const props = child.props as {
+        className?: string;
+        children?: ReactNode;
+      };
+      const match = /language-([\w-]+)/.exec(props.className ?? "");
+      if (match) {
+        return {
+          code: getNodeTextContent(props.children),
+          language: match[1].toLowerCase(),
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function HeadingAnchor({ id, label }: { id: string; label: string }) {
+  return (
+    <a
+      href={`#${id}`}
+      className="heading-anchor"
+      aria-label={`Link to section: ${label}`}
+    >
+      <Link2 className="h-4 w-4" aria-hidden />
+    </a>
+  );
+}
+
 export function Markdown({ content, className }: MarkdownProps) {
   const nextHeadingId = createArticleHeadingIdGenerator();
   const hasMermaid = MERMAID_BLOCK_PATTERN.test(content);
@@ -46,7 +83,15 @@ export function Markdown({ content, className }: MarkdownProps) {
           {...props}
           target={isExternal ? "_blank" : undefined}
           rel={isExternal ? "noreferrer" : undefined}
-        />
+        >
+          {props.children}
+          {isExternal ? (
+            <ExternalLink
+              className="ml-1 inline-block h-3.5 w-3.5 align-baseline opacity-70"
+              aria-hidden
+            />
+          ) : null}
+        </a>
       );
     },
     img(props) {
@@ -60,6 +105,14 @@ export function Markdown({ content, className }: MarkdownProps) {
       );
     },
     pre(props) {
+      const info = findCodeChild(props.children);
+      if (info && info.code) {
+        return (
+          <CodeBlock language={info.language ?? undefined} code={info.code}>
+            <pre className="overflow-x-auto">{props.children}</pre>
+          </CodeBlock>
+        );
+      }
       return <pre {...props} className="overflow-x-auto" />;
     },
     code(props) {
@@ -92,19 +145,34 @@ export function Markdown({ content, className }: MarkdownProps) {
       return <td {...props} className="border-b border-white/6 px-3 py-2 align-top" />;
     },
     h2(props) {
-      const id = nextHeadingId(getNodeTextContent(props.children));
-
-      return <h2 {...props} id={id} className={cn("scroll-mt-32", props.className)} />;
+      const text = getNodeTextContent(props.children);
+      const id = nextHeadingId(text);
+      return (
+        <h2 {...props} id={id} className={cn("scroll-mt-32", props.className)}>
+          {props.children}
+          <HeadingAnchor id={id} label={text} />
+        </h2>
+      );
     },
     h3(props) {
-      const id = nextHeadingId(getNodeTextContent(props.children));
-
-      return <h3 {...props} id={id} className={cn("scroll-mt-32", props.className)} />;
+      const text = getNodeTextContent(props.children);
+      const id = nextHeadingId(text);
+      return (
+        <h3 {...props} id={id} className={cn("scroll-mt-32", props.className)}>
+          {props.children}
+          <HeadingAnchor id={id} label={text} />
+        </h3>
+      );
     },
     h4(props) {
-      const id = nextHeadingId(getNodeTextContent(props.children));
-
-      return <h4 {...props} id={id} className={cn("scroll-mt-32", props.className)} />;
+      const text = getNodeTextContent(props.children);
+      const id = nextHeadingId(text);
+      return (
+        <h4 {...props} id={id} className={cn("scroll-mt-32", props.className)}>
+          {props.children}
+          <HeadingAnchor id={id} label={text} />
+        </h4>
+      );
     },
   };
 

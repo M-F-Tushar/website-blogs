@@ -7,8 +7,23 @@ import { ContentCard } from "@/components/site/content-card";
 import type { Recommendation } from "@/types/content";
 import { cn } from "@/lib/utils";
 
+export interface RecommendationsDirectoryCopy {
+  searchPlaceholder: string;
+  filterAllLabel: string;
+  countLabel: string;
+  sortNewestLabel: string;
+  sortAlphabeticalLabel: string;
+  sortLevelLabel: string;
+  cardActionLabel: string;
+  cardEyebrowFallback: string;
+  emptyEyebrow: string;
+  emptyHeading: string;
+  emptyDescription: string;
+}
+
 interface RecommendationsDirectoryProps {
   recommendations: Recommendation[];
+  copy: RecommendationsDirectoryCopy;
 }
 
 type DirectoryView = "grid" | "list";
@@ -52,11 +67,12 @@ function sortRecommendations(
 
 export function RecommendationsDirectory({
   recommendations,
+  copy,
 }: RecommendationsDirectoryProps) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<RecommendationSort>("newest");
   const [view, setView] = useState<DirectoryView>("grid");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState(copy.filterAllLabel);
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const categories = Array.from(
     new Set(recommendations.map((item) => item.category).filter(Boolean)),
@@ -65,7 +81,7 @@ export function RecommendationsDirectory({
   const filteredRecommendations = sortRecommendations(
     recommendations.filter((item) => {
       const matchesCategory =
-        activeCategory === "All" || item.category === activeCategory;
+        activeCategory === copy.filterAllLabel || item.category === activeCategory;
 
       if (!matchesCategory) {
         return false;
@@ -89,18 +105,24 @@ export function RecommendationsDirectory({
     sort,
   );
 
+  const countText = copy.countLabel.replace(
+    "{count}",
+    String(filteredRecommendations.length),
+  );
+
   return (
     <section className="mt-12">
       <div className="page-filter-shell">
         <div className="page-search-wrap">
-          <Search className="h-5 w-5 text-slate-500" />
+          <Search className="h-5 w-5 text-slate-500" aria-hidden />
           <input
             value={query}
             onChange={(event) => {
               const value = event.target.value;
               startTransition(() => setQuery(value));
             }}
-            placeholder="Search by title, description, or tag..."
+            placeholder={copy.searchPlaceholder}
+            aria-label={copy.searchPlaceholder}
             className="page-search-input"
           />
         </div>
@@ -111,6 +133,7 @@ export function RecommendationsDirectory({
             onClick={() => setView("grid")}
             className={cn("archive-view-button", view === "grid" && "archive-view-button-active")}
             aria-label="Grid view"
+            aria-pressed={view === "grid"}
           >
             <Grid2x2 className="h-4 w-4" />
           </button>
@@ -119,6 +142,7 @@ export function RecommendationsDirectory({
             onClick={() => setView("list")}
             className={cn("archive-view-button", view === "list" && "archive-view-button-active")}
             aria-label="List view"
+            aria-pressed={view === "list"}
           >
             <List className="h-4 w-4" />
           </button>
@@ -128,10 +152,13 @@ export function RecommendationsDirectory({
       <div className="mt-8 flex flex-wrap gap-3">
         <button
           type="button"
-          onClick={() => setActiveCategory("All")}
-          className={cn("filter-pill", activeCategory === "All" && "filter-pill-active")}
+          onClick={() => setActiveCategory(copy.filterAllLabel)}
+          className={cn(
+            "filter-pill",
+            activeCategory === copy.filterAllLabel && "filter-pill-active",
+          )}
         >
-          All
+          {copy.filterAllLabel}
         </button>
         {categories.map((category) => (
           <button
@@ -149,10 +176,8 @@ export function RecommendationsDirectory({
       </div>
 
       <div className="archive-toolbar mt-8">
-        <div className="text-slate-400">
-          Showing {filteredRecommendations.length} curated resources
-        </div>
-        <label className="inline-flex items-center gap-3 rounded-[1rem] border border-white/8 bg-white/4 px-4 py-3 text-sm text-slate-300">
+        <div className="text-slate-400">{countText}</div>
+        <label className="archive-sort-select">
           <span>Sort by</span>
           <select
             value={sort}
@@ -160,11 +185,10 @@ export function RecommendationsDirectory({
               const value = event.target.value as RecommendationSort;
               startTransition(() => setSort(value));
             }}
-            className="bg-transparent text-white outline-none"
           >
-            <option value="newest">Newest First</option>
-            <option value="alphabetical">Alphabetical</option>
-            <option value="level">By Level</option>
+            <option value="newest">{copy.sortNewestLabel}</option>
+            <option value="alphabetical">{copy.sortAlphabeticalLabel}</option>
+            <option value="level">{copy.sortLevelLabel}</option>
           </select>
         </label>
       </div>
@@ -185,7 +209,7 @@ export function RecommendationsDirectory({
             <ContentCard
               key={item.id}
               href={`/recommendations/${item.slug}`}
-              eyebrow={item.category ?? "Recommendation"}
+              eyebrow={item.category ?? copy.cardEyebrowFallback}
               title={item.title}
               description={item.summary}
               meta={item.level}
@@ -193,18 +217,18 @@ export function RecommendationsDirectory({
               imageAlt={item.coverAlt}
               layout={view}
               tags={[item.level, item.audience ?? "", item.useCase ?? ""]}
-              actionLabel="View Resource"
+              actionLabel={copy.cardActionLabel}
             />
           ))}
         </div>
       ) : (
         <div className="detail-card mt-10">
-          <p className="signal-label">Collection state</p>
+          <p className="signal-label">{copy.emptyEyebrow}</p>
           <h3 className="mt-5 font-display text-[2rem] font-semibold leading-[1.04] tracking-[-0.04em] text-white">
-            No recommendations match that filter
+            {copy.emptyHeading}
           </h3>
           <p className="mt-4 text-[0.98rem] leading-8 text-slate-400">
-            Change the category or search term to widen the curated set again.
+            {copy.emptyDescription}
           </p>
         </div>
       )}

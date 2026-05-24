@@ -197,6 +197,26 @@ export async function HomePageContent({
       : ["Learning notes", "Project logs", "Study roadmap", "Resource notes"];
   const focusTags = getCurrentStageFocusLabels(configuredFocusTags);
   const trendingTopics = getTrendingTopics(recentPosts, focusTags);
+  const systemsMapNodesRaw = getSectionSettingStringArray(
+    heroSection,
+    "systemsMapNodes",
+  );
+  const systemsMapNodes =
+    systemsMapNodesRaw.length >= 4
+      ? systemsMapNodesRaw.slice(0, 4)
+      : ["Writing", "Research", "Builds", "MLOps"];
+  const systemsMapCoreLabel =
+    getSectionSettingString(heroSection, "systemsMapCoreLabel") ?? "Public record";
+  const systemsMapCoreCaption =
+    getSectionSettingString(heroSection, "systemsMapCoreCaption") ?? "visible signals";
+  const systemsMapStatLabels = {
+    posts:
+      getSectionSettingString(heroSection, "systemsMapPostsLabel") ?? "Posts",
+    study:
+      getSectionSettingString(heroSection, "systemsMapStudyLabel") ?? "Study",
+    curated:
+      getSectionSettingString(heroSection, "systemsMapCuratedLabel") ?? "Curated",
+  };
   const subscribeHeading =
     connectSection?.heading ?? "Stay Updated";
   const subscribeDescription =
@@ -233,7 +253,7 @@ export async function HomePageContent({
               <span className="text-sky-400">✦</span>
               {heroBadge}
             </p>
-            <h1 className="mt-7 font-display text-5xl font-semibold leading-[0.94] tracking-[-0.04em] text-white md:text-7xl xl:text-[5.7rem]">
+            <h1 className="mt-7 font-display text-5xl font-semibold leading-[0.96] tracking-[-0.04em] text-balance text-white md:text-[4.4rem] md:leading-[0.94] xl:text-[5.7rem] xl:leading-[0.92]">
               {heroLead} <span className="accent-gradient-text">{displayName}</span>
             </h1>
             <p className="mt-6 max-w-2xl text-[1.08rem] leading-8 text-slate-300 md:text-xl">
@@ -242,13 +262,13 @@ export async function HomePageContent({
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <Link
                 href={primaryCtaHref}
-                className="rounded-full bg-sky-500 px-8 py-4 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(14,165,233,0.3)] transition hover:bg-sky-400"
+                className="rounded-full bg-sky-500 px-8 py-4 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(14,165,233,0.3)] transition hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               >
                 {primaryCtaLabel}
               </Link>
               <Link
                 href={secondaryCtaHref}
-                className="rounded-full border border-white/10 bg-white/4 px-8 py-4 text-sm font-semibold text-white transition hover:bg-white/8"
+                className="rounded-full border border-white/10 bg-white/4 px-8 py-4 text-sm font-semibold text-white transition hover:bg-white/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               >
                 {secondaryCtaLabel}
               </Link>
@@ -263,41 +283,41 @@ export async function HomePageContent({
           </div>
 
           <div className="relative mx-auto hidden w-full max-w-[36rem] lg:block">
-            <div className="systems-map">
+            <div className="systems-map" aria-hidden>
               <span className="systems-map-line" />
               <span className="systems-map-line" />
               <span className="systems-map-line" />
               <span className="systems-map-line" />
-              <span className="systems-map-node left-[2%] top-[20%]">Writing</span>
-              <span className="systems-map-node right-[1%] top-[22%]">Research</span>
-              <span className="systems-map-node bottom-[16%] left-[8%]">Builds</span>
-              <span className="systems-map-node bottom-[14%] right-[3%]">MLOps</span>
+              <span className="systems-map-node left-[2%] top-[20%]">{systemsMapNodes[0]}</span>
+              <span className="systems-map-node right-[1%] top-[22%]">{systemsMapNodes[1]}</span>
+              <span className="systems-map-node bottom-[16%] left-[8%]">{systemsMapNodes[2]}</span>
+              <span className="systems-map-node bottom-[14%] right-[3%]">{systemsMapNodes[3]}</span>
               <div className="systems-map-core">
                 <p className="font-mono text-[0.64rem] uppercase tracking-[0.28em] text-sky-200/80">
-                  Public record
+                  {systemsMapCoreLabel}
                 </p>
                 <p className="mt-3 font-display text-[2.4rem] font-semibold leading-none tracking-[-0.05em] text-white">
                   {recentPosts.length + recentAcademic.length + recentRecommendations.length}
                 </p>
-                <p className="mt-2 text-sm text-slate-400">visible signals</p>
+                <p className="mt-2 text-sm text-slate-400">{systemsMapCoreCaption}</p>
               </div>
             </div>
-            <div className="absolute -bottom-5 left-8 right-8 grid grid-cols-3 gap-3">
+            <div className="mt-5 grid grid-cols-3 gap-3 xl:absolute xl:-bottom-5 xl:left-8 xl:right-8 xl:mt-0">
               <div className="rounded-[1.15rem] border border-white/8 bg-slate-950/70 px-4 py-3 backdrop-blur">
                 <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">
-                  Posts
+                  {systemsMapStatLabels.posts}
                 </p>
                 <p className="mt-1 font-display text-2xl text-white">{recentPosts.length}</p>
               </div>
               <div className="rounded-[1.15rem] border border-white/8 bg-slate-950/70 px-4 py-3 backdrop-blur">
                 <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">
-                  Study
+                  {systemsMapStatLabels.study}
                 </p>
                 <p className="mt-1 font-display text-2xl text-white">{recentAcademic.length}</p>
               </div>
               <div className="rounded-[1.15rem] border border-white/8 bg-slate-950/70 px-4 py-3 backdrop-blur">
                 <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">
-                  Curated
+                  {systemsMapStatLabels.curated}
                 </p>
                 <p className="mt-1 font-display text-2xl text-white">{recentRecommendations.length}</p>
               </div>
