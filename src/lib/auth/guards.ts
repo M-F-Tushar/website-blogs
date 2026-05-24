@@ -1,7 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
 
-import { createServiceRoleClient } from "@/lib/supabase/service";
 import { createAuthenticatedServerClient } from "@/lib/supabase/server";
 import { normalizeEmailAddress } from "@/lib/utils";
 import type { SessionProfile } from "@/types/content";
@@ -21,8 +20,10 @@ export async function getOptionalSessionProfile() {
     return null;
   }
 
-  const serviceClient = createServiceRoleClient();
-  const { data: profile } = await serviceClient
+  // Read the caller's own profile via the authenticated client. RLS already
+  // restricts profiles to `id = auth.uid()` or admin, so we don't need to
+  // burn the service-role client on routine page renders.
+  const { data: profile } = await supabase
     .from("profiles")
     .select("id, email, full_name, headline, role")
     .eq("id", user.id)

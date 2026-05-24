@@ -703,67 +703,54 @@ export async function submitContactMessage(formData: FormData, requestMeta: {
     userAgent: requestMeta.userAgent,
   });
 
-  let rateLimitCount = 0;
-  let recentEmailCount = 0;
-  let duplicateMessageCount = 0;
-  let fingerprintCount = 0;
-
-  if (requestMeta.sourceIp) {
-    const { count } = await supabase
-      .from("contact_messages")
-      .select("*", { count: "exact", head: true })
-      .eq("source_ip", requestMeta.sourceIp)
-      .gte("created_at", oneHourAgo);
-
-    rateLimitCount = count ?? 0;
-  }
-
-  {
-    const { count } = await supabase
+  const [
+    rateLimitResult,
+    recentEmailResult,
+    duplicateMessageResult,
+    fingerprintResult,
+  ] = await Promise.all([
+    requestMeta.sourceIp
+      ? supabase
+          .from("contact_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("source_ip", requestMeta.sourceIp)
+          .gte("created_at", oneHourAgo)
+      : Promise.resolve({ count: 0 as number | null }),
+    supabase
       .from("contact_messages")
       .select("*", { count: "exact", head: true })
       .eq("email", payload.email)
-      .gte("created_at", oneDayAgo);
-
-    recentEmailCount = count ?? 0;
-  }
-
-  {
-    const { count } = await supabase
+      .gte("created_at", oneDayAgo),
+    supabase
       .from("contact_messages")
       .select("*", { count: "exact", head: true })
       .eq("email", payload.email)
       .eq("message", payload.message)
-      .gte("created_at", oneWeekAgo);
+      .gte("created_at", oneWeekAgo),
+    requestMeta.userAgent
+      ? supabase
+          .from("contact_messages")
+          .select("email, message, source_ip, user_agent")
+          .eq("user_agent", requestMeta.userAgent)
+          .gte("created_at", oneDayAgo)
+          .limit(20)
+      : Promise.resolve({ data: null as { email: string; message: string; source_ip: string | null; user_agent: string | null }[] | null }),
+  ]);
 
-    duplicateMessageCount = count ?? 0;
-  }
+  const rateLimitCount = rateLimitResult.count ?? 0;
+  const recentEmailCount = recentEmailResult.count ?? 0;
+  const duplicateMessageCount = duplicateMessageResult.count ?? 0;
+  const fingerprintCount =
+    fingerprintResult.data?.filter((row: { email: string; message: string; source_ip: string | null; user_agent: string | null }) => {
+      const existingFingerprint = buildSubmissionFingerprint({
+        email: row.email,
+        message: row.message,
+        sourceIp: row.source_ip,
+        userAgent: row.user_agent,
+      });
 
-  if (requestMeta.userAgent) {
-    const { data } = await supabase
-      .from("contact_messages")
-      .select("email, message, source_ip, user_agent")
-      .eq("user_agent", requestMeta.userAgent)
-      .gte("created_at", oneDayAgo)
-      .limit(20);
-
-    fingerprintCount =
-      data?.filter((row: {
-        email: string;
-        message: string;
-        source_ip: string | null;
-        user_agent: string | null;
-      }) => {
-        const existingFingerprint = buildSubmissionFingerprint({
-          email: row.email,
-          message: row.message,
-          sourceIp: row.source_ip,
-          userAgent: row.user_agent,
-        });
-
-        return existingFingerprint === fingerprint;
-      }).length ?? 0;
-  }
+      return existingFingerprint === fingerprint;
+    }).length ?? 0;
 
   if (rateLimitCount >= 5 || recentEmailCount >= 6) {
     throw new ContactRequestError(

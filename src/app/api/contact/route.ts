@@ -10,10 +10,36 @@ import {
 } from "@/lib/contact/anti-abuse";
 import { submitContactMessage } from "@/features/admin/content-actions";
 import { getAppRuntimeStage } from "@/lib/supabase/env";
+import { getSiteUrl } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
+const MAX_CONTACT_BODY_BYTES = 16 * 1024;
+
+function ensureSameOrigin(request: Request) {
+  const origin = request.headers.get("origin");
+  if (!origin) {
+    return; // server-to-server or same-origin without Origin header
+  }
+
+  let siteOrigin: string;
+  try {
+    siteOrigin = new URL(getSiteUrl()).origin;
+  } catch {
+    return;
+  }
+
+  if (origin !== siteOrigin) {
+    throw new ContactRequestError("Cross-origin submissions are not allowed.", 403);
+  }
+}
+
 async function parseContactPayload(request: Request) {
+  const declaredLength = Number(request.headers.get("content-length") ?? "0");
+  if (declaredLength > MAX_CONTACT_BODY_BYTES) {
+    throw new ContactRequestError("Request body is too large.", 413);
+  }
+
   const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
 
   if (
@@ -46,6 +72,7 @@ async function parseContactPayload(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    ensureSameOrigin(request);
     const formData = await parseContactPayload(request);
     const sourceIp = extractClientIp(request.headers);
     const userAgent = request.headers.get("user-agent");

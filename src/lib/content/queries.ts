@@ -331,70 +331,25 @@ const fetchPageSections = cache(async (pageKey: PageKey): Promise<PageSection[]>
   }));
 });
 
-async function hydratePostTaxonomy(posts: ReturnType<typeof mapPost>[]) {
-  const supabase = getPublicClientOrFallback("post taxonomy");
-  if (!supabase || posts.length === 0) {
-    return posts;
-  }
+type EmbeddedPostRow = PostRow & {
+  post_categories?: { categories: { name: string } | null }[] | null;
+  post_tags?: { tags: { name: string } | null }[] | null;
+};
 
-  const postIds = posts.map((post) => post.id);
-  const [
-    { data: categories, error: categoriesError },
-    { data: tags, error: tagsError },
-  ] = await Promise.all([
-    supabase
-      .from("post_categories")
-      .select("post_id, categories(name)")
-      .in("post_id", postIds),
-    supabase
-      .from("post_tags")
-      .select("post_id, tags(name)")
-      .in("post_id", postIds),
-  ]);
-
-  if (categoriesError || tagsError) {
-    return resolveLocalFallback(
-      "post taxonomy",
-      posts,
-      categoriesError?.message ?? tagsError?.message ?? "post taxonomy query failed",
-      categoriesError ?? tagsError,
-    );
-  }
-
-  const categoriesByPost = new Map<string, string[]>();
-  categories?.forEach((item: { post_id: string; categories: unknown }) => {
-    const list = categoriesByPost.get(item.post_id) ?? [];
-    if (
-      item.categories &&
-      typeof item.categories === "object" &&
-      "name" in item.categories &&
-      typeof item.categories.name === "string"
-    ) {
-      list.push(item.categories.name);
-    }
-    categoriesByPost.set(item.post_id, list);
-  });
-
-  const tagsByPost = new Map<string, string[]>();
-  tags?.forEach((item: { post_id: string; tags: unknown }) => {
-    const list = tagsByPost.get(item.post_id) ?? [];
-    if (
-      item.tags &&
-      typeof item.tags === "object" &&
-      "name" in item.tags &&
-      typeof item.tags.name === "string"
-    ) {
-      list.push(item.tags.name);
-    }
-    tagsByPost.set(item.post_id, list);
-  });
-
-  return posts.map((post) => ({
-    ...post,
-    categories: categoriesByPost.get(post.id) ?? [],
-    tags: tagsByPost.get(post.id) ?? [],
-  }));
+function flattenEmbeddedPost(row: EmbeddedPostRow): PostRow {
+  return {
+    ...row,
+    category_names: (row.post_categories ?? [])
+      .map((entry) => entry.categories?.name)
+      .filter((name): name is string => typeof name === "string"),
+    tag_names: (row.post_tags ?? [])
+      .map((entry) => entry.tags?.name)
+      .filter((name): name is string => typeof name === "string"),
+  };
 }
+
+const POST_SELECT =
+  "*, cover:media_assets!posts_cover_asset_id_fkey(bucket_name, object_path, alt_text), post_categories(categories(name)), post_tags(tags(name))";
 
 export const getPublishedPosts = cache(
   async (options?: { featuredOnly?: boolean; limit?: number }) => {
@@ -408,9 +363,7 @@ export const getPublishedPosts = cache(
 
     let query = supabase
       .from("posts")
-      .select(
-        "*, cover:media_assets!posts_cover_asset_id_fkey(bucket_name, object_path, alt_text)",
-      )
+      .select(POST_SELECT)
       .eq("status", "published")
       .is("deleted_at", null)
       .order("featured", { ascending: false })
@@ -435,7 +388,7 @@ export const getPublishedPosts = cache(
       );
     }
 
-    return hydratePostTaxonomy((data as PostRow[]).map(mapPost));
+    return (data as EmbeddedPostRow[]).map((row) => mapPost(flattenEmbeddedPost(row)));
   },
 );
 
@@ -447,9 +400,7 @@ export const getPostBySlug = cache(async (slug: string) => {
 
   const { data, error } = await supabase
     .from("posts")
-    .select(
-      "*, cover:media_assets!posts_cover_asset_id_fkey(bucket_name, object_path, alt_text)",
-    )
+    .select(POST_SELECT)
     .eq("slug", slug)
     .eq("status", "published")
     .is("deleted_at", null)
@@ -468,8 +419,7 @@ export const getPostBySlug = cache(async (slug: string) => {
     return null;
   }
 
-  const [post] = await hydratePostTaxonomy([mapPost(data as PostRow)]);
-  return post ?? null;
+  return mapPost(flattenEmbeddedPost(data as EmbeddedPostRow));
 });
 
 export const getPublishedAcademicEntries = cache(
@@ -692,9 +642,9 @@ export async function getAboutPageData() {
     await Promise.all([
     fetchSiteSettings(),
     getPageContent("about"),
-    getPublishedPosts(),
-    getPublishedAcademicEntries(),
-    getPublishedRecommendations(),
+    getPublishedPosts({ limit: 6 }),
+    getPublishedAcademicEntries({ limit: 6 }),
+    getPublishedRecommendations({ limit: 6 }),
     ]);
 
   return {

@@ -122,16 +122,6 @@ interface NamedRelationRow {
   name?: string | null;
 }
 
-interface PostCategoryRow {
-  post_id: string;
-  categories: NamedRelationRow | null;
-}
-
-interface PostTagRow {
-  post_id: string;
-  tags: NamedRelationRow | null;
-}
-
 function mapMediaAsset(row: MediaAssetRow): MediaAsset {
   return {
     id: row.id,
@@ -152,42 +142,25 @@ function mapMediaAsset(row: MediaAssetRow): MediaAsset {
   };
 }
 
-async function hydrateAdminPostTaxonomy(posts: PostSummary[]) {
-  if (posts.length === 0) {
-    return posts;
-  }
+type AdminEmbeddedPostRow = Parameters<typeof mapPost>[0] & {
+  post_categories?: { categories: { name: string } | null }[] | null;
+  post_tags?: { tags: { name: string } | null }[] | null;
+};
 
-  const postIds = posts.map((post) => post.id);
-  const supabase = createServiceRoleClient();
-  const [{ data: categories }, { data: tags }] = await Promise.all([
-    supabase.from("post_categories").select("post_id, categories(name)").in("post_id", postIds),
-    supabase.from("post_tags").select("post_id, tags(name)").in("post_id", postIds),
-  ]);
-
-  const categoriesByPost = new Map<string, string[]>();
-  ((categories ?? []) as PostCategoryRow[]).forEach((item) => {
-    const list = categoriesByPost.get(item.post_id) ?? [];
-    if (item.categories?.name) {
-      list.push(item.categories.name);
-    }
-    categoriesByPost.set(item.post_id, list);
-  });
-
-  const tagsByPost = new Map<string, string[]>();
-  ((tags ?? []) as PostTagRow[]).forEach((item) => {
-    const list = tagsByPost.get(item.post_id) ?? [];
-    if (item.tags?.name) {
-      list.push(item.tags.name);
-    }
-    tagsByPost.set(item.post_id, list);
-  });
-
-  return posts.map((post) => ({
-    ...post,
-    categories: categoriesByPost.get(post.id) ?? [],
-    tags: tagsByPost.get(post.id) ?? [],
-  }));
+function flattenAdminPostRow(row: AdminEmbeddedPostRow) {
+  return {
+    ...row,
+    category_names: (row.post_categories ?? [])
+      .map((entry) => entry.categories?.name)
+      .filter((name): name is string => typeof name === "string"),
+    tag_names: (row.post_tags ?? [])
+      .map((entry) => entry.tags?.name)
+      .filter((name): name is string => typeof name === "string"),
+  };
 }
+
+const ADMIN_POST_SELECT =
+  "*, cover:media_assets!posts_cover_asset_id_fkey(bucket_name, object_path, alt_text), post_categories(categories(name)), post_tags(tags(name))";
 
 export const getAdminSiteSettings = cache(async (): Promise<SiteSettings | null> => {
   const supabase = createServiceRoleClient();
@@ -306,12 +279,12 @@ export const getAdminPosts = cache(async (): Promise<PostSummary[]> => {
   const supabase = createServiceRoleClient();
   const { data } = await supabase
     .from("posts")
-    .select(
-      "*, cover:media_assets!posts_cover_asset_id_fkey(bucket_name, object_path, alt_text)",
-    )
+    .select(ADMIN_POST_SELECT)
     .order("created_at", { ascending: false });
 
-  return hydrateAdminPostTaxonomy((data ?? []).map(mapPost));
+  return ((data ?? []) as AdminEmbeddedPostRow[]).map((row) =>
+    mapPost(flattenAdminPostRow(row)),
+  );
 });
 
 export const getAdminAcademicEntries = cache(async (): Promise<AcademicEntry[]> => {
@@ -373,24 +346,54 @@ export const getAdminMessages = cache(async (): Promise<ContactMessage[]> => {
 
 export const getAdminDashboardSnapshot = cache(
   async (): Promise<DashboardSnapshot> => {
-    const [posts, academicEntries, recommendations, pages, messages] =
-      await Promise.all([
-        getAdminPosts(),
-        getAdminAcademicEntries(),
-        getAdminRecommendations(),
-        getAdminPages(),
-        getAdminMessages(),
-      ]);
+    const supabase = createServiceRoleClient();
+    const [
+      { count: postsCount },
+      { count: postDraftCount },
+      { count: academicCount },
+      { count: recommendationCount },
+      { count: pageCount },
+      { count: unreadMessages },
+      { data: latestPostsData },
+      { data: latestAcademicData },
+    ] = await Promise.all([
+      supabase.from("posts").select("*", { count: "exact", head: true }),
+      supabase
+        .from("posts")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "draft"),
+      supabase.from("academic_entries").select("*", { count: "exact", head: true }),
+      supabase.from("recommendations").select("*", { count: "exact", head: true }),
+      supabase.from("pages").select("*", { count: "exact", head: true }),
+      supabase
+        .from("contact_messages")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "new"),
+      supabase
+        .from("posts")
+        .select(ADMIN_POST_SELECT)
+        .order("created_at", { ascending: false })
+        .limit(4),
+      supabase
+        .from("academic_entries")
+        .select(
+          "*, cover:media_assets!academic_entries_cover_asset_id_fkey(bucket_name, object_path, alt_text)",
+        )
+        .order("created_at", { ascending: false })
+        .limit(4),
+    ]);
 
     return {
-      postsCount: posts.length,
-      postDraftCount: posts.filter((post) => post.status === "draft").length,
-      academicCount: academicEntries.length,
-      recommendationCount: recommendations.length,
-      pageCount: pages.length,
-      unreadMessages: messages.filter((message) => message.status === "new").length,
-      latestPosts: posts.slice(0, 4),
-      latestAcademicEntries: academicEntries.slice(0, 4),
+      postsCount: postsCount ?? 0,
+      postDraftCount: postDraftCount ?? 0,
+      academicCount: academicCount ?? 0,
+      recommendationCount: recommendationCount ?? 0,
+      pageCount: pageCount ?? 0,
+      unreadMessages: unreadMessages ?? 0,
+      latestPosts: ((latestPostsData ?? []) as AdminEmbeddedPostRow[]).map((row) =>
+        mapPost(flattenAdminPostRow(row)),
+      ),
+      latestAcademicEntries: (latestAcademicData ?? []).map(mapAcademicEntry),
     };
   },
 );
