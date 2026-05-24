@@ -17,6 +17,17 @@ const nullableUrlSchema = z
   .string()
   .trim()
   .url()
+  .refine(
+    (value) => {
+      try {
+        const protocol = new URL(value).protocol;
+        return protocol === "http:" || protocol === "https:";
+      } catch {
+        return false;
+      }
+    },
+    { message: "Only http(s) URLs are allowed." },
+  )
   .or(z.literal(""))
   .transform((value) => (value.length > 0 ? value : null));
 

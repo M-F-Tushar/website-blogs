@@ -41,7 +41,6 @@ const ALLOWED_MEDIA_MIME_TYPES = new Set([
   "image/webp",
   "image/avif",
   "image/gif",
-  "image/svg+xml",
 ]);
 
 function normalizePageSlug(slug: string | null | undefined) {

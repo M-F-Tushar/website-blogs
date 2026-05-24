@@ -30,6 +30,16 @@ function normalizePageSlug(slug: string | null | undefined) {
   return normalized.length > 1 ? normalized.replace(/\/+$/, "") : normalized;
 }
 
+// Validates a form-supplied returnTo so admin actions cannot be coerced into
+// redirecting to an external URL after a successful mutation.
+function safeReturnTo(value: string | null | undefined, fallback: string) {
+  if (!value) return fallback;
+  if (!value.startsWith("/admin/")) return fallback;
+  if (value.startsWith("//") || value.startsWith("/\\")) return fallback;
+  if (value.includes("\\") || value.includes("@")) return fallback;
+  return value;
+}
+
 async function revalidatePublicRoutes(extraPaths: string[] = []) {
   const paths = new Set<string>([
     "/",
@@ -292,7 +302,7 @@ export async function savePageAction(formData: FormData) {
     lockedSlug,
     previousSlug,
   ].filter((path): path is string => Boolean(path)));
-  redirect(`${returnTo ?? "/admin/content/pages"}?saved=1`);
+  redirect(`${safeReturnTo(returnTo, "/admin/content/pages")}?saved=1`);
 }
 
 export async function savePageSectionAction(formData: FormData) {
@@ -364,7 +374,7 @@ export async function savePageSectionAction(formData: FormData) {
   }
 
   await revalidatePublicRoutes();
-  const basePath = returnTo ?? `/admin/content/${payload.pageKey}`;
+  const basePath = safeReturnTo(returnTo, `/admin/content/${payload.pageKey}`);
   const redirectTarget = payload.id
     ? `${basePath}?edit=${payload.id}&saved=1`
     : `${basePath}?saved=1`;
@@ -374,7 +384,7 @@ export async function savePageSectionAction(formData: FormData) {
 export async function saveContactQuickLinksAction(formData: FormData) {
   await requireAdminSession();
 
-  const returnTo = optionalText(formData.get("returnTo")) ?? "/admin/content/contact";
+  const returnTo = safeReturnTo(optionalText(formData.get("returnTo")), "/admin/content/contact");
   const email = normalizeEmailAddress(formData.get("email"));
   const githubUrl = normalizeOptionalUrlField(formData.get("githubUrl"), "GitHub URL");
   const linkedinUrl = normalizeOptionalUrlField(formData.get("linkedinUrl"), "LinkedIn URL");
@@ -547,7 +557,7 @@ export async function saveContactQuickLinksAction(formData: FormData) {
   }
 
   await revalidatePublicRoutes(["/contact"]);
-  redirect(`${returnTo}?saved=1`);
+  redirect(`${safeReturnTo(returnTo, "/admin/content/contact")}?saved=1`);
 }
 
 export async function deletePageSectionAction(formData: FormData) {
@@ -558,7 +568,7 @@ export async function deletePageSectionAction(formData: FormData) {
   const returnTo = optionalText(formData.get("returnTo"));
 
   if (!id) {
-    redirect(returnTo ?? `/admin/content/${pageKey}`);
+    redirect(safeReturnTo(returnTo, `/admin/content/${pageKey}`));
   }
 
   const supabase = createServiceRoleClient();
@@ -569,5 +579,5 @@ export async function deletePageSectionAction(formData: FormData) {
   }
 
   await revalidatePublicRoutes();
-  redirect(`${returnTo ?? `/admin/content/${pageKey}`}?deleted=1`);
+  redirect(`${safeReturnTo(returnTo, `/admin/content/${pageKey}`)}?deleted=1`);
 }

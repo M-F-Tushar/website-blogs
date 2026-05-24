@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
 import { getServiceRoleSupabaseConfig } from "@/lib/supabase/env";

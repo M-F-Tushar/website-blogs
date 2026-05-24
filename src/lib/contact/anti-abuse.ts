@@ -140,28 +140,20 @@ export async function createContactThrottleCookie(secondsFromNow: number) {
 }
 
 export function extractClientIp(headers: Headers) {
-  const candidates = [
-    normalizeHeaderValue(headers.get("cf-connecting-ip")),
-    normalizeHeaderValue(headers.get("x-real-ip")),
-    normalizeHeaderValue(headers.get("x-vercel-forwarded-for")),
-    normalizeHeaderValue(headers.get("x-forwarded-for")),
-    normalizeHeaderValue(headers.get("forwarded")),
-  ];
-
-  for (const candidate of candidates) {
-    const normalized = normalizeIp(candidate);
-    if (normalized) {
-      return normalized;
-    }
-  }
-
-  return null;
+  // Trust only the header injected by the platform's edge to prevent
+  // attacker-spoofed X-Forwarded-For from defeating the rate limiter.
+  // Override per host with TRUSTED_IP_HEADER (e.g. "x-forwarded-for" behind
+  // your own trusted reverse proxy).
+  const trustedHeader = (process.env.TRUSTED_IP_HEADER ?? "x-vercel-forwarded-for").toLowerCase();
+  const raw = normalizeHeaderValue(headers.get(trustedHeader));
+  return normalizeIp(raw);
 }
 
 export async function verifyTurnstileToken(token: string | null, sourceIp: string | null) {
-  const stage = getAppRuntimeStage();
-
-  if (stage === "local") {
+  // Fail-closed: only skip verification when explicitly opted out
+  // (CONTACT_BOT_PROTECTION=off). A misclassified runtime stage no longer
+  // silently disables bot protection on production deployments.
+  if (process.env.CONTACT_BOT_PROTECTION?.toLowerCase() === "off") {
     return;
   }
 

@@ -244,7 +244,8 @@ export function ContactForm({
         name="company"
         tabIndex={-1}
         autoComplete="off"
-        className="hidden"
+        aria-hidden="true"
+        className="absolute left-[-9999px] h-px w-px overflow-hidden opacity-0"
       />
       <input type="hidden" name="captchaToken" value={captchaToken} />
 

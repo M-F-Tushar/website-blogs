@@ -1,3 +1,4 @@
+import "server-only";
 import { redirect } from "next/navigation";
 
 import { createServiceRoleClient } from "@/lib/supabase/service";
