@@ -45,6 +45,7 @@ export async function generateMetadata({
     path: `/recommendations/${item.slug}`,
     image: item.coverUrl,
     canonicalUrl: item.canonicalUrl,
+    ogType: "article",
   });
 }
 
@@ -89,8 +90,22 @@ export default async function RecommendationDetailPage({
     },
   ];
 
+  const recommendationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Recommendation",
+    name: item.title,
+    description: item.summary ?? item.metaDescription ?? undefined,
+    url: item.externalUrl ?? undefined,
+    image: item.coverUrl ?? undefined,
+    category: item.category ?? undefined,
+  };
+
   return (
     <article className="relative">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(recommendationJsonLd) }}
+      />
       <div className="mx-auto max-w-[96rem] px-6 pb-20 pt-12 md:pb-28 md:pt-16 xl:px-10 2xl:px-14">
         <section className="mx-auto max-w-[86rem]">
           <div className="grid gap-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)] xl:items-center">

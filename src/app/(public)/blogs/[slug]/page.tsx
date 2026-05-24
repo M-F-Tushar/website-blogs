@@ -42,6 +42,8 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
     path: `/blogs/${post.slug}`,
     image: post.coverUrl,
     canonicalUrl: post.canonicalUrl,
+    ogType: "article",
+    publishedTime: post.publishedAt,
   });
 }
 
@@ -60,8 +62,23 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const coverMeta = post.tags.length > 0 ? post.tags.slice(0, 3) : post.categories.slice(0, 3);
   const mainSectionCount = headings.filter((heading) => heading.level === 2).length;
 
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt ?? post.metaDescription ?? undefined,
+    datePublished: post.publishedAt ?? undefined,
+    image: post.coverUrl ?? undefined,
+    keywords: [...post.categories, ...post.tags].join(", ") || undefined,
+    wordCount,
+  };
+
   return (
     <article className="relative">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <div className="mx-auto max-w-[96rem] px-6 pb-20 pt-12 md:pb-28 md:pt-16 xl:px-10 2xl:px-14">
         <header className="mx-auto max-w-[78rem]">
           <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_17rem] xl:items-end">

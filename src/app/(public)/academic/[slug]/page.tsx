@@ -42,6 +42,8 @@ export async function generateMetadata({ params }: AcademicDetailPageProps) {
     path: `/academic/${entry.slug}`,
     image: entry.coverUrl,
     canonicalUrl: entry.canonicalUrl,
+    ogType: "article",
+    publishedTime: entry.completedAt ?? entry.startedAt,
   });
 }
 
@@ -67,8 +69,22 @@ export default async function AcademicDetailPage({
   const academicDate = formatDisplayDate(entry.completedAt ?? entry.startedAt);
   const mainSectionCount = headings.filter((heading) => heading.level === 2).length;
 
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ScholarlyArticle",
+    headline: entry.title,
+    description: entry.summary ?? entry.metaDescription ?? undefined,
+    datePublished: entry.completedAt ?? entry.startedAt ?? undefined,
+    image: entry.coverUrl ?? undefined,
+    wordCount,
+  };
+
   return (
     <article className="relative">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <div className="mx-auto max-w-[96rem] px-6 pb-20 pt-12 md:pb-28 md:pt-16 xl:px-10 2xl:px-14">
         <header className="mx-auto max-w-[78rem]">
           <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_17rem] xl:items-end">

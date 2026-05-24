@@ -10,6 +10,8 @@ interface MetadataInput {
   image?: string | null;
   canonicalUrl?: string | null;
   absoluteTitle?: boolean;
+  ogType?: "website" | "article";
+  publishedTime?: string | null;
 }
 
 function normalizeConfiguredCanonical(
@@ -72,6 +74,8 @@ export function buildMetadata({
   image,
   canonicalUrl,
   absoluteTitle = false,
+  ogType = "website",
+  publishedTime,
 }: MetadataInput): Metadata {
   const resolvedCanonicalUrl = resolveCanonicalUrl(path, canonicalUrl);
 
@@ -85,7 +89,10 @@ export function buildMetadata({
       title,
       description,
       url: resolvedCanonicalUrl,
-      type: "website",
+      type: ogType,
+      ...(ogType === "article" && publishedTime
+        ? { publishedTime }
+        : {}),
       images: image ? [{ url: image, alt: title }] : undefined,
     },
     twitter: {

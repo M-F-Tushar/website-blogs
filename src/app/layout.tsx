@@ -70,6 +70,13 @@ export default function RootLayout({
       lang="en"
       className={`${displayFont.variable} ${sansFont.variable} ${monoFont.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('public-theme-mode');if(t==='midnight'||t==='eclipse'){document.documentElement.dataset.publicTheme=t;}else{document.documentElement.dataset.publicTheme='midnight';}}catch(e){document.documentElement.dataset.publicTheme='midnight';}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full bg-background text-foreground">{children}</body>
     </html>
   );
