@@ -13,7 +13,7 @@ import "./globals.css";
 const displayFont = Cormorant_Garamond({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["600", "700"],
   display: "swap",
 });
 
@@ -27,7 +27,7 @@ const sansFont = Manrope({
 const monoFont = IBM_Plex_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["500"],
   display: "swap",
 });
 

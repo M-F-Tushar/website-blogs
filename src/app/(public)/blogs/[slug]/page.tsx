@@ -8,9 +8,17 @@ import {
 } from "@/components/site/article-navigation";
 import { Markdown } from "@/components/site/markdown";
 import { extractArticleHeadings } from "@/lib/content/article-outline";
-import { getPostBySlug } from "@/lib/content/queries";
+import { getPostBySlug, getPublishedPosts } from "@/lib/content/queries";
 import { buildSiteMetadata } from "@/lib/content/seo";
 import { countWords, estimateReadingTime, formatDisplayDate } from "@/lib/utils";
+
+export const revalidate = 300;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const posts = await getPublishedPosts();
+  return posts.map((post) => ({ slug: post.slug }));
+}
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -140,22 +148,22 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
         {post.coverUrl ? (
           <figure className="relative mx-auto mt-14 max-w-[82rem]">
-            <div className="absolute inset-x-10 -inset-y-8 overflow-hidden rounded-[3rem] opacity-35 blur-3xl">
-              <Image
-                src={post.coverUrl}
-                alt=""
-                fill
-                sizes="100vw"
-                className="object-cover"
-                aria-hidden
-              />
-            </div>
+            <div
+              aria-hidden
+              className="absolute inset-x-10 -inset-y-8 -z-10 overflow-hidden rounded-[3rem] opacity-35 blur-3xl"
+              style={{
+                backgroundImage: `url(${post.coverUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
             <div className="relative overflow-hidden rounded-[2.6rem] border border-white/8">
               <div className="relative aspect-[16/9] overflow-hidden">
                 <Image
                   src={post.coverUrl}
                   alt={post.coverAlt ?? post.title}
                   fill
+                  priority
                   sizes="(max-width: 1024px) 100vw, 88vw"
                   className="object-cover"
                 />

@@ -13,6 +13,8 @@ interface MarkdownProps {
   className?: string;
 }
 
+const MERMAID_BLOCK_PATTERN = /(^|\n)\s*```\s*mermaid\b/;
+
 function getNodeTextContent(children: ReactNode): string {
   return Children.toArray(children)
     .map((child) => {
@@ -32,6 +34,7 @@ function getNodeTextContent(children: ReactNode): string {
 
 export function Markdown({ content, className }: MarkdownProps) {
   const nextHeadingId = createArticleHeadingIdGenerator();
+  const hasMermaid = MERMAID_BLOCK_PATTERN.test(content);
 
   const components: Components = {
     a(props) {
@@ -65,7 +68,7 @@ export function Markdown({ content, className }: MarkdownProps) {
       const language = match?.[1]?.toLowerCase();
       const rawCode = String(children).replace(/\n$/, "");
 
-      if (language === "mermaid") {
+      if (language === "mermaid" && hasMermaid) {
         return <MermaidDiagram chart={rawCode} />;
       }
 

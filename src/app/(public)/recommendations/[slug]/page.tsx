@@ -10,8 +10,16 @@ import {
 } from "lucide-react";
 
 import { Markdown } from "@/components/site/markdown";
-import { getRecommendationBySlug } from "@/lib/content/queries";
+import { getRecommendationBySlug, getPublishedRecommendations } from "@/lib/content/queries";
 import { buildSiteMetadata } from "@/lib/content/seo";
+
+export const revalidate = 300;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const items = await getPublishedRecommendations();
+  return items.map((item) => ({ slug: item.slug }));
+}
 
 interface RecommendationDetailPageProps {
   params: Promise<{ slug: string }>;

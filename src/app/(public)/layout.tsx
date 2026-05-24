@@ -6,6 +6,8 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { getSiteChromeData } from "@/lib/content/queries";
 
+export const revalidate = 300;
+
 export default async function PublicLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {

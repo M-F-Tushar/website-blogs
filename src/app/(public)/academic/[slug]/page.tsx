@@ -8,9 +8,17 @@ import {
 } from "@/components/site/article-navigation";
 import { Markdown } from "@/components/site/markdown";
 import { extractArticleHeadings } from "@/lib/content/article-outline";
-import { getAcademicEntryBySlug } from "@/lib/content/queries";
+import { getAcademicEntryBySlug, getPublishedAcademicEntries } from "@/lib/content/queries";
 import { buildSiteMetadata } from "@/lib/content/seo";
 import { countWords, estimateReadingTime, formatDisplayDate } from "@/lib/utils";
+
+export const revalidate = 300;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const entries = await getPublishedAcademicEntries();
+  return entries.map((entry) => ({ slug: entry.slug }));
+}
 
 interface AcademicDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -156,22 +164,22 @@ export default async function AcademicDetailPage({
 
         {entry.coverUrl ? (
           <figure className="relative mx-auto mt-14 max-w-[82rem]">
-            <div className="absolute inset-x-10 -inset-y-8 overflow-hidden rounded-[3rem] opacity-35 blur-3xl">
-              <Image
-                src={entry.coverUrl}
-                alt=""
-                fill
-                sizes="100vw"
-                className="object-cover"
-                aria-hidden
-              />
-            </div>
+            <div
+              aria-hidden
+              className="absolute inset-x-10 -inset-y-8 -z-10 overflow-hidden rounded-[3rem] opacity-35 blur-3xl"
+              style={{
+                backgroundImage: `url(${entry.coverUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
             <div className="relative overflow-hidden rounded-[2.6rem] border border-white/8">
               <div className="relative aspect-[16/9] overflow-hidden">
                 <Image
                   src={entry.coverUrl}
                   alt={entry.coverAlt ?? entry.title}
                   fill
+                  priority
                   sizes="(max-width: 1024px) 100vw, 88vw"
                   className="object-cover"
                 />
