@@ -44,11 +44,11 @@ test.describe("public smoke", () => {
     await page.goto("/contact");
 
     await expect(page).toHaveTitle(/Contact \|/);
-    await expect(page.getByRole("heading", { name: "Let's Connect" })).toBeVisible();
-    await expect(page.getByRole("textbox", { name: "Your Name *" })).toBeVisible();
-    await expect(page.getByRole("textbox", { name: "Email Address *" })).toBeVisible();
-    await expect(page.getByRole("textbox", { name: "Subject *" })).toBeVisible();
-    await expect(page.getByRole("textbox", { name: "Message *" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Let['’]s Connect/ })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Your Name" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Email Address" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Subject" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Message" })).toBeVisible();
     await expect(page.getByText(/Local development mode is active/i)).toBeVisible();
     await expect(page.getByRole("button", { name: "Send Message" })).toBeEnabled();
   });

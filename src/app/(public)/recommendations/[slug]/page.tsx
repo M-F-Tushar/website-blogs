@@ -142,26 +142,34 @@ export default async function RecommendationDetailPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(recommendationJsonLd) }}
       />
       <div className="mx-auto max-w-[96rem] px-6 pb-20 pt-12 md:pb-28 md:pt-16 xl:px-10 2xl:px-14">
-        <section className="mx-auto max-w-[86rem]">
+        <header className="mx-auto max-w-[86rem]">
           <div className="grid gap-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)] xl:items-center">
             <div className="max-w-4xl">
-              <p className="detail-eyebrow">{categoryLabel}</p>
-              <h1 className="mt-6 font-display text-5xl font-semibold leading-[0.96] tracking-[-0.06em] text-balance text-white md:text-6xl xl:text-7xl">
-                {item.title}
+              <p className="inline-flex items-center gap-2.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-[0.85rem] font-semibold uppercase tracking-widest text-emerald-200 backdrop-blur-md">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                </span>
+                {categoryLabel}
+              </p>
+              <h1 className="mt-8 font-display text-5xl font-bold leading-[1.05] tracking-[-0.04em] text-foreground dark:text-white md:text-6xl xl:text-7xl drop-shadow-sm">
+                <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-lg">
+                  {item.title}
+                </span>
               </h1>
-              <p className="mt-8 max-w-3xl text-xl leading-9 text-slate-300 md:text-[1.42rem]">
+              <p className="mt-8 max-w-3xl text-[1.1rem] font-light leading-[1.8] text-muted dark:text-slate-300 md:text-[1.3rem]">
                 {offerSummary}
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <span className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-200">
+                <span className="inline-flex items-center rounded-full border border-border dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-1 text-muted dark:text-slate-300 backdrop-blur-sm">
                   {levelLabel}
                 </span>
-                <span className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-200">
+                <span className="inline-flex items-center rounded-full border border-border dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-1 text-muted dark:text-slate-300 backdrop-blur-sm">
                   {categoryLabel}
                 </span>
                 {item.audience ? (
-                  <span className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-200">
+                  <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-emerald-300 backdrop-blur-sm">
                     For {item.audience}
                   </span>
                 ) : null}
@@ -173,7 +181,7 @@ export default async function RecommendationDetailPage({
                     href={item.externalUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-sky-300/25 bg-sky-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_36px_rgba(14,165,233,0.22)] transition hover:border-sky-200/40 hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                    className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-5 py-3 text-sm font-semibold text-emerald-100 shadow-[0_0_15px_rgba(16,185,129,0.3)] backdrop-blur-md transition-all hover:border-emerald-300/60 hover:bg-emerald-400/30 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(16,185,129,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
                   >
                     {openLinkLabel}
                     <ArrowUpRight className="h-4 w-4" aria-hidden />
@@ -181,7 +189,7 @@ export default async function RecommendationDetailPage({
                 ) : null}
                 <a
                   href="#recommendation-details"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/10 px-5 py-3 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                  className="inline-flex items-center gap-2 rounded-full border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] px-5 py-3 text-sm font-medium text-muted dark:text-slate-200 backdrop-blur-md transition-all hover:border-white/20 hover:bg-surface-dark/20 dark:bg-[rgba(15,23,42,0.6)] hover:text-foreground dark:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
                 >
                   {detailsAnchorLabel}
                 </a>
@@ -190,73 +198,84 @@ export default async function RecommendationDetailPage({
 
             <div className="relative">
               {item.coverUrl ? (
-                <div className="relative overflow-hidden rounded-[2.4rem] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                <div className="group relative overflow-hidden rounded-[2.5rem] border border-border dark:border-white/10 shadow-[0_20px_60px_rgba(16,185,129,0.15)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_30px_80px_rgba(16,185,129,0.25)]">
                   <div className="relative aspect-[4/5] overflow-hidden">
                     <Image
                       src={item.coverUrl}
                       alt={item.coverAlt ?? item.title}
                       fill
                       sizes="(max-width: 1280px) 100vw, 38vw"
-                      className="object-cover"
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.04),rgba(2,6,23,0.15)_38%,rgba(2,6,23,0.82))]" />
-                    <div className="absolute inset-x-0 bottom-0 p-6 md:p-7">
-                      <p className="detail-eyebrow text-sky-200/80">
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.1),rgba(15,23,42,0.4)_40%,rgba(15,23,42,0.95))]" />
+                    <div className="absolute inset-x-0 bottom-0 p-8 md:p-10 backdrop-blur-sm">
+                      <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                         {posterCaptionLabel}
                       </p>
-                      <p className="mt-3 max-w-md text-base leading-7 text-slate-100/92">
+                      <p className="mt-4 max-w-md text-[1.05rem] leading-7 text-muted dark:text-slate-200">
                         {whyItMatters}
                       </p>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-[2.4rem] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.18),transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.94),rgba(2,6,23,0.98))] p-7 md:p-8">
-                  <p className="detail-eyebrow text-sky-200/80">
-                    {posterCaptionLabel}
-                  </p>
-                  <p className="mt-5 font-display text-[2rem] leading-tight tracking-[-0.04em] text-white md:text-[2.5rem]">
-                    {item.title}
-                  </p>
-                  <p className="mt-6 text-base leading-8 text-slate-300">{whyItMatters}</p>
-                  <div className="mt-10 border-t border-white/10 pt-6">
-                    <p className="detail-eyebrow text-slate-500">Best use</p>
-                    <p className="mt-3 text-base leading-7 text-slate-200">{useCase}</p>
+                <div className="group overflow-hidden rounded-[2.5rem] border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] p-10 md:p-12 shadow-2xl backdrop-blur-xl transition-all hover:border-emerald-500/30 hover:bg-surface-dark/20 dark:bg-[rgba(15,23,42,0.6)]">
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(16,185,129,0.15),transparent_50%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <div className="relative z-10">
+                    <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      {posterCaptionLabel}
+                    </p>
+                    <p className="mt-6 font-display text-[2.2rem] font-bold leading-tight tracking-[-0.04em] text-foreground dark:text-white md:text-[2.8rem]">
+                      {item.title}
+                    </p>
+                    <p className="mt-6 text-[1.05rem] leading-8 text-muted dark:text-slate-300">{whyItMatters}</p>
+                    <div className="mt-10 border-t border-border dark:border-white/10 pt-8">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted dark:text-slate-500">Best use</p>
+                      <p className="mt-4 text-[1.05rem] leading-7 text-muted dark:text-slate-200">{useCase}</p>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           </div>
-        </section>
+        </header>
 
         <section
           id="recommendation-details"
-          className="mx-auto mt-16 max-w-[86rem] border-t border-white/8 pt-10 md:pt-12"
+          className="mx-auto mt-16 max-w-[86rem] border-t border-border dark:border-white/10 pt-10 md:pt-14"
         >
-          <div className="grid gap-10 lg:grid-cols-3 lg:gap-12">
+          <div className="grid gap-8 lg:grid-cols-3">
             {benefitPoints.map(({ icon: Icon, label, value }) => (
-              <div key={label} className="border-l border-white/10 pl-5">
-                <div className="flex items-center gap-3 text-sky-300">
-                  <Icon className="h-4 w-4" aria-hidden />
-                  <p className="detail-eyebrow">{label}</p>
+              <div key={label} className="group relative overflow-hidden rounded-[1.5rem] border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] p-8 shadow-lg backdrop-blur-xl transition-all duration-300 hover:border-emerald-500/30 hover:bg-surface-dark/20 dark:bg-[rgba(15,23,42,0.6)] hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(16,185,129,0.15)]">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                <div className="relative z-10 flex items-center gap-3 text-emerald-400">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    <Icon className="h-4 w-4" aria-hidden />
+                  </div>
+                  <p className="inline-flex items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.28em] text-emerald-300">{label}</p>
                 </div>
-                <p className="mt-4 text-base leading-8 text-slate-300">{value}</p>
+                <p className="relative z-10 mt-6 text-[1.05rem] leading-[1.8] text-muted dark:text-slate-300 group-hover:text-muted dark:text-slate-200 transition-colors">{value}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto mt-16 max-w-[86rem] grid gap-12 xl:grid-cols-[minmax(0,1fr)_18rem]">
+        <section className="mx-auto mt-20 max-w-[86rem] grid gap-12 xl:grid-cols-[minmax(0,1fr)_18rem]">
           <div className="min-w-0">
             <div className="max-w-3xl">
-              <p className="detail-eyebrow text-sky-200/72">{detailsSectionEyebrow}</p>
-              <h2 className="mt-4 font-display text-4xl tracking-[-0.05em] text-white md:text-5xl">
+              <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                {detailsSectionEyebrow}
+              </p>
+              <h2 className="mt-6 font-display text-4xl font-bold tracking-[-0.04em] text-foreground dark:text-white md:text-5xl">
                 {detailsSectionHeading}
               </h2>
             </div>
 
-            <div className="recommendation-markdown mt-10 max-w-4xl border-t border-white/8 pt-8 md:pt-10">
-              <Markdown content={item.bodyMarkdown} />
+            <div className="recommendation-markdown mt-10 max-w-4xl border-t border-border dark:border-white/10 pt-10 md:pt-14 [&_.markdown-body_p]:!text-muted dark:text-slate-300 [&_.markdown-body_li]:!text-muted dark:text-slate-300 [&_.markdown-body_h2]:!text-foreground dark:text-white [&_.markdown-body_h3]:!text-foreground dark:text-white [&_.markdown-body_strong]:!text-foreground dark:text-white">
+              <Markdown className="markdown-inverse" content={item.bodyMarkdown} />
             </div>
 
             <RelatedContent
@@ -269,29 +288,32 @@ export default async function RecommendationDetailPage({
 
           <aside className="xl:block">
             <div className="sticky top-28 space-y-8">
-              <div className="border-l border-white/10 pl-5">
-                <div className="flex items-center gap-3 text-sky-300">
-                  <Compass className="h-4 w-4" aria-hidden />
-                  <p className="detail-eyebrow">{quickFitLabel}</p>
+              <div className="rounded-[1.5rem] border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] p-8 shadow-xl backdrop-blur-xl transition-colors hover:border-emerald-500/20 hover:bg-surface-dark/20 dark:bg-[rgba(15,23,42,0.6)] hover:shadow-[0_12px_40px_rgba(16,185,129,0.1)]">
+                <div className="flex items-center gap-3 text-emerald-400">
+                  <Compass className="h-5 w-5" aria-hidden />
+                  <p className="inline-flex items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.28em]">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                    {quickFitLabel}
+                  </p>
                 </div>
-                <dl className="mt-5 space-y-5 text-sm text-slate-300">
+                <dl className="mt-8 space-y-8 text-sm text-muted dark:text-slate-300">
                   <div>
-                    <dt className="text-[0.68rem] uppercase tracking-[0.24em] text-slate-500">
+                    <dt className="text-[0.68rem] uppercase tracking-[0.24em] text-muted dark:text-slate-500">
                       {quickFitLevelLabel}
                     </dt>
-                    <dd className="mt-1 text-base text-slate-100">{levelLabel}</dd>
+                    <dd className="mt-2 text-base font-medium text-foreground dark:text-slate-100">{levelLabel}</dd>
                   </div>
                   <div>
-                    <dt className="text-[0.68rem] uppercase tracking-[0.24em] text-slate-500">
+                    <dt className="text-[0.68rem] uppercase tracking-[0.24em] text-muted dark:text-slate-500">
                       {quickFitAudienceLabel}
                     </dt>
-                    <dd className="mt-1 leading-7">{audience}</dd>
+                    <dd className="mt-2 leading-7 text-[0.95rem]">{audience}</dd>
                   </div>
                   <div>
-                    <dt className="text-[0.68rem] uppercase tracking-[0.24em] text-slate-500">
+                    <dt className="text-[0.68rem] uppercase tracking-[0.24em] text-muted dark:text-slate-500">
                       {quickFitValueLabel}
                     </dt>
-                    <dd className="mt-1 leading-7">{whyItMatters}</dd>
+                    <dd className="mt-2 leading-7 text-[0.95rem]">{whyItMatters}</dd>
                   </div>
                 </dl>
               </div>
@@ -301,7 +323,7 @@ export default async function RecommendationDetailPage({
                   href={item.externalUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/10 px-5 py-3 text-sm font-medium text-white transition hover:border-white/20 hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                  className="inline-flex w-full justify-center items-center gap-2 rounded-[1rem] border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] px-6 py-4 text-sm font-medium text-foreground dark:text-white backdrop-blur-md transition-all hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] focus-visible:outline-none"
                 >
                   {secondaryCtaLabel}
                   <ArrowUpRight className="h-4 w-4" aria-hidden />

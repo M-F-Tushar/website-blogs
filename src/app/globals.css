@@ -1486,7 +1486,7 @@ body:has(.theme-nebula)::after {
   color: transparent;
 }
 
-.theme-blogsite {
+.dark {
   --background: #0b1220;
   --foreground: #f8fafc;
   --muted: #94a3b8;
@@ -1498,11 +1498,11 @@ body:has(.theme-nebula)::after {
   color: var(--foreground);
 }
 
-.theme-blogsite .surface-panel,
-.theme-blogsite .editorial-panel,
-.theme-blogsite .content-card-shell,
-.theme-blogsite .signal-card,
-.theme-blogsite .detail-card {
+.dark .surface-panel,
+.dark .editorial-panel,
+.dark .content-card-shell,
+.dark .signal-card,
+.dark .detail-card {
   background:
     linear-gradient(180deg, rgba(30, 41, 59, 0.84), rgba(15, 23, 42, 0.9)),
     rgba(15, 23, 42, 0.9);
@@ -1513,11 +1513,11 @@ body:has(.theme-nebula)::after {
   color: var(--foreground);
 }
 
-.theme-blogsite .surface-panel::before,
-.theme-blogsite .editorial-panel::before,
-.theme-blogsite .content-card-shell::before,
-.theme-blogsite .signal-card::before,
-.theme-blogsite .detail-card::before {
+.dark .surface-panel::before,
+.dark .editorial-panel::before,
+.dark .content-card-shell::before,
+.dark .signal-card::before,
+.dark .detail-card::before {
   background:
     linear-gradient(90deg, rgba(56, 189, 248, 0.34), rgba(255, 255, 255, 0.02), transparent);
   content: "";
@@ -1527,11 +1527,11 @@ body:has(.theme-nebula)::after {
   position: absolute;
 }
 
-.theme-blogsite .surface-panel::after,
-.theme-blogsite .editorial-panel::after,
-.theme-blogsite .content-card-shell::after,
-.theme-blogsite .signal-card::after,
-.theme-blogsite .detail-card::after {
+.dark .surface-panel::after,
+.dark .editorial-panel::after,
+.dark .content-card-shell::after,
+.dark .signal-card::after,
+.dark .detail-card::after {
   background:
     radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.12), transparent 24%),
     radial-gradient(circle at 0% 100%, rgba(14, 165, 233, 0.08), transparent 28%);
@@ -1541,69 +1541,69 @@ body:has(.theme-nebula)::after {
   position: absolute;
 }
 
-.theme-blogsite .dark-panel {
+.dark .dark-panel {
   background:
     radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 30%),
     linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.96));
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.theme-blogsite .grid-backdrop::before {
+.dark .grid-backdrop::before {
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
 }
 
-.theme-blogsite .grid-backdrop::after {
+.dark .grid-backdrop::after {
   background:
     radial-gradient(circle at 0% 50%, rgba(14, 165, 233, 0.08), transparent 28%),
     radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.1), transparent 24%);
 }
 
-.theme-blogsite .signal-pill {
+.dark .signal-pill {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: none;
   color: #cbd5e1;
 }
 
-.theme-blogsite .signal-label {
+.dark .signal-label {
   color: #cbd5e1;
 }
 
-.theme-blogsite .signal-label::before,
-.theme-blogsite .signal-pill::before {
+.dark .signal-label::before,
+.dark .signal-pill::before {
   background: linear-gradient(180deg, #7dd3fc, #0ea5e9);
   box-shadow: 0 0 18px rgba(14, 165, 233, 0.44);
 }
 
-.theme-blogsite .markdown-body p,
-.theme-blogsite .markdown-body li {
+.dark .markdown-body p,
+.dark .markdown-body li {
   color: #cbd5e1;
 }
 
-.theme-blogsite .markdown-body strong,
-.theme-blogsite .markdown-body h2,
-.theme-blogsite .markdown-body h3,
-.theme-blogsite .markdown-body h4 {
+.dark .markdown-body strong,
+.dark .markdown-body h2,
+.dark .markdown-body h3,
+.dark .markdown-body h4 {
   color: white;
 }
 
-.theme-blogsite .markdown-body a {
+.dark .markdown-body a {
   color: #7dd3fc;
 }
 
-.theme-blogsite .markdown-body blockquote {
+.dark .markdown-body blockquote {
   border-left-color: rgba(125, 211, 252, 0.45);
   color: #94a3b8;
 }
 
-.theme-blogsite .markdown-body code {
+.dark .markdown-body code {
   background: rgba(255, 255, 255, 0.08);
   color: #f8fafc;
 }
 
-.theme-blogsite .markdown-body hr {
+.dark .markdown-body hr {
   border-top-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -1751,7 +1751,7 @@ body:has(.theme-nebula)::after {
   height: 1px;
 }
 
-body:has(.theme-blogsite) {
+body:has(.dark) {
   background:
     radial-gradient(circle at 14% 14%, rgba(14, 165, 233, 0.12), transparent 20%),
     radial-gradient(circle at 88% 10%, rgba(59, 130, 246, 0.12), transparent 22%),
@@ -1759,8 +1759,8 @@ body:has(.theme-blogsite) {
   color: white;
 }
 
-body:has(.theme-blogsite)::before,
-body:has(.theme-blogsite)::after {
+body:has(.dark)::before,
+body:has(.dark)::after {
   display: none !important;
 }
 

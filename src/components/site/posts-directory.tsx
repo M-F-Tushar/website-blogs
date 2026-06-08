@@ -92,10 +92,11 @@ export function PostsDirectory({ posts, copy }: PostsDirectoryProps) {
   const countText = copy.countLabel.replace("{count}", String(filteredPosts.length));
 
   return (
-    <section className="mt-12">
-      <div className="page-filter-shell">
-        <div className="page-search-wrap" id="search">
-          <Search className="h-5 w-5 text-slate-500" aria-hidden />
+    <section className="mt-16">
+      <div className="relative group rounded-[1.5rem] bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] p-2 shadow-lg backdrop-blur-xl border border-border dark:border-white/10 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-500/30 hover:bg-surface-dark/20 dark:bg-[rgba(15,23,42,0.6)] hover:shadow-[0_12px_40px_rgba(14,165,233,0.15)] focus-within:bg-[rgba(15,23,42,0.7)] focus-within:border-sky-400/50 focus-within:shadow-[0_12px_40px_rgba(14,165,233,0.2)]">
+        <div className="absolute inset-0 rounded-[1.5rem] bg-gradient-to-r from-sky-500/5 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+        <div className="relative z-10 flex items-center gap-4 px-4 py-3">
+          <Search className="h-5 w-5 text-muted dark:text-slate-400 transition-colors duration-300 group-focus-within:text-sky-400" aria-hidden />
           <input
             value={query}
             onChange={(event) => {
@@ -104,19 +105,21 @@ export function PostsDirectory({ posts, copy }: PostsDirectoryProps) {
             }}
             placeholder={copy.searchPlaceholder}
             aria-label={copy.searchPlaceholder}
-            className="page-search-input"
+            className="flex-1 bg-transparent text-[1.1rem] text-muted dark:text-slate-200 placeholder:text-muted dark:text-slate-500 focus:outline-none"
           />
         </div>
       </div>
 
       {categories.length > 0 ? (
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-8 flex flex-wrap gap-2.5">
           <button
             type="button"
             onClick={() => setActiveCategory(copy.filterAllLabel)}
             className={cn(
-              "filter-pill",
-              activeCategory === copy.filterAllLabel && "filter-pill-active",
+              "inline-flex items-center rounded-full border px-4 py-1.5 text-[0.85rem] font-semibold uppercase tracking-widest transition-all duration-300 backdrop-blur-md",
+              activeCategory === copy.filterAllLabel
+                ? "border-sky-400/40 bg-sky-500/20 text-sky-200 shadow-[0_0_15px_rgba(14,165,233,0.3)]"
+                : "border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] text-muted dark:text-slate-400 hover:border-white/20 hover:text-muted dark:text-slate-200 hover:bg-surface-dark/20 dark:bg-[rgba(15,23,42,0.6)]"
             )}
           >
             {copy.filterAllLabel}
@@ -127,8 +130,10 @@ export function PostsDirectory({ posts, copy }: PostsDirectoryProps) {
               type="button"
               onClick={() => setActiveCategory(category)}
               className={cn(
-                "filter-pill",
-                activeCategory === category && "filter-pill-active",
+                "inline-flex items-center rounded-full border px-4 py-1.5 text-[0.85rem] font-semibold uppercase tracking-widest transition-all duration-300 backdrop-blur-md",
+                activeCategory === category
+                  ? "border-sky-400/40 bg-sky-500/20 text-sky-200 shadow-[0_0_15px_rgba(14,165,233,0.3)]"
+                  : "border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] text-muted dark:text-slate-400 hover:border-white/20 hover:text-muted dark:text-slate-200 hover:bg-surface-dark/20 dark:bg-[rgba(15,23,42,0.6)]"
               )}
             >
               {category}
@@ -137,17 +142,23 @@ export function PostsDirectory({ posts, copy }: PostsDirectoryProps) {
         </div>
       ) : null}
 
-      <div className="archive-toolbar mt-8">
-        <div className="flex items-center gap-3 text-slate-400">
-          <SlidersHorizontal className="h-4 w-4" aria-hidden />
+      <div className="mt-12 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between border-b border-border dark:border-white/10 pb-6">
+        <div className="flex items-center gap-2.5 text-sm font-medium text-muted dark:text-slate-400">
+          <SlidersHorizontal className="h-4 w-4 text-muted dark:text-slate-500" aria-hidden />
           <span>{countText}</span>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex items-center rounded-[1rem] border border-white/8 bg-white/4 p-1">
+        
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+          <div className="inline-flex items-center rounded-xl border border-border dark:border-white/10 bg-slate-900/50 p-1">
             <button
               type="button"
               onClick={() => setView("grid")}
-              className={cn("archive-view-button", view === "grid" && "archive-view-button-active")}
+              className={cn(
+                "inline-flex h-8 w-8 items-center justify-center rounded-lg transition-all",
+                view === "grid" 
+                  ? "bg-slate-800 text-sky-400 shadow-sm ring-1 ring-white/10" 
+                  : "text-muted dark:text-slate-500 hover:text-muted dark:text-slate-300"
+              )}
               aria-label="Grid view"
               aria-pressed={view === "grid"}
             >
@@ -156,7 +167,12 @@ export function PostsDirectory({ posts, copy }: PostsDirectoryProps) {
             <button
               type="button"
               onClick={() => setView("list")}
-              className={cn("archive-view-button", view === "list" && "archive-view-button-active")}
+              className={cn(
+                "inline-flex h-8 w-8 items-center justify-center rounded-lg transition-all",
+                view === "list" 
+                  ? "bg-slate-800 text-sky-400 shadow-sm ring-1 ring-white/10" 
+                  : "text-muted dark:text-slate-500 hover:text-muted dark:text-slate-300"
+              )}
               aria-label="List view"
               aria-pressed={view === "list"}
             >
@@ -164,19 +180,27 @@ export function PostsDirectory({ posts, copy }: PostsDirectoryProps) {
             </button>
           </div>
 
-          <label className="archive-sort-select">
-            <span>Sort by</span>
-            <select
-              value={sort}
-              onChange={(event) => {
-                const value = event.target.value as PostSort;
-                startTransition(() => setSort(value));
-              }}
-            >
-              <option value="newest">{copy.sortNewestLabel}</option>
-              <option value="oldest">{copy.sortOldestLabel}</option>
-              <option value="alphabetical">{copy.sortAlphabeticalLabel}</option>
-            </select>
+          <label className="flex items-center gap-3 text-sm">
+            <span className="text-muted dark:text-slate-500">Sort by</span>
+            <div className="relative">
+              <select
+                value={sort}
+                onChange={(event) => {
+                  const value = event.target.value as PostSort;
+                  startTransition(() => setSort(value));
+                }}
+                className="appearance-none rounded-lg border border-border dark:border-white/10 bg-slate-900/50 py-1.5 pl-3 pr-8 font-medium text-muted dark:text-slate-300 transition-colors hover:border-white/20 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
+              >
+                <option value="newest">{copy.sortNewestLabel}</option>
+                <option value="oldest">{copy.sortOldestLabel}</option>
+                <option value="alphabetical">{copy.sortAlphabeticalLabel}</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted dark:text-slate-500">
+                <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
+            </div>
           </label>
         </div>
       </div>
@@ -211,14 +235,22 @@ export function PostsDirectory({ posts, copy }: PostsDirectoryProps) {
           ))}
         </div>
       ) : (
-        <div className="detail-card mt-10">
-          <p className="signal-label">{copy.emptyEyebrow}</p>
-          <h3 className="mt-5 font-display text-[2rem] font-semibold leading-[1.04] tracking-[-0.04em] text-white">
-            {copy.emptyHeading}
-          </h3>
-          <p className="mt-4 text-[0.98rem] leading-8 text-slate-400">
-            {copy.emptyDescription}
-          </p>
+        <div className="group relative mt-12 overflow-hidden rounded-[2rem] border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] p-10 text-center shadow-xl backdrop-blur-xl transition-all duration-500 hover:border-white/20 hover:bg-[rgba(15,23,42,0.5)]">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(14,165,233,0.1),transparent_50%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full border border-border dark:border-white/10 bg-black/5 dark:bg-white/5 shadow-inner backdrop-blur-md">
+              <Search className="h-7 w-7 text-muted dark:text-slate-400" />
+            </div>
+            <p className="inline-flex items-center gap-2 rounded-full border border-border dark:border-white/10 bg-black/5 dark:bg-white/5 px-3.5 py-1.5 text-[0.7rem] font-semibold uppercase tracking-widest text-muted dark:text-slate-300">
+              {copy.emptyEyebrow}
+            </p>
+            <h3 className="mt-6 font-display text-[2.2rem] font-bold leading-[1.05] tracking-[-0.03em] text-foreground dark:text-white">
+              {copy.emptyHeading}
+            </h3>
+            <p className="mt-4 max-w-lg text-[1.05rem] leading-[1.7] text-muted dark:text-slate-400">
+              {copy.emptyDescription}
+            </p>
+          </div>
         </div>
       )}
     </section>

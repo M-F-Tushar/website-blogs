@@ -14,7 +14,7 @@ export default async function PublicLayout({
   const { siteSettings, navigationItems, recentPosts } = await getSiteChromeData();
 
   return (
-    <div id="top" className="theme-blogsite relative min-h-screen overflow-x-clip">
+    <div id="top" className="relative min-h-screen overflow-x-clip">
       <NebulaBackground />
       <SiteHeader siteSettings={siteSettings} navigationItems={navigationItems} />
       <main className="relative z-10">{children}</main>

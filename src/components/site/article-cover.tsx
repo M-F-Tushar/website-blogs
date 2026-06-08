@@ -28,7 +28,7 @@ export function ArticleCover({
           backgroundPosition: "center",
         }}
       />
-      <div className="relative overflow-hidden rounded-[2.8rem] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+      <div className="relative overflow-hidden rounded-[2.8rem] border border-border dark:border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
         <div className="relative aspect-[16/9] overflow-hidden">
           <Image
             src={src}
@@ -42,7 +42,7 @@ export function ArticleCover({
           <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-4 p-5 md:p-7">
             <div className="max-w-xl">
               <p className="detail-eyebrow text-sky-200/80">{captionLabel}</p>
-              <p className="mt-2 text-[0.92rem] leading-7 text-slate-100/92 md:text-base">
+              <p className="mt-2 text-[0.92rem] leading-7 text-foreground dark:text-slate-100/92 md:text-base">
                 {captionText}
               </p>
             </div>
@@ -51,7 +51,7 @@ export function ArticleCover({
                 {metaPills.map((pill) => (
                   <span
                     key={pill}
-                    className="rounded-full border border-white/12 bg-slate-950/40 px-3 py-1.5 text-[0.68rem] uppercase tracking-[0.22em] text-slate-200"
+                    className="rounded-full border border-white/12 bg-slate-950/40 px-3 py-1.5 text-[0.68rem] uppercase tracking-[0.22em] text-muted dark:text-slate-200"
                   >
                     {pill}
                   </span>

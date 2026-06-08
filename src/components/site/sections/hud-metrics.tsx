@@ -23,10 +23,10 @@ export function HUDMetrics({ activeVectors, vectorLabel, vectorBadge }: HUDMetri
               <span className="inline-block rounded-full bg-cyan-500/10 px-3 py-1 font-mono text-[0.6rem] uppercase tracking-widest text-cyan-400">
                 {vectorBadge}
               </span>
-              <h2 className="mt-6 font-display text-4xl font-bold tracking-tight text-white md:text-5xl">
+              <h2 className="mt-6 font-display text-4xl font-bold tracking-tight text-foreground dark:text-white md:text-5xl">
                 {vectorLabel}
               </h2>
-              <p className="mt-6 text-slate-400">
+              <p className="mt-6 text-muted dark:text-slate-400">
                 A live representation of the core tracks shaping the platform&apos;s current direction.
               </p>
             </div>
@@ -35,10 +35,10 @@ export function HUDMetrics({ activeVectors, vectorLabel, vectorBadge }: HUDMetri
               {activeVectors.map((vector, index) => (
                 <div key={vector.label} className="relative">
                   <div className="flex items-center justify-between mb-3 font-mono text-xs uppercase tracking-widest">
-                    <span className="text-slate-300">{vector.label}</span>
+                    <span className="text-muted dark:text-slate-300">{vector.label}</span>
                     <span className="text-cyan-400">{vector.value}</span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
                     <motion.div
                       initial={{ width: 0 }}
                       whileInView={{ width: vector.value }}

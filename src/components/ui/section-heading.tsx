@@ -18,21 +18,21 @@ export function SectionHeading({
       {eyebrow ? (
         <p
           className={cn(
-            "inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-[0.8rem] text-slate-300",
+            "inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-400/10 px-4 py-2 text-[0.8rem] font-semibold uppercase tracking-widest text-sky-300 backdrop-blur-md",
             align === "center" && "justify-center",
           )}
         >
-          <span className="text-sky-400">✦</span>
+          <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
           {eyebrow}
         </p>
       ) : null}
-      <h2 className="mt-5 font-display text-[2.65rem] font-semibold leading-[0.98] tracking-[-0.05em] text-white md:text-[3.45rem]">
+      <h2 className="mt-6 font-display text-[2.8rem] font-bold leading-[1.05] tracking-[-0.04em] text-white md:text-[3.6rem]">
         {title}
       </h2>
       {description ? (
         <p
           className={cn(
-            "mt-4 max-w-2xl text-[0.98rem] leading-7 text-slate-300 md:text-[1.04rem]",
+            "mt-5 max-w-2xl text-[1.05rem] leading-8 text-slate-300 md:text-[1.15rem]",
             align === "center" && "mx-auto",
           )}
         >

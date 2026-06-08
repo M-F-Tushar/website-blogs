@@ -361,42 +361,50 @@ export async function ContactPageContent({
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10 md:py-14">
-      <section className="redesign-hero rounded-[2rem] border border-white/8 px-6 py-8 md:px-8 md:py-10">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
+      <section className="relative overflow-hidden rounded-[2.5rem] border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] px-8 py-12 shadow-2xl backdrop-blur-xl md:px-12 md:py-16">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(244,63,94,0.15),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(245,158,11,0.1),transparent_50%)]" />
+        <div className="relative z-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
-              <span className="text-sky-400" aria-hidden>✦</span>
+            <p className="inline-flex items-center gap-2.5 rounded-full border border-rose-400/20 bg-rose-400/10 px-4 py-2 text-[0.85rem] font-semibold uppercase tracking-widest text-rose-200 backdrop-blur-md">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500"></span>
+              </span>
               {heroEyebrow}
             </p>
-            <h1 className="mt-6 max-w-4xl font-display text-[3.7rem] font-semibold leading-[0.92] tracking-[-0.06em] text-white md:text-[5.2rem]">
-              {heroTitleLead} <span className="accent-gradient-text">{heroTitleAccent}</span>
+            <h1 className="mt-8 max-w-4xl font-display text-5xl font-bold leading-[1.05] tracking-[-0.04em] text-foreground dark:text-white md:text-[5.5rem] drop-shadow-sm">
+              {heroTitleLead} <span className="bg-gradient-to-r from-rose-400 via-orange-400 to-amber-400 bg-clip-text text-transparent drop-shadow-lg">{heroTitleAccent}</span>
             </h1>
-            <p className="mt-5 max-w-3xl text-[1.04rem] leading-8 text-slate-300 md:text-[1.14rem]">
+            <p className="mt-8 max-w-2xl text-[1.1rem] font-light leading-[1.7] text-muted dark:text-slate-300 md:text-[1.25rem]">
               {heroDescription}
             </p>
           </div>
-          <div className="page-rail">
-            <p className="font-mono text-[0.66rem] uppercase tracking-[0.24em] text-slate-500">
-              {railLabel}
-            </p>
-            <div className="space-y-3 text-sm leading-7 text-slate-400">
-              <p>{railLine1}</p>
-              <p className="text-sky-200">{railLine2}</p>
+          <div className="group relative flex flex-col overflow-hidden rounded-[1.5rem] border border-border dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] p-8 shadow-lg backdrop-blur-md transition-colors hover:bg-black/[0.04] dark:bg-white/[0.04] hover:border-rose-500/20 hover:shadow-[0_12px_40px_rgba(244,63,94,0.15)]">
+            <div className="absolute inset-0 bg-gradient-to-t from-rose-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+            <div className="relative z-10">
+              <p className="font-mono text-[0.7rem] uppercase tracking-[0.25em] text-rose-400">
+                {railLabel}
+              </p>
+              <div className="mt-4 space-y-4 text-[0.95rem] leading-relaxed text-muted dark:text-slate-300">
+                <p className="group-hover:text-muted dark:text-slate-200 transition-colors">{railLine1}</p>
+                <p className="text-orange-200 font-medium">{railLine2}</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mt-10 rounded-[1.7rem] border border-emerald-400/18 bg-emerald-400/6 px-6 py-5 text-slate-200">
-        <div className="flex items-start gap-4">
-          <div className="rounded-[1rem] bg-emerald-400/12 p-3 text-emerald-300">
-            <Clock3 className="h-5 w-5" aria-hidden />
+      <section className="mt-12 overflow-hidden rounded-[2rem] border border-amber-500/20 bg-gradient-to-r from-[rgba(245,158,11,0.05)] to-[rgba(244,63,94,0.05)] p-8 shadow-xl backdrop-blur-xl transition-all duration-500 hover:border-amber-400/30 hover:shadow-[0_12px_40px_rgba(245,158,11,0.15)] md:p-10">
+        <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
+          <div className="relative flex shrink-0 items-center justify-center rounded-[1.25rem] bg-amber-500/15 p-4 text-amber-400 border border-amber-500/20 backdrop-blur-md">
+            <div className="absolute inset-0 animate-pulse rounded-[1.25rem] bg-amber-400/10" />
+            <Clock3 className="relative h-8 w-8" aria-hidden />
           </div>
           <div>
-            <h2 className="font-display text-[1.8rem] font-semibold tracking-[-0.04em] text-white">
+            <h2 className="font-display text-[2rem] font-bold tracking-[-0.04em] text-foreground dark:text-white">
               {availabilityTitle}
             </h2>
-            <p className="mt-2 text-[0.98rem] leading-8 text-slate-300">
+            <p className="mt-3 text-[1.05rem] leading-[1.7] text-muted dark:text-slate-300">
               {availabilityDescription}
             </p>
           </div>
@@ -406,7 +414,7 @@ export async function ContactPageContent({
       <section className="mt-10 grid gap-8 lg:grid-cols-[1fr_0.95fr]">
         <div className="space-y-8">
           <div>
-            <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.5rem]">
+            <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-foreground dark:text-white md:text-[2.5rem]">
               {formSectionHeading}
             </h2>
           </div>
@@ -419,30 +427,34 @@ export async function ContactPageContent({
 
         <div className="space-y-8">
           <div>
-            <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.5rem]">
+            <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-foreground dark:text-white md:text-[2.5rem]">
               {socialSectionHeading}
             </h2>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-6">
             {socialCards.map((card) => {
               const Icon = card.icon;
-              const cardClassName = `block overflow-hidden rounded-[1.45rem] border p-5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
-                card.href ? "hover:-translate-y-0.5" : ""
+              const cardClassName = `group relative block overflow-hidden rounded-[1.5rem] border p-6 transition-all duration-500 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-400/20 ${
+                card.href ? "hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(244,63,94,0.15)]" : ""
               } ${
                 card.featured
-                  ? "border-sky-400/20 bg-[linear-gradient(90deg,rgba(14,165,233,0.9),rgba(79,70,229,0.8))]"
-                  : "border-white/8 bg-white/4"
+                  ? "border-rose-400/30 bg-gradient-to-br from-[rgba(244,63,94,0.15)] to-[rgba(245,158,11,0.05)] hover:border-rose-400/50 backdrop-blur-xl"
+                  : "border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] hover:border-white/20 hover:bg-surface-dark/20 dark:bg-[rgba(15,23,42,0.6)] backdrop-blur-xl"
               }`;
               const cardContent = (
-                <div className="flex items-start gap-4">
-                  <div className="rounded-[1rem] bg-white/10 p-3 text-white">
-                    <Icon className="h-5 w-5" aria-hidden />
+                <div className="relative z-10 flex items-start gap-5">
+                  <div className={`flex shrink-0 items-center justify-center rounded-[1.25rem] p-3.5 transition-transform duration-500 group-hover:scale-110 ${
+                    card.featured
+                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                      : "bg-black/10 dark:bg-white/10 text-foreground dark:text-white/90 border border-white/5 group-hover:bg-white/20"
+                  }`}>
+                    <Icon className="h-6 w-6" aria-hidden />
                   </div>
                   <div>
-                    <p className="font-display text-[2rem] font-semibold tracking-[-0.04em] text-white">
+                    <p className="font-display text-[1.8rem] font-bold tracking-[-0.04em] text-foreground dark:text-white">
                       {card.title}
                     </p>
-                    <p className="mt-1 text-[0.98rem] leading-7 text-white/80">
+                    <p className="mt-2 text-[1.05rem] leading-[1.6] text-muted dark:text-slate-300">
                       {card.description}
                     </p>
                   </div>
@@ -452,6 +464,7 @@ export async function ContactPageContent({
               if (!card.href) {
                 return (
                   <div key={card.key} className={cardClassName}>
+                    {card.featured && <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(244,63,94,0.2),transparent_50%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />}
                     {cardContent}
                   </div>
                 );
@@ -473,6 +486,7 @@ export async function ContactPageContent({
                   }
                   className={cardClassName}
                 >
+                  {card.featured && <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(244,63,94,0.2),transparent_50%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />}
                   {cardContent}
                 </a>
               );
@@ -480,7 +494,7 @@ export async function ContactPageContent({
           </div>
 
           <div>
-            <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.5rem]">
+            <h2 className="font-display text-[2.2rem] font-semibold tracking-[-0.04em] text-foreground dark:text-white md:text-[2.5rem]">
               {faqSectionHeading}
             </h2>
             <div className="mt-5">

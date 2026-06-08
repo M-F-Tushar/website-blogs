@@ -104,9 +104,9 @@ export function ContactForm({
     botProtectionMode === "required" && Boolean(turnstileSiteKey);
   const botProtectionMisconfigured = botProtectionMode === "misconfigured";
   const fieldClassName =
-    "rounded-[1.2rem] border border-white/8 bg-white/4 px-4 py-3.5 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/30 focus:bg-white/7 focus-visible:ring-2 focus-visible:ring-sky-300/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950";
+    "w-full rounded-[1.2rem] border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] px-5 py-4 text-[1.05rem] text-foreground dark:text-white outline-none transition-all duration-300 placeholder:text-muted dark:text-slate-500 hover:border-rose-400/30 hover:bg-surface-dark/20 dark:bg-[rgba(15,23,42,0.6)] focus:border-rose-400/50 focus:bg-[rgba(15,23,42,0.7)] focus-visible:ring-4 focus-visible:ring-rose-400/20";
   const requiredMark = (
-    <span aria-hidden className="ml-1 text-sky-400">
+    <span aria-hidden className="ml-1.5 text-rose-400">
       {copy.requiredMarker}
     </span>
   );
@@ -235,28 +235,32 @@ export function ContactForm({
 
   return (
     <form
-      className="surface-panel rounded-[1.8rem] p-6 md:p-8"
+      className="relative overflow-hidden rounded-[2rem] border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] p-8 md:p-10 shadow-2xl backdrop-blur-xl"
       onSubmit={handleSubmit}
       noValidate
     >
-      <div className="flex flex-col gap-4 border-b border-white/8 pb-6 md:flex-row md:items-end md:justify-between">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(244,63,94,0.1),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(245,158,11,0.05),transparent_50%)] pointer-events-none" />
+      <div className="relative z-10 flex flex-col gap-6 border-b border-border dark:border-white/10 pb-8 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="signal-label">{copy.eyebrow}</p>
-          <h2 className="mt-4 font-display text-[2.4rem] font-semibold leading-[1.02] tracking-[-0.05em] text-white">
+          <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-rose-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+            {copy.eyebrow}
+          </p>
+          <h2 className="mt-4 font-display text-[2.4rem] font-semibold leading-[1.02] tracking-[-0.05em] text-foreground dark:text-white">
             {copy.title}
           </h2>
-          <p className="mt-3 max-w-2xl text-[0.98rem] leading-8 text-slate-400">
+          <p className="mt-4 max-w-2xl text-[1.05rem] leading-[1.7] text-muted dark:text-slate-300">
             {copy.description}
           </p>
         </div>
-        <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.24em] text-slate-400">
+        <div className="inline-flex rounded-full border border-rose-400/20 bg-rose-500/10 px-4 py-2 text-xs font-medium uppercase tracking-[0.2em] text-rose-300 backdrop-blur-md">
           {copy.badge}
         </div>
       </div>
 
       <div className="mt-8 grid gap-5 md:grid-cols-2">
-        <div className="flex flex-col gap-2 text-sm text-slate-300">
-          <label htmlFor={nameId}>
+        <div className="flex flex-col gap-2.5">
+          <label htmlFor={nameId} className="text-[0.92rem] font-medium text-muted dark:text-slate-300 pl-1">
             {copy.nameLabel}
             {requiredMark}
           </label>
@@ -271,8 +275,8 @@ export function ContactForm({
             aria-describedby={describedBy}
           />
         </div>
-        <div className="flex flex-col gap-2 text-sm text-slate-300">
-          <label htmlFor={emailId}>
+        <div className="flex flex-col gap-2.5">
+          <label htmlFor={emailId} className="text-[0.92rem] font-medium text-muted dark:text-slate-300 pl-1">
             {copy.emailLabel}
             {requiredMark}
           </label>
@@ -290,8 +294,8 @@ export function ContactForm({
         </div>
       </div>
 
-      <div className="mt-5 flex flex-col gap-2 text-sm text-slate-300">
-        <label htmlFor={subjectId}>
+      <div className="mt-6 flex flex-col gap-2.5">
+        <label htmlFor={subjectId} className="text-[0.92rem] font-medium text-muted dark:text-slate-300 pl-1">
           {copy.subjectLabel}
           {requiredMark}
         </label>
@@ -306,8 +310,8 @@ export function ContactForm({
         />
       </div>
 
-      <div className="mt-5 flex flex-col gap-2 text-sm text-slate-300">
-        <label htmlFor={messageId}>
+      <div className="mt-6 flex flex-col gap-2.5">
+        <label htmlFor={messageId} className="text-[0.92rem] font-medium text-muted dark:text-slate-300 pl-1">
           {copy.messageLabel}
           {requiredMark}
         </label>
@@ -334,12 +338,18 @@ export function ContactForm({
       <input type="hidden" name="captchaToken" value={captchaToken} />
 
       {requiresBotProtection ? (
-        <div className="mt-5 rounded-[1.25rem] border border-white/8 bg-white/4 p-4">
-          <p className="text-sm text-slate-400">{copy.captchaPrompt}</p>
+        <div className="mt-5 rounded-[1.25rem] border border-border dark:border-white/8 bg-white/4 p-4">
+          <p className="text-sm text-muted dark:text-slate-400">{copy.captchaPrompt}</p>
           <div ref={turnstileContainerRef} className="mt-4" />
           {!captchaReady ? (
-            <p className="mt-3 text-xs text-slate-500">{copy.captchaRequired}</p>
+            <p className="mt-3 text-xs text-muted dark:text-slate-500">{copy.captchaRequired}</p>
           ) : null}
+        </div>
+      ) : null}
+
+      {botProtectionMode === "disabled" ? (
+        <div className="mt-5 rounded-[1.25rem] border border-emerald-400/18 bg-emerald-400/8 p-4 text-sm text-emerald-200">
+          Local development mode is active, so bot protection is disabled for testing.
         </div>
       ) : null}
 
@@ -352,7 +362,7 @@ export function ContactForm({
         </div>
       ) : null}
 
-      <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="relative z-10 mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <button
           type="submit"
           disabled={
@@ -360,10 +370,11 @@ export function ContactForm({
             botProtectionMisconfigured ||
             (requiresBotProtection && !captchaToken)
           }
-          className="inline-flex items-center justify-center gap-2 rounded-[1.15rem] bg-sky-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-sky-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+          className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-[1.15rem] border border-rose-400/40 bg-rose-500/20 px-8 py-4 text-[1.05rem] font-semibold text-rose-100 shadow-[0_0_15px_rgba(244,63,94,0.3)] backdrop-blur-md transition-all duration-300 hover:border-rose-300/60 hover:bg-rose-400/30 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(244,63,94,0.25)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-400/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
-          <Send className="h-4 w-4" aria-hidden />
-          {state.status === "submitting" ? copy.submittingLabel : copy.submitLabel}
+          <div className="absolute inset-0 bg-gradient-to-r from-rose-500/20 to-amber-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <Send className="relative z-10 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" aria-hidden />
+          <span className="relative z-10">{state.status === "submitting" ? copy.submittingLabel : copy.submitLabel}</span>
         </button>
         <p
           id={statusId}

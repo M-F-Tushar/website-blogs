@@ -24,18 +24,18 @@ export function DetailCard({
       <p className="signal-label">{eyebrow}</p>
       {href ? (
         <a
-          className="mt-4 inline-block font-display text-[1.8rem] font-semibold leading-[1.06] tracking-[-0.04em] text-white transition hover:text-sky-300 md:text-[1.95rem]"
+          className="mt-4 inline-block font-display text-[1.8rem] font-semibold leading-[1.06] tracking-[-0.04em] text-foreground dark:text-white transition hover:text-sky-300 md:text-[1.95rem]"
           href={href}
         >
           {title}
         </a>
       ) : (
-        <h2 className="mt-4 font-display text-[1.8rem] font-semibold leading-[1.06] tracking-[-0.04em] text-white md:text-[1.95rem]">
+        <h2 className="mt-4 font-display text-[1.8rem] font-semibold leading-[1.06] tracking-[-0.04em] text-foreground dark:text-white md:text-[1.95rem]">
           {title}
         </h2>
       )}
       {description ? (
-        <p className="mt-3 max-w-3xl text-[0.96rem] leading-7 text-slate-400">
+        <p className="mt-3 max-w-3xl text-[0.96rem] leading-7 text-muted dark:text-slate-400">
           {description}
         </p>
       ) : null}

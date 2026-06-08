@@ -53,3 +53,7 @@ output/
 
 # isolated git workspaces
 .worktrees/
+
+# local agent / CLI installer artifacts
+install.cmd
+.gemini/

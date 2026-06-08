@@ -49,14 +49,14 @@ export function SiteFooter({
           ];
 
   return (
-    <footer className="border-t border-white/6 bg-[rgba(6,10,22,0.96)] text-white">
+    <footer className="border-t border-white/6 bg-[rgba(6,10,22,0.96)] text-foreground dark:text-white">
       <div className="mx-auto max-w-7xl px-6 py-14">
         <div className="grid gap-10 lg:grid-cols-[1.15fr_0.75fr_0.95fr_1fr]">
           <div>
             <h2 className="font-display text-[2rem] font-semibold tracking-[-0.05em]">
               {siteSettings.siteName}
             </h2>
-            <p className="mt-4 max-w-sm text-[0.96rem] leading-7 text-slate-400">
+            <p className="mt-4 max-w-sm text-[0.96rem] leading-7 text-muted dark:text-slate-400">
               {siteSettings.footerBlurb}
             </p>
             <div className="mt-6 flex items-center gap-3">
@@ -94,14 +94,14 @@ export function SiteFooter({
 
           <div>
             <p className="footer-column-title">Explore</p>
-            <div className="mt-5 flex flex-col gap-3.5 text-[0.96rem] text-slate-300">
+            <div className="mt-5 flex flex-col gap-3.5 text-[0.96rem] text-muted dark:text-slate-300">
               {navItems.map((item) => (
                 <Link
                   key={item.id}
                   href={item.href}
                   target={item.isExternal ? "_blank" : undefined}
                   rel={item.isExternal ? "noreferrer" : undefined}
-                  className="transition hover:text-white"
+                  className="transition hover:text-foreground dark:text-white"
                 >
                   {normalizeNavLabel(item)}
                 </Link>
@@ -116,11 +116,11 @@ export function SiteFooter({
                 <div key={post.id}>
                   <Link
                     href={`/blogs/${post.slug}`}
-                    className="font-display text-[1.28rem] leading-[1.2] tracking-[-0.04em] text-white transition hover:text-sky-300"
+                    className="font-display text-[1.28rem] leading-[1.2] tracking-[-0.04em] text-foreground dark:text-white transition hover:text-sky-300"
                   >
                     {post.title}
                   </Link>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-muted dark:text-slate-500">
                     {formatDisplayDate(post.publishedAt)}
                   </p>
                 </div>
@@ -130,7 +130,7 @@ export function SiteFooter({
 
           <div>
             <p className="footer-column-title">Stay Connected</p>
-            <p className="mt-5 text-[0.96rem] leading-7 text-slate-400">
+            <p className="mt-5 text-[0.96rem] leading-7 text-muted dark:text-slate-400">
               The newsletter is not live yet, so these are the real ways to follow the work.
             </p>
             <NewsletterSignup
@@ -141,15 +141,15 @@ export function SiteFooter({
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-4 border-t border-white/6 pt-6 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
+        <div className="mt-12 flex flex-col gap-4 border-t border-white/6 pt-6 text-sm text-muted dark:text-slate-500 md:flex-row md:items-center md:justify-between">
           <p>
             © 2026 {siteSettings.siteName}. Built for a durable public record of growth.
           </p>
           <div className="flex items-center gap-5">
-            <Link href="/sitemap.xml" className="transition hover:text-slate-300">
+            <Link href="/sitemap.xml" className="transition hover:text-muted dark:text-slate-300">
               Sitemap
             </Link>
-            <a href="#top" className="transition hover:text-slate-300">
+            <a href="#top" className="transition hover:text-muted dark:text-slate-300">
               Back to Top
             </a>
           </div>

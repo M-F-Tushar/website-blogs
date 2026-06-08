@@ -118,9 +118,7 @@ interface MessageRow {
   handled_at: string | null;
 }
 
-interface NamedRelationRow {
-  name?: string | null;
-}
+
 
 function mapMediaAsset(row: MediaAssetRow): MediaAsset {
   return {

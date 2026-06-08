@@ -23,7 +23,8 @@ export function slugify(value: string) {
     .trim()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 export function normalizeText(value: FormDataEntryValue | string | null | undefined) {

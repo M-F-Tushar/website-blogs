@@ -32,13 +32,13 @@ export function HeroCosmic({
         transition={{ duration: 0.8 }}
         className="relative z-10 max-w-5xl"
       >
-        <span className="inline-block rounded-full border border-white/10 bg-white/5 px-4 py-1.5 font-mono text-xs uppercase tracking-[0.3em] text-cyan-200 backdrop-blur-md">
+        <span className="inline-block rounded-full border border-border dark:border-white/10 bg-black/5 dark:bg-white/5 px-4 py-1.5 font-mono text-xs uppercase tracking-[0.3em] text-cyan-200 backdrop-blur-md">
           {heroEyebrow}
         </span>
-        <h1 className="mt-8 font-display text-6xl font-bold tracking-tight text-white md:text-8xl">
+        <h1 className="mt-8 font-display text-6xl font-bold tracking-tight text-foreground dark:text-white md:text-8xl">
           {heroSection?.heading ?? siteSettings.siteTagline}
         </h1>
-        <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-400 md:text-xl">
+        <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-muted dark:text-slate-400 md:text-xl">
           {heroSection?.subheading ?? siteSettings.siteDescription}
         </p>
         
@@ -56,7 +56,7 @@ export function HeroCosmic({
           </motion.div>
           <Link
             href={secondaryCtaHref}
-            className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-8 py-4 text-sm font-semibold text-white backdrop-blur-md transition-all hover:bg-white/10"
+            className="inline-flex items-center rounded-full border border-border dark:border-white/10 bg-black/5 dark:bg-white/5 px-8 py-4 text-sm font-semibold text-foreground dark:text-white backdrop-blur-md transition-all hover:bg-black/10 dark:bg-white/10"
           >
             {secondaryCtaLabel}
           </Link>
@@ -64,7 +64,7 @@ export function HeroCosmic({
 
         <div className="mt-16 flex flex-wrap justify-center gap-3">
           {focusTags.map((tag) => (
-            <span key={tag} className="rounded-full border border-white/5 bg-white/5 px-4 py-2 text-xs font-medium text-slate-400">
+            <span key={tag} className="rounded-full border border-white/5 bg-black/5 dark:bg-white/5 px-4 py-2 text-xs font-medium text-muted dark:text-slate-400">
               {tag}
             </span>
           ))}
@@ -75,7 +75,7 @@ export function HeroCosmic({
       <motion.div
         animate={{ y: [0, 10, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/30"
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 text-foreground dark:text-white/30"
       >
         <div className="h-10 w-6 rounded-full border border-white/20 p-1">
           <div className="mx-auto h-2 w-1 rounded-full bg-white/50" />

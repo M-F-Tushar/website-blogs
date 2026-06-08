@@ -57,8 +57,8 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
     return (
       <div className="mermaid-shell">
         <p className="text-sm font-medium text-amber-200">Mermaid diagram error</p>
-        <p className="mt-2 text-sm text-slate-300">{error}</p>
-        <pre className="mt-4 overflow-x-auto rounded-2xl bg-black/30 p-4 text-xs text-slate-100">
+        <p className="mt-2 text-sm text-muted dark:text-slate-300">{error}</p>
+        <pre className="mt-4 overflow-x-auto rounded-2xl bg-black/30 p-4 text-xs text-foreground dark:text-slate-100">
           <code>{chart}</code>
         </pre>
       </div>
@@ -68,7 +68,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
   if (!svg) {
     return (
       <div className="mermaid-shell">
-        <p className="text-sm text-slate-300">Rendering diagram...</p>
+        <p className="text-sm text-muted dark:text-slate-300">Rendering diagram...</p>
       </div>
     );
   }

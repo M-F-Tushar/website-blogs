@@ -20,10 +20,10 @@ test.describe("contact flow", () => {
 
     await page.goto("/contact");
 
-    await page.getByRole("textbox", { name: "Your Name *" }).fill("Contact Flow Test");
-    await page.getByRole("textbox", { name: "Email Address *" }).fill(email);
-    await page.getByRole("textbox", { name: "Subject *" }).fill(subject);
-    await page.getByRole("textbox", { name: "Message *" }).fill(message);
+    await page.getByRole("textbox", { name: "Your Name" }).fill("Contact Flow Test");
+    await page.getByRole("textbox", { name: "Email Address" }).fill(email);
+    await page.getByRole("textbox", { name: "Subject" }).fill(subject);
+    await page.getByRole("textbox", { name: "Message" }).fill(message);
     await page
       .locator("form")
       .filter({ has: page.getByRole("button", { name: "Send Message" }) })
@@ -33,10 +33,10 @@ test.describe("contact flow", () => {
 
     await expect(page.getByText("Your message has been received.")).toBeVisible();
 
-    await page.getByRole("textbox", { name: "Your Name *" }).fill("Contact Flow Test");
-    await page.getByRole("textbox", { name: "Email Address *" }).fill(email);
-    await page.getByRole("textbox", { name: "Subject *" }).fill(`${subject} retry`);
-    await page.getByRole("textbox", { name: "Message *" }).fill(message);
+    await page.getByRole("textbox", { name: "Your Name" }).fill("Contact Flow Test");
+    await page.getByRole("textbox", { name: "Email Address" }).fill(email);
+    await page.getByRole("textbox", { name: "Subject" }).fill(`${subject} retry`);
+    await page.getByRole("textbox", { name: "Message" }).fill(message);
     await page
       .locator("form")
       .filter({ has: page.getByRole("button", { name: "Send Message" }) })

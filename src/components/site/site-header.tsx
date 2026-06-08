@@ -54,12 +54,12 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-white/6 bg-[rgba(7,14,28,0.82)] backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-8 px-6 py-5">
-        <Link href="/" className="font-display text-[2rem] font-semibold tracking-[-0.05em] text-white">
+        <Link href="/" className="font-display text-[2rem] font-semibold tracking-[-0.05em] text-foreground dark:text-white">
           {siteSettings.siteName}
         </Link>
 
         <div className="hidden flex-1 items-center justify-center lg:flex">
-          <nav className="flex items-center gap-8 text-[0.98rem] text-slate-300">
+          <nav className="flex items-center gap-8 text-[0.98rem] text-muted dark:text-slate-300">
             {headerItems.map((item) => {
               const isActive = !item.isExternal && isActivePath(pathname, item.href);
 
@@ -70,8 +70,8 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
                   target={item.isExternal ? "_blank" : undefined}
                   rel={item.isExternal ? "noreferrer" : undefined}
                   className={cn(
-                    "relative pb-2 transition hover:text-white",
-                    isActive && "text-white",
+                    "relative pb-2 transition hover:text-foreground dark:text-white",
+                    isActive && "text-foreground dark:text-white",
                   )}
                 >
                   {normalizeNavLabel(item)}
@@ -87,7 +87,7 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
           </nav>
         </div>
 
-        <div className="hidden items-center gap-3 text-slate-200 lg:flex">
+        <div className="hidden items-center gap-3 text-muted dark:text-slate-200 lg:flex">
           <Link
             href="/blogs#search"
             className="site-icon-button"
@@ -97,7 +97,7 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
             <Search className="h-4 w-4" />
           </Link>
           <PublicThemeToggle />
-          <span className="mx-1 h-8 w-px bg-white/10" />
+          <span className="mx-1 h-8 w-px bg-black/10 dark:bg-white/10" />
           {siteSettings.githubUrl ? (
             <a
               href={siteSettings.githubUrl}
@@ -126,7 +126,7 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
       </div>
 
       <div className="border-t border-white/6 px-6 pb-4 pt-3 lg:hidden">
-        <nav className="grid grid-cols-2 gap-3 text-sm text-slate-300 min-[430px]:grid-cols-3">
+        <nav className="grid grid-cols-2 gap-3 text-sm text-muted dark:text-slate-300 min-[430px]:grid-cols-3">
           {headerItems.map((item) => {
             const isActive = !item.isExternal && isActivePath(pathname, item.href);
 
@@ -139,8 +139,8 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
                 className={cn(
                   "rounded-full border px-4 py-2 text-center transition",
                   isActive
-                    ? "border-sky-400/30 bg-sky-400/10 text-white"
-                    : "border-white/8 bg-white/4 text-slate-300",
+                    ? "border-sky-400/30 bg-sky-400/10 text-foreground dark:text-white"
+                    : "border-border dark:border-white/8 bg-white/4 text-muted dark:text-slate-300",
                 )}
               >
                 {normalizeNavLabel(item)}

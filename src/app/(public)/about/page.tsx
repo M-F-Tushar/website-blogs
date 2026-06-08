@@ -52,54 +52,58 @@ function AboutTimeline({
   description: string;
 }) {
   return (
-    <div className="detail-card relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(56,189,248,0.14),transparent_24%),radial-gradient(circle_at_88%_12%,rgba(129,140,248,0.16),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_36%)]" />
-      <div className="relative">
-        <p className="signal-label">{eyebrow}</p>
-        <h3 className="mt-4 font-display text-[2rem] font-semibold leading-[1.02] tracking-[-0.04em] text-white md:text-[2.25rem]">
+    <div className="relative overflow-hidden rounded-[2.5rem] border border-border dark:border-white/10 bg-[rgba(15,23,42,0.5)] p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:border-white/20 md:p-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.1),transparent_60%),radial-gradient(ellipse_at_bottom_right,rgba(99,102,241,0.08),transparent_50%)]" />
+      <div className="relative z-10">
+        <p className="inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-400/10 px-4 py-2 text-[0.75rem] font-semibold uppercase tracking-widest text-sky-300 backdrop-blur-md">
+          <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+          {eyebrow}
+        </p>
+        <h3 className="mt-6 font-display text-[2.2rem] font-bold leading-[1.05] tracking-[-0.04em] text-foreground dark:text-white md:text-[2.6rem]">
           {heading}
         </h3>
-        <p className="mt-3 max-w-xl text-[0.96rem] leading-7 text-slate-400">
+        <p className="mt-4 max-w-xl text-[1rem] leading-relaxed text-muted dark:text-slate-400">
           {description}
         </p>
 
-        <div className="relative mt-8">
-          <div className="absolute bottom-4 left-[1.05rem] top-4 w-px bg-gradient-to-b from-sky-300/70 via-sky-400/30 to-transparent" />
-          <div className="space-y-5">
+        <div className="relative mt-12">
+          <div className="absolute bottom-4 left-[1.25rem] top-4 w-px bg-gradient-to-b from-sky-400/80 via-indigo-500/30 to-transparent" />
+          <div className="space-y-8">
             {items.map((item, index) => (
               <div
                 key={`${item.phase}-${item.title}`}
-                className="relative grid gap-3 pl-10 md:grid-cols-[auto_minmax(0,1fr)]"
+                className="relative grid gap-4 pl-12 md:grid-cols-[auto_minmax(0,1fr)]"
               >
-                <div className="absolute left-0 top-2.5 flex h-9 w-9 items-center justify-center rounded-full border border-sky-300/25 bg-slate-950/85 shadow-[0_0_0_6px_rgba(2,6,23,0.8)]">
-                  <span className="font-mono text-[0.68rem] tracking-[0.2em] text-sky-200">
+                <div className="absolute left-0 top-1 flex h-10 w-10 items-center justify-center rounded-full border border-sky-400/30 bg-slate-900 shadow-[0_0_20px_rgba(14,165,233,0.3)] backdrop-blur-sm z-10">
+                  <span className="font-mono text-[0.65rem] font-bold tracking-[0.2em] text-sky-300">
                     {item.phase}
                   </span>
                 </div>
                 <div
-                  className={`rounded-[1.25rem] border border-white/8 bg-white/[0.03] px-4 py-4 shadow-[0_18px_40px_rgba(2,6,23,0.16)] ${
+                  className={`group relative overflow-hidden rounded-[1.5rem] border border-white/5 bg-black/[0.02] dark:bg-white/[0.02] px-6 py-6 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-sky-500/20 hover:bg-white/[0.05] hover:shadow-[0_12px_40px_rgba(14,165,233,0.15)] ${
                     item.align === "right" && index % 2 === 1 ? "md:ml-6" : "md:mr-6"
                   }`}
                 >
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="relative z-10 flex flex-wrap items-center gap-3">
                     {item.status ? (
-                      <span className="inline-flex items-center rounded-full border border-sky-300/15 bg-sky-400/8 px-3 py-1 text-[0.68rem] uppercase tracking-[0.18em] text-sky-200">
+                      <span className="inline-flex items-center rounded-full border border-sky-400/20 bg-sky-400/10 px-3.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-sky-300 transition-colors group-hover:border-sky-400/40">
                         {item.status}
                       </span>
                     ) : null}
                     {item.tags?.slice(0, 2).map((tag) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[0.68rem] uppercase tracking-[0.16em] text-slate-400"
+                        className="inline-flex items-center rounded-full border border-border dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.15em] text-muted dark:text-slate-400 transition-colors group-hover:text-muted dark:text-slate-300"
                       >
                         {tag}
                       </span>
                     ))}
                   </div>
-                  <h4 className="mt-3 font-display text-[1.45rem] leading-[1.08] tracking-[-0.03em] text-white">
+                  <h4 className="relative z-10 mt-4 font-display text-[1.4rem] font-semibold leading-[1.15] tracking-[-0.03em] text-foreground dark:text-slate-100 transition-colors duration-300 group-hover:text-foreground dark:text-white">
                     {item.title}
                   </h4>
-                  <p className="mt-2 text-[0.95rem] leading-7 text-slate-400">
+                  <p className="relative z-10 mt-3 text-[0.95rem] leading-[1.7] text-muted dark:text-slate-400 group-hover:text-muted dark:text-slate-300 transition-colors duration-300">
                     {item.description}
                   </p>
                 </div>
@@ -351,8 +355,7 @@ export async function AboutPageContent({
     getSectionSettingString(identitySection, "eyebrow") ??
     getSectionSettingString(template, "heroEyebrow") ??
     "About Me";
-  const heroGreeting =
-    getSectionSettingString(template, "heroGreeting") ?? "Hi, I’m";
+
   const taglineFallback =
     getSectionSettingString(template, "taglineFallback") ??
     "AI & ML Enthusiast • Aspiring AI Agent Developer • LLM Explorer • Lifelong Learner";
@@ -426,87 +429,100 @@ export async function AboutPageContent({
   ];
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
-      <section className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+    <div className="mx-auto max-w-7xl px-6 py-16 md:py-24">
+      <section className="grid gap-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300">
-            <span className="text-sky-400" aria-hidden>✦</span>
+          <p className="inline-flex items-center gap-2.5 rounded-full border border-sky-400/20 bg-sky-400/10 px-4 py-2 text-[0.85rem] font-semibold uppercase tracking-widest text-sky-200 backdrop-blur-md">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-500"></span>
+            </span>
             {heroEyebrow}
           </p>
-          <h1 className="mt-6 font-display text-[4rem] font-semibold leading-[0.92] tracking-[-0.06em] text-white md:text-[5.6rem]">
-            {heroGreeting} <span className="accent-gradient-text">{displayName}</span>
-          </h1>
-          <p className="mt-5 max-w-3xl text-[1.08rem] leading-8 text-slate-300 md:text-[1.18rem]">
+          <h1 className="mt-8 max-w-2xl font-display text-[2.5rem] font-bold leading-[1.15] tracking-[-0.03em] text-foreground dark:text-white md:text-[3.5rem] lg:text-[4rem] drop-shadow-sm">
             {identitySection?.subheading ??
               siteSettings.siteTagline ??
               taglineFallback}
-          </p>
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            <div className="detail-card h-full">
-              <p className="signal-label">{focusCardEyebrow}</p>
-              <h2 className="mt-4 font-display text-[1.8rem] font-semibold leading-[1.06] tracking-[-0.04em] text-white md:text-[1.95rem]">
-                {focusCardTitle}
-              </h2>
-              <p className="mt-3 text-[0.96rem] leading-7 text-slate-400">
-                {focusCardDescription}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2.5">
-                {focusAreas.map((area) => (
-                  <span key={area} className="signal-pill">
-                    {area}
-                  </span>
-                ))}
+          </h1>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2">
+            <div className="group/card relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] p-8 shadow-xl backdrop-blur-md transition-all duration-500 hover:-translate-y-1 hover:border-sky-500/20 hover:shadow-[0_12px_40px_rgba(14,165,233,0.15)]">
+              <div className="absolute inset-0 bg-gradient-to-b from-sky-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover/card:opacity-100" />
+              <div className="relative z-10 flex flex-1 flex-col">
+                <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+                  {focusCardEyebrow}
+                </p>
+                <h2 className="mt-5 font-display text-[1.8rem] font-bold leading-[1.1] tracking-[-0.03em] text-foreground dark:text-white">
+                  {focusCardTitle}
+                </h2>
+                <p className="mt-3 text-[0.95rem] leading-relaxed text-muted dark:text-slate-400">
+                  {focusCardDescription}
+                </p>
+                <div className="mt-8 flex flex-wrap gap-2.5">
+                  {focusAreas.map((area) => (
+                    <span key={area} className="inline-flex items-center rounded-full border border-slate-700/50 bg-slate-800/40 px-3.5 py-1.5 text-[0.75rem] font-medium text-muted dark:text-slate-300 transition-colors hover:border-sky-400/30 hover:text-foreground dark:text-slate-100 cursor-default">
+                      {area}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="detail-card h-full">
-              <p className="signal-label">{platformCardEyebrow}</p>
-              <h2 className="mt-4 font-display text-[1.8rem] font-semibold leading-[1.06] tracking-[-0.04em] text-white md:text-[1.95rem]">
-                {platformCardTitle}
-              </h2>
-              <p className="mt-3 text-[0.96rem] leading-7 text-slate-400">
-                {platformCardDescription}
-              </p>
-              <div className="mt-5 space-y-3">
-                {aboutSummary.map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-center justify-between gap-4 rounded-[1rem] border border-white/8 bg-white/4 px-4 py-3"
-                  >
-                    <span className="text-sm text-slate-400">{item.label}</span>
-                    <span className="text-sm font-medium text-slate-100">{item.value}</span>
-                  </div>
-                ))}
+            <div className="group/card relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] p-8 shadow-xl backdrop-blur-md transition-all duration-500 hover:-translate-y-1 hover:border-indigo-500/20 hover:shadow-[0_12px_40px_rgba(99,102,241,0.15)]">
+              <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover/card:opacity-100" />
+              <div className="relative z-10 flex flex-1 flex-col">
+                <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                  {platformCardEyebrow}
+                </p>
+                <h2 className="mt-5 font-display text-[1.8rem] font-bold leading-[1.1] tracking-[-0.03em] text-foreground dark:text-white">
+                  {platformCardTitle}
+                </h2>
+                <p className="mt-3 text-[0.95rem] leading-relaxed text-muted dark:text-slate-400">
+                  {platformCardDescription}
+                </p>
+                <div className="mt-8 space-y-3">
+                  {aboutSummary.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center justify-between gap-4 rounded-xl border border-border dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.03] px-5 py-3 transition-colors hover:border-white/20 hover:bg-white/[0.06]"
+                    >
+                      <span className="text-[0.92rem] font-medium text-muted dark:text-slate-400">{item.label}</span>
+                      <span className="text-lg font-bold text-foreground dark:text-slate-100">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="editorial-panel rounded-[2rem] p-4">
-          <div className="relative overflow-hidden rounded-[1.7rem] border border-white/8 bg-slate-950/70">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(56,189,248,0.16),transparent_22%),radial-gradient(circle_at_82%_0%,rgba(99,102,241,0.2),transparent_24%)]" />
-            <div className="relative aspect-[4/4.8]">
+        <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+          <div className="absolute -inset-4 rounded-[3rem] bg-gradient-to-tr from-sky-500/20 via-indigo-500/20 to-purple-500/20 opacity-30 blur-2xl" />
+          <div className="relative overflow-hidden rounded-[2.5rem] border border-border dark:border-white/10 bg-surface-dark/20 dark:bg-[rgba(15,23,42,0.6)] p-6 shadow-2xl backdrop-blur-xl group">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(56,189,248,0.16),transparent_22%),radial-gradient(circle_at_82%_0%,rgba(99,102,241,0.2),transparent_24%)] opacity-70 transition-opacity duration-500 group-hover:opacity-100" />
+            <div className="relative aspect-[4/4.8] overflow-hidden rounded-3xl border border-border dark:border-white/10 bg-slate-950/80 shadow-inner">
               {portraitUrl ? (
                 <Image
                   src={portraitUrl}
                   alt={`${siteSettings.siteName} portrait`}
                   fill
-                  sizes="(max-width: 1024px) 100vw, 34vw"
-                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 40vw"
+                  className="object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
                 />
               ) : (
                 <div className="relative flex h-full items-center justify-center overflow-hidden text-center">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_20%,rgba(56,189,248,0.28),transparent_24%),radial-gradient(circle_at_80%_70%,rgba(129,140,248,0.22),transparent_28%),linear-gradient(135deg,rgba(15,23,42,0.72),rgba(2,6,23,0.98))]" />
-                  <div className="absolute inset-10 rounded-full border border-sky-300/16" />
-                  <div className="absolute inset-20 rounded-full border border-sky-300/10" />
-                  <div className="relative">
-                    <p className="font-mono text-[0.7rem] uppercase tracking-[0.32em] text-sky-200/72">
+                  <div className="absolute inset-10 rounded-full border border-sky-300/20 animate-[spin_60s_linear_infinite]" />
+                  <div className="absolute inset-20 rounded-full border border-sky-300/10 animate-[spin_40s_linear_infinite_reverse]" />
+                  <div className="relative z-10 px-6">
+                    <p className="font-mono text-[0.8rem] font-semibold uppercase tracking-[0.3em] text-sky-300">
                       {portraitInitialsEyebrow}
                     </p>
-                    <p className="mt-6 font-display text-[6rem] font-semibold leading-none tracking-[-0.08em] text-white md:text-[8rem]">
+                    <p className="mt-6 font-display text-[7rem] font-bold leading-none tracking-[-0.05em] text-foreground dark:text-white md:text-[9rem] drop-shadow-xl">
                       {getInitials(displayName)}
                     </p>
-                    <p className="mx-auto mt-5 max-w-xs text-sm leading-7 text-slate-400">
+                    <p className="mx-auto mt-6 max-w-xs text-[0.95rem] leading-relaxed text-muted dark:text-slate-300 font-medium">
                       {portraitInitialsCaption}
                     </p>
                   </div>
@@ -528,13 +544,13 @@ export async function AboutPageContent({
         <SignalCard eyebrow={signalTopicsLabel} title={String(topicCount)} emphasis="display" />
       </section>
 
-      <section className="mt-14 border-t border-white/8 pt-10">
-        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-          <div>
-            <h2 className="font-display text-[2.8rem] font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-[3.6rem]">
+      <section className="mt-16 border-t border-border dark:border-white/10 pt-16">
+        <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+          <div className="max-w-none">
+            <h2 className="font-display text-[3rem] font-bold leading-[1.05] tracking-[-0.04em] text-foreground dark:text-white md:text-[4rem]">
               {storyHeading}
             </h2>
-            <div className="mt-5 space-y-5 text-[1rem] leading-8 text-slate-300">
+            <div className="mt-8 text-[1.1rem] leading-[1.8] [&_.markdown-body_p]:!text-muted dark:text-slate-300 [&_.markdown-body_li]:!text-muted dark:text-slate-300 [&_.markdown-body_h2]:!text-foreground dark:text-white [&_.markdown-body_h3]:!text-foreground dark:text-white [&_.markdown-body_strong]:!text-foreground dark:text-white">
               <Markdown
                 content={identitySection?.bodyMarkdown ?? storyFallback}
               />
