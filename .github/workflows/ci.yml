@@ -59,3 +59,55 @@ jobs:
 
       - name: Run smoke tests
         run: npm run smoke
+
+  e2e:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APP_ENV: local
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3205
+      E2E_ADMIN_EMAIL: e2e-admin@example.com
+      E2E_ADMIN_PASSWORD: e2e-Admin-Password-123
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start local Supabase stack
+        # Exclude services the tests don't need; the full stack plus a Next.js
+        # build exceeds the 7 GB runner memory and gets the build OOM-killed.
+        run: npx supabase start -x studio,realtime,edge-runtime,logflare,vector,supavisor
+
+      - name: Export local Supabase credentials
+        run: |
+          npx supabase status -o env > supabase-status.env
+          # shellcheck disable=SC1091
+          . ./supabase-status.env
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+          } >> "$GITHUB_ENV"
+          rm supabase-status.env
+
+      - name: Bootstrap e2e admin user
+        run: node scripts/bootstrap-admin.mjs "$E2E_ADMIN_EMAIL" "$E2E_ADMIN_PASSWORD" "E2E Admin"
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run e2e flows
+        run: npm run e2e:flows
+
+      - name: Stop local Supabase stack
+        if: always()
+        run: npx supabase stop --no-backup

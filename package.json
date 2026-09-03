@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run lint && npm run typecheck && npm run build",
+    "verify": "npm run lint && npm run typecheck && APP_ENV=local npm run build",
     "smoke:install": "playwright install chromium",
     "smoke": "playwright test",
     "e2e:flows": "playwright test --config=playwright.e2e.config.ts",
@@ -44,6 +44,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "supabase": "^2.111.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
