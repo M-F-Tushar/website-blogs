@@ -16,7 +16,12 @@ import {
 } from "@/lib/content/queries";
 import { getSectionSettingString } from "@/lib/content/section-settings";
 import { buildSiteMetadata } from "@/lib/content/seo";
-import { countWords, estimateReadingTime, formatDisplayDate } from "@/lib/utils";
+import {
+  countWords,
+  estimateReadingTime,
+  formatDisplayDate,
+  serializeJsonLd,
+} from "@/lib/utils";
 
 export const revalidate = 300;
 export const dynamicParams = true;
@@ -120,7 +125,7 @@ export default async function AcademicDetailPage({
     <article className="relative">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleJsonLd) }}
       />
       <div className="mx-auto max-w-[96rem] px-6 pb-20 pt-12 md:pb-28 md:pt-16 xl:px-10 2xl:px-14">
         <header className="mx-auto max-w-[78rem]">

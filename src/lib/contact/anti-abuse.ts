@@ -1,4 +1,4 @@
-import { getAppRuntimeStage } from "@/lib/supabase/env";
+import { getAppRuntimeStage, getContactBotProtectionConfig } from "@/lib/supabase/env";
 
 export const CONTACT_THROTTLE_COOKIE = "contact-throttle";
 export const CONTACT_PROXY_THROTTLE_SECONDS = 8;
@@ -146,14 +146,27 @@ export function extractClientIp(headers: Headers) {
   // your own trusted reverse proxy).
   const trustedHeader = (process.env.TRUSTED_IP_HEADER ?? "x-vercel-forwarded-for").toLowerCase();
   const raw = normalizeHeaderValue(headers.get(trustedHeader));
-  return normalizeIp(raw);
+  const ip = normalizeIp(raw);
+
+  if (!ip && getAppRuntimeStage() === "production") {
+    console.warn(
+      `[contact] trusted IP header "${trustedHeader}" is missing; per-IP rate limiting is inactive. Set TRUSTED_IP_HEADER for this host.`,
+    );
+  }
+
+  return ip;
 }
 
 export async function verifyTurnstileToken(token: string | null, sourceIp: string | null) {
-  // Fail-closed: only skip verification when explicitly opted out
-  // (CONTACT_BOT_PROTECTION=off). A misclassified runtime stage no longer
-  // silently disables bot protection on production deployments.
+  // Explicit opt-out for testing hosts.
   if (process.env.CONTACT_BOT_PROTECTION?.toLowerCase() === "off") {
+    return;
+  }
+
+  // The local stage renders no Turnstile widget (see getContactBotProtectionConfig),
+  // so verification must be skipped to match the UI. Hosted stages (staging and
+  // production) never resolve to "disabled" and still fail closed below.
+  if (getContactBotProtectionConfig().mode === "disabled") {
     return;
   }
 
