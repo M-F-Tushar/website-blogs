@@ -13,6 +13,8 @@ test.describe("admin content flow", () => {
   );
 
   const createdSlugs: string[] = [];
+  const createdTagSlugs = ["playwright", "e2e"];
+  const createdCategorySlugs = ["testing"];
 
   test.afterAll(async () => {
     if (!supabaseUrl || !serviceRoleKey || createdSlugs.length === 0) {
@@ -23,6 +25,35 @@ test.describe("admin content flow", () => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
     await service.from("posts").delete().in("slug", createdSlugs);
+
+    // Remove taxonomy rows this test introduced, unless another post still uses them.
+    const { data: tags } = await service.from("tags").select("id").in("slug", createdTagSlugs);
+    const tagIds = (tags ?? []).map((row) => row.id);
+    if (tagIds.length > 0) {
+      const { data: usedTags } = await service.from("post_tags").select("tag_id").in("tag_id", tagIds);
+      const used = new Set((usedTags ?? []).map((row) => row.tag_id));
+      const unused = tagIds.filter((id) => !used.has(id));
+      if (unused.length > 0) {
+        await service.from("tags").delete().in("id", unused);
+      }
+    }
+
+    const { data: categories } = await service
+      .from("categories")
+      .select("id")
+      .in("slug", createdCategorySlugs);
+    const categoryIds = (categories ?? []).map((row) => row.id);
+    if (categoryIds.length > 0) {
+      const { data: usedCategories } = await service
+        .from("post_categories")
+        .select("category_id")
+        .in("category_id", categoryIds);
+      const used = new Set((usedCategories ?? []).map((row) => row.category_id));
+      const unused = categoryIds.filter((id) => !used.has(id));
+      if (unused.length > 0) {
+        await service.from("categories").delete().in("id", unused);
+      }
+    }
   });
 
   test("admin can publish a post and see it publicly", async ({ page }) => {
@@ -80,5 +111,29 @@ test.describe("admin content flow", () => {
     // The archive is paginated; search narrows to the new post regardless of volume.
     await page.getByPlaceholder("Search articles...").fill(uniqueSuffix);
     await expect(page.getByRole("link", { name: new RegExp(title) }).first()).toBeVisible();
+
+    if (supabaseUrl && serviceRoleKey) {
+      // Taxonomy must persist too; a schema mismatch once made tag saves fail silently.
+      const service = createClient(supabaseUrl, serviceRoleKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const [{ data: postTags }, { data: postCategories }] = await Promise.all([
+        service.from("post_tags").select("tags(slug), posts!inner(slug)").eq("posts.slug", slug),
+        service
+          .from("post_categories")
+          .select("categories(slug), posts!inner(slug)")
+          .eq("posts.slug", slug),
+      ]);
+
+      const tagSlugs = (postTags ?? [])
+        .map((row) => (row.tags as unknown as { slug: string } | null)?.slug)
+        .sort();
+      const categorySlugs = (postCategories ?? []).map(
+        (row) => (row.categories as unknown as { slug: string } | null)?.slug,
+      );
+
+      expect(tagSlugs).toEqual(["e2e", "playwright"]);
+      expect(categorySlugs).toEqual(["testing"]);
+    }
   });
 });
