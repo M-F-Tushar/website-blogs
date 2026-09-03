@@ -123,14 +123,16 @@ export function StatusPill({
   tone = "neutral",
 }: {
   children: ReactNode;
-  tone?: "neutral" | "success" | "warning";
+  tone?: "neutral" | "success" | "warning" | "danger";
 }) {
   const classes =
     tone === "success"
       ? "bg-emerald-100 text-emerald-700"
       : tone === "warning"
         ? "bg-amber-100 text-amber-700"
-        : "bg-slate-200 text-slate-700";
+        : tone === "danger"
+          ? "bg-rose-100 text-rose-700"
+          : "bg-slate-200 text-slate-700";
 
   return (
     <span

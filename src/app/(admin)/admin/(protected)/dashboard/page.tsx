@@ -18,10 +18,19 @@ import {
   StatusPill,
 } from "@/components/admin/primitives";
 import { getAdminDashboardSnapshot } from "@/lib/content/admin-queries";
+import { getIntegrationStatuses, type IntegrationState } from "@/lib/ops/integration-status";
 import { formatDisplayDate } from "@/lib/utils";
+
+const INTEGRATION_TONE: Record<IntegrationState, "success" | "warning" | "danger" | "neutral"> = {
+  ok: "success",
+  warning: "warning",
+  error: "danger",
+  off: "neutral",
+};
 
 export default async function AdminDashboardPage() {
   const dashboard = await getAdminDashboardSnapshot();
+  const integrations = getIntegrationStatuses();
 
   const commonTasks: Array<{
     href: string;
@@ -255,6 +264,29 @@ export default async function AdminDashboardPage() {
               </Link>
             ))}
           </div>
+
+          <div className="mt-8 flex items-center justify-between gap-3">
+            <p className="font-mono text-xs uppercase tracking-[0.24em] text-accent">
+              Integrations
+            </p>
+            <StatusPill tone={integrations.stage === "production" ? "success" : "neutral"}>
+              {integrations.stage}
+            </StatusPill>
+          </div>
+          <ul className="mt-4 space-y-3" aria-label="Integration status">
+            {integrations.items.map((item) => (
+              <li
+                key={item.key}
+                className="rounded-[1.1rem] border border-border bg-white/50 px-4 py-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-sm font-medium text-foreground">{item.label}</span>
+                  <StatusPill tone={INTEGRATION_TONE[item.state]}>{item.state}</StatusPill>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-muted">{item.detail}</p>
+              </li>
+            ))}
+          </ul>
         </AdminPanel>
       </section>
 
