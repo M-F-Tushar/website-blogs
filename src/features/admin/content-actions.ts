@@ -27,6 +27,14 @@ import {
   slugify,
   toBoolean,
 } from "@/lib/utils";
+import type { ContactMessageStatus } from "@/types/content";
+
+const CONTACT_MESSAGE_STATUSES: readonly ContactMessageStatus[] = [
+  "new",
+  "reviewed",
+  "replied",
+  "archived",
+];
 
 interface NamedLookupRow {
   id: string;
@@ -574,7 +582,7 @@ async function uploadMediaAsset(formData: FormData) {
   }
 
   if (!ALLOWED_MEDIA_MIME_TYPES.has(file.type)) {
-    throw new Error("Unsupported file type. Upload a PNG, JPEG, WebP, AVIF, GIF, or SVG.");
+    throw new Error("Unsupported file type. Upload a PNG, JPEG, WebP, AVIF, or GIF.");
   }
 
   const extension = file.name.includes(".")
@@ -654,7 +662,8 @@ export async function updateMessageStatusAction(formData: FormData) {
   await requireAdminSession();
 
   const id = optionalText(formData.get("id"));
-  const status = normalizeText(formData.get("status"));
+  const statusInput = normalizeText(formData.get("status"));
+  const status = CONTACT_MESSAGE_STATUSES.find((value) => value === statusInput);
 
   if (!id || !status) {
     redirect("/admin/messages");

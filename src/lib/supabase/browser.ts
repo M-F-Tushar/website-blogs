@@ -1,13 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getPublicSupabaseConfig } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 
-let client: any = null;
+let client: SupabaseClient<Database> | null = null;
 
-export function getBrowserSupabaseClient(): any {
+export function getBrowserSupabaseClient(): SupabaseClient<Database> | null {
   const config = getPublicSupabaseConfig();
 
   if (!config) {
@@ -15,7 +16,7 @@ export function getBrowserSupabaseClient(): any {
   }
 
   if (!client) {
-    client = createBrowserClient(config.url, config.anonKey) as any;
+    client = createBrowserClient<Database>(config.url, config.anonKey);
   }
 
   return client;
