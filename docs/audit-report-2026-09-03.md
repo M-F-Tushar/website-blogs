@@ -174,3 +174,53 @@ Based on the evidence above, the auditor certifies that as of 2026-09-03:
 4. Production is **not running the current codebase** and **is running a Next.js release with known High-severity advisories**. Until F-01 and F-02 are closed, this system is rated **OPERATIONAL — CONDITIONAL**, not **PRODUCTION-CLEAN**.
 
 Re-audit scope after remediation: re-run §4.1, re-probe §4.3 headers and `/feed.xml`, `npm audit`, and `supabase migration list` against the linked production project.
+
+---
+
+## 7. Remediation record (same day, 2026-09-03)
+
+All findings were worked sequentially on `main`, each in its own commit, with the full gate (lint, typecheck, clean build, 8 smoke, 10 e2e) re-run after every change. Two additional defects were discovered and fixed during remediation.
+
+| Finding | Status | Commit | What changed | Evidence |
+|---|---|---|---|---|
+| F-01 Next.js advisories | **Closed** | `fix(deps): upgrade Next.js to 16.3.4…` | `next` 16.2.6 → 16.3.4, `eslint-config-next` 16.3.4, `mermaid` 11.17.2; transitive `sharp` 0.35.x, `postcss`, `nanoid`, `dompurify` patched via `npm audit fix`. | `npm audit` → **0 vulnerabilities** (production and full tree). |
+| F-02 Uncommitted hardening | **Closed locally; push pending** | 7 grouped commits (`fix(db)`, `feat(types)`, `security`, `feat(site)`, `fix(content)`, `test`, `docs`) | The 2026-08-04 working tree was committed in logical units *before* any new change, so nothing was ever at risk again. | `git status` clean; 14 commits ahead of `origin/main`. **Push requires operator confirmation** (deploys to production via Vercel). |
+| F-03 Migration ledger | **Closed (tooling + procedure); repair itself is an operator step** | `docs+ops: migration ledger checker…` | `npm run db:check` (`scripts/check-migration-ledger.mjs`) compares tracked migrations with the linked/local history table and prints the exact `migration repair` command on drift; exits non-zero so it can gate `db push`. Operator guide Task H documents the one-time repair for `ljljrvqlrleppyzzfysj`. | Checker verified in all three states (unlinked → 2, in sync → 0, simulated drift → 1 with correct command). Cannot execute the remote repair from this workspace: no `SUPABASE_ACCESS_TOKEN`. |
+| F-04 Soft-404s | **Closed** | `fix(routing): return real 404 status…` | Root cause was two layers of `loading.tsx` (root + section) wrapping `notFound()` callers in Suspense, committing a 200 before the lookup resolved. Root boundary removed; section listing pages moved to `(index)` route groups so `[slug]` detail pages are outside the streamed boundary. | `/nope`, `/about/deeper`, `/blogs|academic|recommendations/nope`, `/admin/nope` → **404**; all real routes 200. Smoke test added. |
+| F-05 Single-layer admin gating | **Closed** | `security(admin): redirect anonymous admin requests at the proxy layer` | `updateSession()` now returns a 307 to `/admin/login` for anonymous requests to any protected admin path (including when Supabase is unconfigured), carrying refreshed cookies. `requireAdminSession()` remains the authoritative role check. | Unauthenticated `/admin/*` → **307**, 12-byte body, no admin shell rendered. Smoke test added; admin e2e login flow unaffected. |
+| F-06 Unverifiable integrations | **Closed (in-app visibility); live confirmation is an operator step** | `feat(admin): integration status panel…` | Server-only `getIntegrationStatuses()` reports Supabase (public/service role), Turnstile, throttle secret, trusted IP header, and Resend wiring for the running stage — presence and mode only, never values. Rendered on `/admin/dashboard`. Operator guide Task I defines the live production check. | e2e asserts the panel renders and no key-shaped strings appear in the page. |
+| F-07 Dependency drift | **Closed** | `chore(deps): update Supabase SDKs, Playwright, Tailwind, React…` | `@supabase/ssr` 0.12.5, `supabase-js` 2.114, Playwright 1.62, CLI 2.116, Tailwind 4.3, React 19.2.8, `@types/node` 22, `[inbucket]` → `[local_smtp]`. Remaining `npm outdated` entries are intentional major-version holds (TypeScript 7, ESLint 10, framer-motion 13, lucide 1.x). | CI `-x` service names confirmed valid on CLI 2.116. |
+| F-08 Documentation drift | **Closed** | `docs+ops: …` | README: migrations dir is canonical, remote flow runs `db:check` first, accurate auth-toggle note, proxy redirect note, all three CI jobs, post-deploy checklist gains 404 + integration panel checks. `scripts/db/README.md` links to the repair procedure. | — |
+| F-09 TLS | No action | — | Vercel-managed, auto-renews (expires 2026-10-22). | — |
+
+### Defects found during remediation (not in the original report)
+
+| ID | Severity | Description | Fix |
+|---|---|---|---|
+| R-01 | **High (data loss, production-affecting)** | `upsertNamedRows()` sent `sort_order` to `public.tags`, which has no such column. PostgREST rejected every tag upsert and the error was never checked, so **tags entered in the post editor were silently dropped**. Confirmed in production: `post_tags` is empty despite posts having been edited. Surfaced by the stricter `supabase-js` 2.114 typings. | Categories and tags are now upserted with their own row shapes; upsert and lookup errors throw. e2e asserts tags and categories persist after save. Existing production posts will need their tags re-entered once deployed. |
+| R-02 | Low (test hygiene) | `admin-content` e2e never cleaned up: 11 `codex-e2e-post-*` rows had accumulated locally, pushing the newest one past the 12-item first page and making the test flaky. | Test deletes its post and any taxonomy rows it introduced (when unreferenced) in `afterAll`, and locates the post via archive search. Local DB purged. |
+
+### Environmental note (not a code defect)
+
+In this 8 GB Codespace, `next build` is intermittently SIGTERM'd (exit 143) at its compile-end memory spike by the **host** memory guard (sender uid 61876, outside the container namespace — confirmed with `strace`). Running with `NEXT_PRIVATE_BUILD_WORKER=false NODE_OPTIONS=--max-old-space-size=1536` avoids it. CI (dedicated 7 GB runner) and Vercel are unaffected; no repository change was made for this.
+
+### Final gate (post-remediation)
+
+| Check | Result |
+|---|---|
+| `npm audit` | 0 vulnerabilities |
+| `npm run lint` | pass |
+| `npm run typecheck` | pass |
+| `next build` (clean) | pass, all routes generated |
+| `npm run smoke` | **8/8** (4 original + 404 status, admin edge redirect, security headers, RSS) |
+| `npm run e2e:flows` | **10/10** (admin publish + taxonomy persistence, contact + throttle, 8 RLS invariants) |
+| DB hygiene after tests | 0 leftover rows; taxonomy tables restored; local ledger 11/11 |
+
+### Remaining operator actions (cannot be performed from the repository)
+
+1. **Push `main` to `origin`** → CI runs all three jobs → Vercel deploys. Then re-probe production: `curl -I https://tusherblog.me/` shows CSP/XFO/HSTS; `/feed.xml` is `application/rss+xml`; an unknown URL returns 404; anonymous `/admin/dashboard` returns 307.
+2. **Manual Task H** — link the CLI and repair the production migration ledger (`npm run db:check` → printed `migration repair` command → `db:check` again).
+3. **Manual Task I** — on production `/admin/dashboard`, confirm every Integrations row is `ok`; send one live contact message and confirm the email arrives.
+4. **Re-enter tags** on any production posts that were expected to carry them (R-01).
+
+Upon completion of items 1–3, the system rating moves from **OPERATIONAL — CONDITIONAL** to **PRODUCTION-CLEAN**.
