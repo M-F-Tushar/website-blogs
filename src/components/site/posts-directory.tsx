@@ -29,6 +29,8 @@ interface PostsDirectoryProps {
 type PostSort = "newest" | "oldest" | "alphabetical";
 type DirectoryView = "grid" | "list";
 
+const PAGE_SIZE = 12;
+
 function sortPosts(posts: PostSummary[], sort: PostSort) {
   const sortedPosts = [...posts];
 
@@ -51,7 +53,16 @@ export function PostsDirectory({ posts, copy }: PostsDirectoryProps) {
   const [sort, setSort] = useState<PostSort>("newest");
   const [view, setView] = useState<DirectoryView>("grid");
   const [activeCategory, setActiveCategory] = useState(copy.filterAllLabel);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
+
+  // Reset pagination during render when any filter changes.
+  const filterKey = `${deferredQuery}|${activeCategory}|${sort}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
+    setVisibleCount(PAGE_SIZE);
+  }
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -90,6 +101,7 @@ export function PostsDirectory({ posts, copy }: PostsDirectoryProps) {
   );
 
   const countText = copy.countLabel.replace("{count}", String(filteredPosts.length));
+  const visiblePosts = filteredPosts.slice(0, visibleCount);
 
   return (
     <section className="mt-16">
@@ -206,34 +218,50 @@ export function PostsDirectory({ posts, copy }: PostsDirectoryProps) {
       </div>
 
       {filteredPosts.length > 0 ? (
-        <div
-          className={cn(
-            "mt-8 gap-6",
-            view === "grid"
-              ? cn(
-                  "grid md:grid-cols-2",
-                  filteredPosts.length < 3 ? "mx-auto max-w-5xl" : "xl:grid-cols-3",
-                )
-              : "flex flex-col gap-5",
-          )}
-        >
-          {filteredPosts.map((post) => (
-            <ContentCard
-              key={post.id}
-              href={`/blogs/${post.slug}`}
-              eyebrow={post.categories[0] ?? copy.cardEyebrowFallback}
-              title={post.title}
-              description={post.excerpt}
-              date={post.publishedAt}
-              meta={estimateReadingTime(post.bodyMarkdown)}
-              imageUrl={post.coverUrl}
-              imageAlt={post.coverAlt}
-              layout={view}
-              tags={post.tags}
-              actionLabel={copy.cardActionLabel}
-            />
-          ))}
-        </div>
+        <>
+          <div
+            className={cn(
+              "mt-8 gap-6",
+              view === "grid"
+                ? cn(
+                    "grid md:grid-cols-2",
+                    visiblePosts.length < 3 ? "mx-auto max-w-5xl" : "xl:grid-cols-3",
+                  )
+                : "flex flex-col gap-5",
+            )}
+          >
+            {visiblePosts.map((post) => (
+              <ContentCard
+                key={post.id}
+                href={`/blogs/${post.slug}`}
+                eyebrow={post.categories[0] ?? copy.cardEyebrowFallback}
+                title={post.title}
+                description={post.excerpt}
+                date={post.publishedAt}
+                meta={estimateReadingTime(post.bodyMarkdown)}
+                imageUrl={post.coverUrl}
+                imageAlt={post.coverAlt}
+                layout={view}
+                tags={post.tags}
+                actionLabel={copy.cardActionLabel}
+              />
+            ))}
+          </div>
+          {filteredPosts.length > visiblePosts.length ? (
+            <div className="mt-10 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+                className="inline-flex items-center gap-2 rounded-full border border-border dark:border-white/10 bg-black/5 dark:bg-white/5 px-6 py-3 text-sm font-semibold text-muted dark:text-slate-200 backdrop-blur-md transition-all hover:border-sky-400/40 hover:bg-sky-400/10 hover:text-foreground dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+              >
+                Load more articles
+                <span className="text-xs text-muted dark:text-slate-400">
+                  ({filteredPosts.length - visiblePosts.length} remaining)
+                </span>
+              </button>
+            </div>
+          ) : null}
+        </>
       ) : (
         <div className="group relative mt-12 overflow-hidden rounded-[2rem] border border-border dark:border-white/10 bg-surface-dark/10 dark:bg-[rgba(15,23,42,0.4)] p-10 text-center shadow-xl backdrop-blur-xl transition-all duration-500 hover:border-white/20 hover:bg-[rgba(15,23,42,0.5)]">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(14,165,233,0.1),transparent_50%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
