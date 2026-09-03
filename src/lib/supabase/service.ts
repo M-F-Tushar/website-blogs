@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import "server-only";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { getServiceRoleSupabaseConfig } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 
-let serviceClient: any = null;
+let serviceClient: SupabaseClient<Database> | null = null;
 
-export function createServiceRoleClient(): any {
+export function createServiceRoleClient(): SupabaseClient<Database> {
   const config = getServiceRoleSupabaseConfig();
 
   if (!config) {
@@ -16,12 +16,12 @@ export function createServiceRoleClient(): any {
   }
 
   if (!serviceClient) {
-    serviceClient = createClient(config.url, config.serviceRoleKey, {
+    serviceClient = createClient<Database>(config.url, config.serviceRoleKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
       },
-    }) as any;
+    });
   }
 
   return serviceClient;

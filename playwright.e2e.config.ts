@@ -1,4 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
+import dotenv from "dotenv";
+
+// Capture values set explicitly by the operator/CI before .env.local is merged,
+// so a developer's local site URL cannot break the same-origin contact check.
+const explicitSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+const explicitAppEnv = process.env.APP_ENV;
+
+// Make local Supabase credentials available to the test process (the Next.js
+// web server loads .env.local on its own).
+dotenv.config({ path: ".env.local", quiet: true });
 
 const port = Number(process.env.PORT ?? "3205");
 const host = process.env.HOST ?? "127.0.0.1";
@@ -36,8 +46,8 @@ export default defineConfig({
     stderr: "pipe",
     env: {
       ...process.env,
-      APP_ENV: process.env.APP_ENV ?? "local",
-      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? baseURL,
+      APP_ENV: explicitAppEnv ?? "local",
+      NEXT_PUBLIC_SITE_URL: explicitSiteUrl ?? baseURL,
     },
   },
 });

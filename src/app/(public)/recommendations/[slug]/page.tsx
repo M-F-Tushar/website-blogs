@@ -17,6 +17,7 @@ import {
 } from "@/lib/content/queries";
 import { getSectionSettingString } from "@/lib/content/section-settings";
 import { buildSiteMetadata } from "@/lib/content/seo";
+import { serializeJsonLd } from "@/lib/utils";
 
 export const revalidate = 300;
 export const dynamicParams = true;
@@ -139,7 +140,7 @@ export default async function RecommendationDetailPage({
     <article className="relative">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(recommendationJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(recommendationJsonLd) }}
       />
       <div className="mx-auto max-w-[96rem] px-6 pb-20 pt-12 md:pb-28 md:pt-16 xl:px-10 2xl:px-14">
         <header className="mx-auto max-w-[86rem]">

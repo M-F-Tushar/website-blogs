@@ -118,7 +118,14 @@ function buildPublicContentFailureMessage(resource: string) {
 }
 
 function failPublicContent(resource: string, reason: string, error?: unknown): never {
-  console.error(`[content:${getAppRuntimeStage()}] ${resource} failed: ${reason}`, error);
+  const prefix = `[content:${getAppRuntimeStage()}] ${resource} failed: ${reason}`;
+
+  if (error === undefined) {
+    console.error(prefix);
+  } else {
+    console.error(prefix, error);
+  }
+
   throw new Error(buildPublicContentFailureMessage(resource));
 }
 

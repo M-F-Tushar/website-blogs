@@ -211,6 +211,83 @@ The last safety step must happen in the live environment.
 
 ---
 
+## Manual Task H: Repair The Production Migration Ledger (one time)
+
+### When you will do this
+Once, before the next schema change is pushed to production. Also any time `npm run db:check` reports drift.
+
+### Why this is needed
+The June 2026 production upgrade was applied by hand with the SQL in `scripts/db/`. The database *schema* matches `supabase/migrations/`, but the Supabase CLI's history table (`supabase_migrations.schema_migrations`) was never told about it. Until it is, `supabase db push` would try to re-run migrations that are already applied and fail part-way.
+
+### What you need
+- a Supabase access token (Dashboard → Account → Access Tokens), exported as `SUPABASE_ACCESS_TOKEN`, or run `npx supabase login`
+- the production project ref: `ljljrvqlrleppyzzfysj`
+- the production database password (the CLI will prompt for it)
+
+### Steps
+1. Link this checkout to production (creates `supabase/.temp/project-ref`, which is git-ignored):
+
+   ```bash
+   npx supabase link --project-ref ljljrvqlrleppyzzfysj
+   ```
+
+2. Check the ledger:
+
+   ```bash
+   npm run db:check
+   ```
+
+   - `Ledger in sync` → you are done; skip to "How to verify".
+   - `DRIFT DETECTED` → continue.
+
+3. The script prints the exact repair command. It will look like this (all eleven tracked versions are expected to be missing the first time):
+
+   ```bash
+   npx supabase migration repair --linked --status applied \
+     20260321123000 20260321131500 20260321140000 20260321150000 20260321154000 \
+     20260524120000 20260524120500 20260524130000 20260524140000 20260524150000 \
+     20260608000000
+   ```
+
+   Only mark a version `applied` if its SQL really is already in production. If you are unsure about one, run `npx supabase db push --dry-run` and read what it would execute before deciding.
+
+4. Re-run `npm run db:check` until it reports `Ledger in sync`.
+
+### How to verify
+- `npm run db:check` exits 0 and prints `Ledger in sync`
+- `npx supabase migration list --linked` shows every local version with a matching remote entry
+
+### After this
+- Never apply hand-written SQL to production again. Add a file in `supabase/migrations/`, verify it locally with `npx supabase db reset`, then run `npm run db:check` and `npx supabase db push`.
+- Do not commit `supabase/.temp/`.
+
+---
+
+## Manual Task I: Confirm Third-Party Integrations In Production
+
+### When you will do this
+After every production deploy that touches environment variables, and once after the first deploy of the integration status panel.
+
+### Why this is needed
+Turnstile and Resend are configured entirely through environment variables in the hosting dashboard. The code cannot prove they are set correctly; only a live check can.
+
+### Steps
+1. Log in to `/admin/dashboard` on production.
+2. In the right-hand column, find **Integrations**. The pill next to it must read `production`.
+3. Every row should be `ok`. Meaning of other values:
+   - `error` → the contact form is failing closed right now; fix the named variable in the hosting dashboard and redeploy.
+   - `warning` → the site works, but the named feature is off (for example email notifications).
+   - `off` → expected only on the local stage.
+4. Open `/contact` in a private window, complete the Turnstile check, and send a short message to yourself.
+5. Confirm the message appears in `/admin/messages`.
+6. Confirm the notification email arrives at the configured recipient. Check the spam folder once; if it landed there, verify the sending domain in Resend.
+
+### How to verify
+- all Integrations rows show `ok` on production
+- one contact message stored and one email received, both within a minute
+
+---
+
 ## Beginner Notes
 
 If a step says:

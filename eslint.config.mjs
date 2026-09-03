@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "bootstrap-app-temp/**",
     "test-results/**",
     "playwright-report/**",
+    // Supabase CLI local-stack runtime files.
+    "supabase/.temp/**",
   ]),
 ]);
 

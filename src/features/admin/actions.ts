@@ -7,6 +7,7 @@ import { requireAdminSession } from "@/lib/auth/guards";
 import { DEFAULT_TOP_LEVEL_PAGE_PATHS } from "@/lib/content/page-routing";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { createAuthenticatedServerClient } from "@/lib/supabase/server";
+import type { Json } from "@/types/database";
 import {
   navigationItemSchema,
   pageSchema,
@@ -352,7 +353,7 @@ export async function savePageSectionAction(formData: FormData) {
           is_visible: payload.isVisible,
           featured: payload.featured,
           image_asset_id: payload.imageAssetId,
-          settings_json: payload.settingsJson,
+          settings_json: payload.settingsJson as Json,
         })
         .eq("id", payload.id)
     : await supabase.from("page_sections").insert({
@@ -366,7 +367,7 @@ export async function savePageSectionAction(formData: FormData) {
         is_visible: payload.isVisible,
         featured: payload.featured,
         image_asset_id: payload.imageAssetId,
-        settings_json: payload.settingsJson,
+        settings_json: payload.settingsJson as Json,
       });
 
   if (error) {

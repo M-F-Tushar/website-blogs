@@ -27,6 +27,14 @@ import {
   slugify,
   toBoolean,
 } from "@/lib/utils";
+import type { ContactMessageStatus } from "@/types/content";
+
+const CONTACT_MESSAGE_STATUSES: readonly ContactMessageStatus[] = [
+  "new",
+  "reviewed",
+  "replied",
+  "archived",
+];
 
 interface NamedLookupRow {
   id: string;
@@ -107,21 +115,32 @@ async function upsertNamedRows(table: "categories" | "tags", names: string[]) {
   }
 
   const supabase = createServiceRoleClient();
-  const rows = names.map((name, index) => ({
-    name,
-    slug: slugify(name),
-    sort_order: index,
-  }));
+  const slugs = names.map((name) => slugify(name));
 
-  await supabase.from(table).upsert(rows, { onConflict: "slug" });
+  // The two tables differ: only categories carry sort_order.
+  const { error } =
+    table === "categories"
+      ? await supabase.from("categories").upsert(
+          names.map((name, index) => ({ name, slug: slugs[index], sort_order: index })),
+          { onConflict: "slug" },
+        )
+      : await supabase.from("tags").upsert(
+          names.map((name, index) => ({ name, slug: slugs[index] })),
+          { onConflict: "slug" },
+        );
 
-  const { data } = await supabase
+  if (error) {
+    throw new Error(`Failed to save ${table}: ${error.message}`);
+  }
+
+  const { data, error: lookupError } = await supabase
     .from(table)
     .select("id, slug")
-    .in(
-      "slug",
-      rows.map((row) => row.slug),
-    );
+    .in("slug", slugs);
+
+  if (lookupError) {
+    throw new Error(`Failed to load ${table}: ${lookupError.message}`);
+  }
 
   return (data ?? []) as NamedLookupRow[];
 }
@@ -574,7 +593,7 @@ async function uploadMediaAsset(formData: FormData) {
   }
 
   if (!ALLOWED_MEDIA_MIME_TYPES.has(file.type)) {
-    throw new Error("Unsupported file type. Upload a PNG, JPEG, WebP, AVIF, GIF, or SVG.");
+    throw new Error("Unsupported file type. Upload a PNG, JPEG, WebP, AVIF, or GIF.");
   }
 
   const extension = file.name.includes(".")
@@ -654,7 +673,8 @@ export async function updateMessageStatusAction(formData: FormData) {
   await requireAdminSession();
 
   const id = optionalText(formData.get("id"));
-  const status = normalizeText(formData.get("status"));
+  const statusInput = normalizeText(formData.get("status"));
+  const status = CONTACT_MESSAGE_STATUSES.find((value) => value === statusInput);
 
   if (!id || !status) {
     redirect("/admin/messages");

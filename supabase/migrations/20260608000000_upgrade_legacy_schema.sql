@@ -18,8 +18,17 @@ ALTER TABLE public.posts DROP COLUMN IF EXISTS tags;
 ALTER TABLE public.posts DROP COLUMN IF EXISTS cover_image;
 ALTER TABLE public.posts DROP COLUMN IF EXISTS is_initial;
 
--- 2. Upgrade 'contact_messages' table
-UPDATE public.contact_messages SET status = 'reviewed' WHERE is_read = true;
+-- 2. Upgrade 'contact_messages' table (legacy databases only: is_read never exists on fresh installs)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'contact_messages' AND column_name = 'is_read'
+  ) THEN
+    UPDATE public.contact_messages SET status = 'reviewed' WHERE is_read = true;
+  END IF;
+END
+$$;
 ALTER TABLE public.contact_messages DROP COLUMN IF EXISTS is_read;
 
 -- 3. Upgrade 'recommendations' table
@@ -40,11 +49,11 @@ ALTER TABLE public.recommendations DROP CONSTRAINT IF EXISTS recommendations_cov
 ALTER TABLE public.recommendations ADD CONSTRAINT recommendations_cover_asset_id_fkey FOREIGN KEY (cover_asset_id) REFERENCES public.media_assets (id) ON DELETE SET NULL;
 
 -- 4. Site Settings (Clean up legacy columns)
+-- Note: site_name and site_description are canonical columns in the current
+-- schema (queried by the app) and must NOT be dropped.
 ALTER TABLE public.site_settings DROP COLUMN IF EXISTS featured_post_id;
 ALTER TABLE public.site_settings DROP COLUMN IF EXISTS site_title;
-ALTER TABLE public.site_settings DROP COLUMN IF EXISTS site_description;
 ALTER TABLE public.site_settings DROP COLUMN IF EXISTS photo_url;
-ALTER TABLE public.site_settings DROP COLUMN IF EXISTS site_name;
 ALTER TABLE public.site_settings DROP COLUMN IF EXISTS author_name;
 ALTER TABLE public.site_settings DROP COLUMN IF EXISTS author_tagline;
 ALTER TABLE public.site_settings DROP COLUMN IF EXISTS author_bio;

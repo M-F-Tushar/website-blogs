@@ -52,4 +52,48 @@ test.describe("public smoke", () => {
     await expect(page.getByText(/Local development mode is active/i)).toBeVisible();
     await expect(page.getByRole("button", { name: "Send Message" })).toBeEnabled();
   });
+
+  test("unknown urls return a real 404 status", async ({ request }) => {
+    for (const path of [
+      "/this-page-does-not-exist",
+      "/about/deeper",
+      "/blogs/this-post-does-not-exist",
+      "/academic/this-entry-does-not-exist",
+      "/recommendations/this-item-does-not-exist",
+    ]) {
+      const response = await request.get(path, { maxRedirects: 0 });
+      expect(response.status(), path).toBe(404);
+    }
+  });
+
+  test("anonymous admin requests are redirected at the edge", async ({ request }) => {
+    for (const path of ["/admin", "/admin/dashboard", "/admin/messages", "/admin/nope"]) {
+      const response = await request.get(path, { maxRedirects: 0 });
+      expect(response.status(), path).toBe(307);
+      expect(new URL(response.headers().location, "http://localhost").pathname).toBe(
+        "/admin/login",
+      );
+    }
+
+    const login = await request.get("/admin/login", { maxRedirects: 0 });
+    expect(login.status()).toBe(200);
+  });
+
+  test("security headers are present on public responses", async ({ request }) => {
+    const headers = (await request.get("/")).headers();
+
+    expect(headers["content-security-policy"]).toContain("default-src 'self'");
+    expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+    expect(headers["x-frame-options"]).toBe("DENY");
+    expect(headers["x-content-type-options"]).toBe("nosniff");
+    expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+  });
+
+  test("rss feed is served with the correct content type", async ({ request }) => {
+    const response = await request.get("/feed.xml");
+
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("application/rss+xml");
+    expect(await response.text()).toContain("<rss");
+  });
 });

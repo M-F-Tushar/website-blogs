@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 
 import { AboutPageContent } from "@/app/(public)/about/page";
-import { AcademicPageContent } from "@/app/(public)/academic/page";
-import { BlogsPageContent } from "@/app/(public)/blogs/page";
+import { AcademicPageContent } from "@/app/(public)/academic/(index)/page";
+import { BlogsPageContent } from "@/app/(public)/blogs/(index)/page";
 import { ContactPageContent } from "@/app/(public)/contact/page";
 import { HomePageContent } from "@/app/(public)/page";
-import { RecommendationsPageContent } from "@/app/(public)/recommendations/page";
+import { RecommendationsPageContent } from "@/app/(public)/recommendations/(index)/page";
 import {
   buildTopLevelPageMetadata,
   getAuthoritativeTopLevelPageBySlug,

@@ -196,6 +196,11 @@ export function absoluteUrl(path = "/") {
   return new URL(path, getSiteUrl()).toString();
 }
 
+export function serializeJsonLd(value: unknown) {
+  // Escape < so embedded strings can never close the surrounding <script> tag.
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
 export function getSupabaseStoragePublicUrl(bucketName: string, objectPath: string) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!supabaseUrl) {

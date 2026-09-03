@@ -85,12 +85,7 @@ This repo contains the Supabase schema and seed files under `supabase/`.
 
 ### Migration Order
 
-Apply migrations in timestamp order:
-
-1. `supabase/migrations/20260321123000_initial_platform.sql`
-2. `supabase/migrations/20260321131500_move_contact_messages_to_public.sql`
-3. `supabase/migrations/20260321150000_backfill_top_level_page_sections.sql`
-4. `supabase/migrations/20260321154000_enhance_homepage_hybrid_sections.sql`
+Migrations live in `supabase/migrations/` and are applied in timestamp order by the Supabase CLI. The directory is the single source of truth; never hand-apply SQL to a hosted database. `scripts/db/` holds one-time historical scripts only and must not be re-run.
 
 ### Local Supabase Flow
 
@@ -105,12 +100,15 @@ supabase db reset
 
 ### Remote Supabase Flow
 
-For a hosted Supabase project, link the project and push the schema:
+For a hosted Supabase project, link the project, confirm the migration ledger matches, then push:
 
 ```bash
 supabase link --project-ref <your-project-ref>
+npm run db:check
 supabase db push
 ```
+
+`npm run db:check` compares `supabase/migrations/` with the remote history table and exits non-zero (with the exact `migration repair` command) if they disagree. Do not run `db push` while it reports drift; see Manual Task H in [`docs/manual-operator-guide.md`](./docs/manual-operator-guide.md).
 
 If you want starter content in the remote database, apply `supabase/seed.sql` intentionally. Do not seed production with placeholder content unless you plan to replace it immediately.
 
@@ -137,7 +135,8 @@ This project is currently designed as an admin-only backend.
 What is already true in this repo:
 - the app only exposes a sign-in form, not a public signup flow
 - no OAuth providers are enabled in `supabase/config.toml`
-- local Supabase config now disables email signup by default
+- local `[auth].enable_signup = false` blocks self-service account creation; `[auth.email].enable_signup = true` is required because the CLI maps it to the email provider toggle and `false` would block all local password logins
+- anonymous requests to any `/admin/*` route other than `/admin/login` are redirected by the proxy before rendering; `requireAdminSession()` then enforces the `admin` role server-side
 - admin access is expected to be created manually with `npm run bootstrap-admin`
 
 Hosted Supabase settings you should apply manually before launch:
@@ -165,25 +164,22 @@ npm run e2e:flows
 npm run verify:smoke
 npm run start
 npm run bootstrap-admin -- admin@example.com strong-password "Admin Name"
+npm run db:check            # linked project ledger vs supabase/migrations
+npm run db:check -- --local
 ```
 
 ## Continuous Integration
 
-Minimum CI is defined in [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).
+CI is defined in [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) and runs on pushes to `main` and on pull requests. Three jobs:
 
-It runs on pushes to `main` and on pull requests, and it verifies:
-- dependency install with `npm ci`
-- `npm run lint`
-- `npm run typecheck`
-- `npm run build`
-- `npm run smoke`
+- `verify`: `npm ci`, `npm run lint`, `npm run typecheck`, `npm run build`
+- `smoke`: builds and serves the public app with no Supabase or Turnstile credentials, then runs `tests/smoke/` (public pages, real 404 status codes, anonymous admin redirect, security headers, RSS)
+- `e2e`: starts an ephemeral Supabase stack with the CLI, bootstraps an admin user, and runs `tests/e2e/` (admin publish flow with taxonomy persistence, contact flow and throttling, eight RLS invariants)
 
 Important note:
-- CI runs with `APP_ENV=local` so the build gate can use local fallback content without requiring live Supabase credentials.
-- smoke tests build and run the public app with isolated local-style environment values so the pipeline does not depend on live Supabase or Turnstile credentials
-- This is intentional for the minimum code-quality/build gate.
+- All jobs run with `APP_ENV=local`. No GitHub Actions secrets or repository variables are required.
+- The `e2e` job proves the code against a real Postgres with the tracked migrations, not against the hosted project.
 - Real staged backend verification belongs in the staging smoke checklist below.
-- No GitHub Actions secrets or repository variables are required for the current CI workflow.
 
 ## Optional Authenticated E2E Check
 
@@ -200,9 +196,10 @@ What it proves:
 - the public contact form stores a message
 - rapid repeat contact submissions are throttled
 - the new message appears in `/admin/messages`
-- admin login works
-- a post can be created from `/admin/content/posts`
+- admin login works and the dashboard integration panel renders without leaking keys
+- a post can be created from `/admin/content/posts`, with its categories and tags persisted
 - the saved post appears on the public blog
+- anonymous clients cannot read drafts, soft-deleted posts, private media, profiles, or contact messages, and cannot write
 
 ## Staging Smoke Checklist
 
@@ -219,7 +216,7 @@ For the current improvement and rollout sequence, use:
 Recommended deployment path:
 
 1. Provision a hosted Supabase project.
-2. Apply migrations in order.
+2. Link it and apply migrations with `npm run db:check` followed by `supabase db push` (see Remote Supabase Flow).
 3. Set production env variables:
    - `APP_ENV=production`
    - `NEXT_PUBLIC_SITE_URL=https://tusherblog.me`
@@ -245,7 +242,9 @@ npm run build
 7. Deploy the Next.js app to a Node-capable host such as Vercel.
 8. Verify post-deploy:
    - admin login works
+   - `/admin/dashboard` → Integrations shows `production` and every row `ok`
    - public pages load
+   - an unknown URL returns HTTP 404, not 200
    - content saves from admin and appears publicly
    - contact messages reach the admin inbox
    - media uploads succeed

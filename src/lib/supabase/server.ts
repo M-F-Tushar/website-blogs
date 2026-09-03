@@ -1,18 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 import { getPublicSupabaseConfig } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 
-export function createPublicServerClient(): any {
+export function createPublicServerClient(): SupabaseClient<Database> | null {
   const config = getPublicSupabaseConfig();
 
   if (!config) {
     return null;
   }
 
-  return createClient(config.url, config.anonKey, {
+  return createClient<Database>(config.url, config.anonKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -29,7 +29,7 @@ export async function createAuthenticatedServerClient() {
 
   const cookieStore = await cookies();
 
-  return createServerClient(config.url, config.anonKey, {
+  return createServerClient<Database>(config.url, config.anonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -44,5 +44,5 @@ export async function createAuthenticatedServerClient() {
         }
       },
     },
-  }) as any;
+  });
 }
