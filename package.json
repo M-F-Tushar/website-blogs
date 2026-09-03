@@ -16,7 +16,8 @@
     "smoke": "playwright test",
     "e2e:flows": "playwright test --config=playwright.e2e.config.ts",
     "verify:smoke": "npm run verify && npm run smoke",
-    "bootstrap-admin": "node scripts/bootstrap-admin.mjs"
+    "bootstrap-admin": "node scripts/bootstrap-admin.mjs",
+    "db:check": "node scripts/check-migration-ledger.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

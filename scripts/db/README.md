@@ -21,3 +21,11 @@ here for historical reference only.
 ## Official Migrations
 
 Live, tracked migrations are in `supabase/migrations/` and managed by the Supabase CLI.
+
+## Ledger Repair
+
+Because the scripts above were applied by hand, the hosted project's migration history
+table does not know about the tracked migrations even though the schema matches them.
+Before the next `supabase db push`, run `npm run db:check` against the linked project and
+follow Manual Task H in [`docs/manual-operator-guide.md`](../../docs/manual-operator-guide.md)
+to mark the already-applied versions as `applied`.
