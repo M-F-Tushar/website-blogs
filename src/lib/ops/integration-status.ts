@@ -4,7 +4,7 @@ import {
   getAppRuntimeStage,
   getContactBotProtectionConfig,
   getPublicSupabaseConfig,
-  hasServiceRoleEnv,
+  getServiceRoleSupabaseConfig,
   type AppRuntimeStage,
 } from "@/lib/supabase/env";
 
@@ -30,25 +30,66 @@ function hostOf(url: string) {
 }
 
 /**
+ * Confirms a key is accepted by the project at `url`. Uses the auth health
+ * endpoint: it is schema-independent, tiny, and returns 401 when the key
+ * belongs to a different project.
+ */
+async function probeSupabaseKey(
+  url: string,
+  key: string,
+): Promise<{ state: IntegrationState; detail: string }> {
+  const host = hostOf(url);
+
+  try {
+    const response = await fetch(`${url.replace(/\/$/, "")}/auth/v1/health`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(4_000),
+    });
+
+    if (response.ok) {
+      return { state: "ok", detail: `Key accepted by ${host}.` };
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      return {
+        state: "error",
+        detail: `Key rejected by ${host} (${response.status}). URL and key belong to different projects?`,
+      };
+    }
+
+    return { state: "warning", detail: `${host} answered ${response.status}.` };
+  } catch {
+    return { state: "warning", detail: `${host} unreachable from the server.` };
+  }
+}
+
+/**
  * Operator-facing view of which runtime integrations are wired up for the
  * current stage. Never exposes secret values, only presence and derived mode.
  */
-export function getIntegrationStatuses(): {
+export async function getIntegrationStatuses(): Promise<{
   stage: AppRuntimeStage;
   items: IntegrationStatus[];
-} {
+}> {
   const stage = getAppRuntimeStage();
   const hosted = stage !== "local";
   const items: IntegrationStatus[] = [];
 
   const publicSupabase = getPublicSupabaseConfig();
+  const serviceSupabase = getServiceRoleSupabaseConfig();
+  const [publicProbe, serviceProbe] = await Promise.all([
+    publicSupabase ? probeSupabaseKey(publicSupabase.url, publicSupabase.anonKey) : null,
+    serviceSupabase ? probeSupabaseKey(serviceSupabase.url, serviceSupabase.serviceRoleKey) : null,
+  ]);
+
   items.push(
-    publicSupabase
+    publicSupabase && publicProbe
       ? {
           key: "supabase",
           label: "Supabase (public reads, auth)",
-          state: "ok",
-          detail: hostOf(publicSupabase.url),
+          state: publicProbe.state,
+          detail: publicProbe.detail,
         }
       : {
           key: "supabase",
@@ -61,12 +102,12 @@ export function getIntegrationStatuses(): {
   );
 
   items.push(
-    hasServiceRoleEnv()
+    serviceSupabase && serviceProbe
       ? {
           key: "service-role",
           label: "Supabase service role (admin writes)",
-          state: "ok",
-          detail: "Configured (server-only).",
+          state: serviceProbe.state,
+          detail: `${serviceProbe.detail} Server-only.`,
         }
       : {
           key: "service-role",

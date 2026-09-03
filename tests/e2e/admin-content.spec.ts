@@ -74,8 +74,11 @@ test.describe("admin content flow", () => {
 
     const integrations = page.getByRole("list", { name: "Integration status" });
     await expect(integrations).toBeVisible();
-    await expect(integrations.getByText("Supabase (public reads, auth)")).toBeVisible();
-    await expect(integrations.getByText("Supabase service role (admin writes)")).toBeVisible();
+    for (const label of ["Supabase (public reads, auth)", "Supabase service role (admin writes)"]) {
+      const row = integrations.getByRole("listitem").filter({ hasText: label });
+      await expect(row.getByText("ok", { exact: true })).toBeVisible();
+      await expect(row).toContainText("Key accepted by");
+    }
     await expect(page.getByText(/^(eyJ|sb_secret_|sb_publishable_)/)).toHaveCount(0);
 
     await page.goto("/admin/content/posts");

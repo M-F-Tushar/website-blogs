@@ -29,8 +29,10 @@ const INTEGRATION_TONE: Record<IntegrationState, "success" | "warning" | "danger
 };
 
 export default async function AdminDashboardPage() {
-  const dashboard = await getAdminDashboardSnapshot();
-  const integrations = getIntegrationStatuses();
+  const [dashboard, integrations] = await Promise.all([
+    getAdminDashboardSnapshot(),
+    getIntegrationStatuses(),
+  ]);
 
   const commonTasks: Array<{
     href: string;
