@@ -15,6 +15,7 @@
     "smoke:install": "playwright install chromium",
     "smoke": "playwright test",
     "e2e:flows": "playwright test --config=playwright.e2e.config.ts",
+    "test:live": "playwright test --config=playwright.live.config.ts",
     "verify:smoke": "npm run verify && npm run smoke",
     "bootstrap-admin": "node scripts/bootstrap-admin.mjs",
     "db:check": "node scripts/check-migration-ledger.mjs"

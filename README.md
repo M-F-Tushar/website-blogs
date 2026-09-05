@@ -205,6 +205,32 @@ What it proves:
 
 Use the repeatable checklist in [`docs/staging-smoke-checklist.md`](./docs/staging-smoke-checklist.md) after staging deploys and before production release.
 
+## Local Full-Stack Live Audit
+
+The expanded browser audit uses real local Supabase, creates temporary admin accounts,
+exercises public/admin workflows, and verifies database and storage persistence.
+Its configuration rejects non-loopback Supabase backends. The deployed-site checks
+only browse `https://tusherblog.me`; they do not log in or submit production data.
+
+With the local Supabase stack running and its URL, anon key, and service-role key
+configured in the ignored `.env.local`, run:
+
+```bash
+npm run test:live
+npx playwright show-report playwright-report/live
+```
+
+The command builds and starts the local app on port 3215. No hosted staging project
+or preconfigured test-admin credentials are required. Do not run concurrently with
+other local content editors: the audit temporarily changes settings and restores them.
+Use `LIVE_REUSE_SERVER=1 npm run test:live` only when port 3215 already serves the
+same audited build and local configuration. To omit the deployed read-only sweep,
+add `-- --grep-invert "deployed public"`.
+
+The audit does not suppress known defects, so a completed diagnostic run can exit
+non-zero. See [the September 5 live audit report](./docs/live-audit-report-2026-09-05.md)
+for findings, coverage limits, cleanup evidence, and the recorded result.
+
 ## Execution Guides
 
 For the current improvement and rollout sequence, use:
