@@ -17,6 +17,7 @@ interface ContentCardProps {
   layout?: "grid" | "list";
   tags?: string[];
   actionLabel?: string;
+  headingLevel?: 2 | 3;
   className?: string;
 }
 
@@ -33,16 +34,19 @@ export function ContentCard({
   layout = "grid",
   tags = [],
   actionLabel = "Read Article",
+  headingLevel = 2,
   className,
 }: ContentCardProps) {
   const isFeatured = size === "feature";
   const isList = layout === "list";
   const hasImage = Boolean(imageUrl);
   const visibleTags = tags.filter(Boolean).slice(0, isList ? 4 : 3);
+  const Heading = headingLevel === 2 ? "h2" : "h3";
 
   return (
     <Link
       href={href}
+      prefetch={false}
       className={cn(
         "group relative flex h-full flex-col overflow-hidden rounded-[1.5rem] bg-slate-900/40 border border-border dark:border-white/10 transition-all duration-300 hover:-translate-y-1 hover:border-sky-500/30 hover:bg-slate-900/60 hover:shadow-[0_8px_32px_rgba(14,165,233,0.1)]",
         isList &&
@@ -115,7 +119,7 @@ export function ContentCard({
           ) : null}
         </div>
 
-        <h3
+        <Heading
           className={cn(
             "mt-4 font-display font-semibold text-foreground dark:text-slate-100 transition-colors duration-300 group-hover:text-sky-300",
             isFeatured && !isList ? "text-3xl leading-tight" : "text-xl leading-snug md:text-2xl",
@@ -123,7 +127,7 @@ export function ContentCard({
           )}
         >
           {title}
-        </h3>
+        </Heading>
 
         <p
           className={cn(

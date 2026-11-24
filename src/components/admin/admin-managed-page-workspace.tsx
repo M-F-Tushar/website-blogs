@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AdminActionForm } from "@/components/admin/admin-action-form";
 import { MarkdownEditorField } from "@/components/admin/markdown-editor-field";
 import {
   AdminCheckbox,
@@ -19,9 +20,9 @@ import {
 } from "@/lib/content/admin-queries";
 import { DEFAULT_TOP_LEVEL_PAGE_PATHS } from "@/lib/content/page-routing";
 import {
-  deletePageSectionAction,
-  savePageAction,
-  savePageSectionAction,
+  deletePageSectionFormAction,
+  savePageFormAction,
+  savePageSectionFormAction,
 } from "@/features/admin/actions";
 import type { PageKey } from "@/types/content";
 
@@ -29,6 +30,11 @@ interface SectionTypeOption {
   value: string;
   label: string;
 }
+
+const TEMPLATE_SECTION_TYPE: SectionTypeOption = {
+  value: "template",
+  label: "Page template (used by the public page)",
+};
 
 interface AdminManagedPageWorkspaceProps {
   pageKey: PageKey;
@@ -224,6 +230,12 @@ export async function AdminManagedPageWorkspace({
   const publicPath = DEFAULT_TOP_LEVEL_PAGE_PATHS[pageKey];
   const guide = PAGE_EDITOR_GUIDES[pageKey];
   const visibleSectionCount = sections.filter((section) => section.isVisible).length;
+  const availableSectionTypes = sectionTypes.some(
+    (type) => type.value === TEMPLATE_SECTION_TYPE.value,
+  )
+    ? sectionTypes
+    : [...sectionTypes, TEMPLATE_SECTION_TYPE];
+  const selectedSectionIsTemplate = selectedSection?.sectionType === "template";
   const selectedArea = selectedSection
     ? getAreaForSection(pageKey, selectedSection.sectionKey)
     : null;
@@ -301,7 +313,7 @@ export async function AdminManagedPageWorkspace({
                         href={`${adminRoute}?edit=${section.id}`}
                         className="inline-flex items-center gap-2 rounded-full border border-border bg-white/70 px-4 py-2 text-sm font-medium text-foreground transition hover:border-accent/30 hover:bg-white"
                       >
-                        <span>{section.heading || getSectionLabel(section, sectionTypes)}</span>
+                        <span>{section.heading || getSectionLabel(section, availableSectionTypes)}</span>
                         <span className="font-mono text-[0.64rem] uppercase tracking-[0.2em] text-muted">
                           Edit
                         </span>
@@ -350,6 +362,7 @@ export async function AdminManagedPageWorkspace({
               {sections.map((section) => {
                 const area = getAreaForSection(pageKey, section.sectionKey);
                 const isActive = selectedSection?.id === section.id;
+                const isConsumedTemplate = section.sectionType === "template";
 
                 return (
                   <Link
@@ -364,14 +377,26 @@ export async function AdminManagedPageWorkspace({
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-medium">
-                          {section.heading || getSectionLabel(section, sectionTypes)}
+                          {section.heading || getSectionLabel(section, availableSectionTypes)}
                         </p>
                         <p className="mt-1 text-sm leading-6 text-muted">
-                          {area?.title ?? "Saved section not shown on the public page"}
+                          {isConsumedTemplate
+                            ? "Template used by the public page for shared copy"
+                            : area?.title ?? "Saved section not shown on the public page"}
                         </p>
                       </div>
-                      <StatusPill tone={section.isVisible ? "success" : "warning"}>
-                        {section.isVisible ? "visible" : "hidden"}
+                      <StatusPill
+                        tone={
+                          isConsumedTemplate || section.isVisible
+                            ? "success"
+                            : "warning"
+                        }
+                      >
+                        {isConsumedTemplate
+                          ? "template"
+                          : section.isVisible
+                            ? "visible"
+                            : "hidden"}
                       </StatusPill>
                     </div>
                   </Link>
@@ -390,7 +415,7 @@ export async function AdminManagedPageWorkspace({
             </p>
 
             {page ? (
-              <form action={savePageAction} className="mt-6 grid gap-5">
+              <AdminActionForm action={savePageFormAction} className="mt-6 grid gap-5">
                 <input type="hidden" name="id" value={page.id} />
                 <input type="hidden" name="pageKey" value={pageKey} />
                 <input type="hidden" name="returnTo" value={adminRoute} />
@@ -448,7 +473,7 @@ export async function AdminManagedPageWorkspace({
                 </AdminField>
 
                 <SubmitButton>Save page settings</SubmitButton>
-              </form>
+              </AdminActionForm>
             ) : (
               <p className="mt-4 text-sm text-muted">No page record exists for this route yet.</p>
             )}
@@ -468,7 +493,17 @@ export async function AdminManagedPageWorkspace({
             </div>
           </div>
 
-          {selectedArea ? (
+          {selectedSectionIsTemplate ? (
+            <div className="mt-6 rounded-[1.2rem] border border-sky-300/40 bg-sky-50/80 p-4">
+              <p className="font-mono text-[0.68rem] uppercase tracking-[0.24em] text-sky-700">
+                Shared page template
+              </p>
+              <p className="mt-2 text-sm leading-6 text-sky-950">
+                This template is consumed by the public page even when it is not marked
+                visible. Its type is locked so ordinary edits cannot disconnect it.
+              </p>
+            </div>
+          ) : selectedArea ? (
             <div className="mt-6 rounded-[1.2rem] border border-accent/20 bg-accent-soft p-4">
               <p className="font-mono text-[0.68rem] uppercase tracking-[0.24em] text-accent-strong">
                 This edits
@@ -489,7 +524,10 @@ export async function AdminManagedPageWorkspace({
             </div>
           ) : null}
 
-          <form action={savePageSectionAction} className="mt-6 grid gap-5">
+          <AdminActionForm
+            action={savePageSectionFormAction}
+            className="mt-6 grid gap-5"
+          >
             <input type="hidden" name="id" defaultValue={selectedSection?.id ?? ""} />
             <input type="hidden" name="pageKey" value={pageKey} />
             <input type="hidden" name="returnTo" value={adminRoute} />
@@ -505,10 +543,10 @@ export async function AdminManagedPageWorkspace({
                 <AdminField label="Where this appears">
                   <AdminSelect
                     name="sectionType"
-                    defaultValue={sectionTypes[0]?.value ?? ""}
+                    defaultValue={availableSectionTypes[0]?.value ?? ""}
                     required
                   >
-                    {sectionTypes.map((type) => (
+                    {availableSectionTypes.map((type) => (
                       <option key={type.value} value={type.value}>
                         {type.label}
                       </option>
@@ -535,6 +573,7 @@ export async function AdminManagedPageWorkspace({
             </AdminField>
 
             <MarkdownEditorField
+              key={`section-markdown-${selectedSection?.id ?? "new"}`}
               name="bodyMarkdown"
               label="Long content"
               defaultValue={selectedSection?.bodyMarkdown ?? ""}
@@ -593,18 +632,34 @@ export async function AdminManagedPageWorkspace({
                       required
                     />
                   </AdminField>
-                  <AdminField label="Section type">
-                    <AdminSelect
-                      name="sectionType"
-                      defaultValue={selectedSection.sectionType}
-                      required
-                    >
-                      {sectionTypes.map((type) => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </AdminSelect>
+                  <AdminField
+                    label="Section type"
+                    hint={
+                      selectedSectionIsTemplate
+                        ? "Locked because this template is consumed by the public page."
+                        : undefined
+                    }
+                  >
+                    {selectedSectionIsTemplate ? (
+                      <AdminInput
+                        name="sectionType"
+                        value={TEMPLATE_SECTION_TYPE.value}
+                        readOnly
+                        aria-readonly="true"
+                      />
+                    ) : (
+                      <AdminSelect
+                        name="sectionType"
+                        defaultValue={selectedSection.sectionType}
+                        required
+                      >
+                        {availableSectionTypes.map((type) => (
+                          <option key={type.value} value={type.value}>
+                            {type.label}
+                          </option>
+                        ))}
+                      </AdminSelect>
+                    )}
                   </AdminField>
                 </div>
               ) : null}
@@ -641,15 +696,15 @@ export async function AdminManagedPageWorkspace({
             <div className="flex flex-wrap gap-3 pt-2">
               <SubmitButton>Save section</SubmitButton>
             </div>
-          </form>
+          </AdminActionForm>
 
           {selectedSection ? (
-            <form action={deletePageSectionAction} className="mt-4">
+            <AdminActionForm action={deletePageSectionFormAction} className="mt-4">
               <input type="hidden" name="id" value={selectedSection.id} />
               <input type="hidden" name="pageKey" value={pageKey} />
               <input type="hidden" name="returnTo" value={adminRoute} />
               <SubmitButton variant="danger">Delete section</SubmitButton>
-            </form>
+            </AdminActionForm>
           ) : null}
         </AdminPanel>
       </div>

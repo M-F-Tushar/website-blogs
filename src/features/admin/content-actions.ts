@@ -4,23 +4,17 @@ import { randomUUID } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { ZodError } from "zod";
 
+import type { AdminActionState } from "@/features/admin/action-state";
 import { requireAdminSession } from "@/lib/auth/guards";
-import {
-  buildSubmissionFingerprint,
-  ContactRequestError,
-  evaluateContactSubmission,
-  verifyTurnstileToken,
-} from "@/lib/contact/anti-abuse";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import {
   academicEntrySchema,
-  contactMessageSchema,
   postSchema,
   recommendationSchema,
 } from "@/lib/content/validators";
 import {
-  normalizeEmailAddress,
   normalizeText,
   optionalText,
   parseDelimitedList,
@@ -36,20 +30,76 @@ const CONTACT_MESSAGE_STATUSES: readonly ContactMessageStatus[] = [
   "archived",
 ];
 
-interface NamedLookupRow {
-  id: string;
-  slug: string;
-}
-
 const MAX_MEDIA_UPLOAD_BYTES = 10 * 1024 * 1024;
 const ALLOWED_MEDIA_BUCKETS = new Set(["site-public", "site-admin"]);
-const ALLOWED_MEDIA_MIME_TYPES = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/avif",
-  "image/gif",
-]);
+const CONTENT_VALIDATION_LABELS: Record<string, string> = {
+  canonicalUrl: "Canonical URL",
+  externalUrl: "External URL",
+};
+
+interface SupportedMediaType {
+  contentType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" | "image/avif";
+  extension: "png" | "jpg" | "webp" | "gif" | "avif";
+}
+
+class ContentActionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ContentActionError";
+  }
+}
+
+function isNextRedirectError(error: unknown) {
+  if (!error || typeof error !== "object" || !("digest" in error)) {
+    return false;
+  }
+
+  const digest = (error as { digest?: unknown }).digest;
+  return typeof digest === "string" && digest.startsWith("NEXT_REDIRECT");
+}
+
+function getContentValidationMessage(error: ZodError) {
+  const issue = error.issues[0];
+  if (!issue) {
+    return "Please check the form values and try again.";
+  }
+
+  const fieldName = String(issue.path.at(-1) ?? "");
+  const fieldLabel = CONTENT_VALIDATION_LABELS[fieldName];
+  return fieldLabel ? `${fieldLabel}: ${issue.message}` : issue.message;
+}
+
+async function runContentFormAction(
+  formData: FormData,
+  action: (input: FormData) => Promise<void>,
+  fallbackMessage: string,
+): Promise<AdminActionState> {
+  try {
+    await action(formData);
+  } catch (error) {
+    if (isNextRedirectError(error)) {
+      throw error;
+    }
+
+    if (error instanceof ZodError) {
+      return {
+        status: "error",
+        message: getContentValidationMessage(error),
+      };
+    }
+
+    return {
+      status: "error",
+      message:
+        error instanceof ContentActionError ? error.message : fallbackMessage,
+    };
+  }
+
+  return {
+    status: "idle",
+    message: null,
+  };
+}
 
 function normalizePageSlug(slug: string | null | undefined) {
   if (!slug || slug === "/") {
@@ -72,15 +122,23 @@ async function revalidatePublicContent(extraPaths: string[] = []) {
 
   try {
     const supabase = createServiceRoleClient();
-    const { data } = await supabase.from("pages").select("slug");
+    const { data, error } = await supabase.from("pages").select("slug");
 
-    for (const page of data ?? []) {
-      if (page.slug) {
-        paths.add(normalizePageSlug(page.slug));
+    if (error) {
+      console.error("[admin action] public content revalidation paths failed", {
+        code: error.code,
+      });
+    } else {
+      for (const page of data ?? []) {
+        if (page.slug) {
+          paths.add(normalizePageSlug(page.slug));
+        }
       }
     }
   } catch {
-    // If page lookup fails, still revalidate the known top-level routes.
+    console.error("[admin action] public content revalidation paths failed", {
+      code: "client_error",
+    });
   }
 
   revalidatePath("/", "layout");
@@ -102,77 +160,16 @@ async function ensureUniqueSlug(
     query = query.neq("id", currentId);
   }
 
-  const { data } = await query;
-
-  if (data && data.length > 0) {
-    throw new Error(`The slug "${slug}" is already in use.`);
-  }
-}
-
-async function upsertNamedRows(table: "categories" | "tags", names: string[]) {
-  if (names.length === 0) {
-    return [];
-  }
-
-  const supabase = createServiceRoleClient();
-  const slugs = names.map((name) => slugify(name));
-
-  // The two tables differ: only categories carry sort_order.
-  const { error } =
-    table === "categories"
-      ? await supabase.from("categories").upsert(
-          names.map((name, index) => ({ name, slug: slugs[index], sort_order: index })),
-          { onConflict: "slug" },
-        )
-      : await supabase.from("tags").upsert(
-          names.map((name, index) => ({ name, slug: slugs[index] })),
-          { onConflict: "slug" },
-        );
+  const { data, error } = await query;
 
   if (error) {
-    throw new Error(`Failed to save ${table}: ${error.message}`);
-  }
-
-  const { data, error: lookupError } = await supabase
-    .from(table)
-    .select("id, slug")
-    .in("slug", slugs);
-
-  if (lookupError) {
-    throw new Error(`Failed to load ${table}: ${lookupError.message}`);
-  }
-
-  return (data ?? []) as NamedLookupRow[];
-}
-
-async function syncPostTaxonomy(postId: string, categories: string[], tags: string[]) {
-  const supabase = createServiceRoleClient();
-  const [categoryRows, tagRows] = await Promise.all([
-    upsertNamedRows("categories", categories),
-    upsertNamedRows("tags", tags),
-  ]);
-
-  await Promise.all([
-    supabase.from("post_categories").delete().eq("post_id", postId),
-    supabase.from("post_tags").delete().eq("post_id", postId),
-  ]);
-
-  if (categoryRows.length > 0) {
-    await supabase.from("post_categories").insert(
-      categoryRows.map((row: NamedLookupRow) => ({
-        post_id: postId,
-        category_id: row.id,
-      })),
+    throw new ContentActionError(
+      "The content library could not verify that slug. Please try again.",
     );
   }
 
-  if (tagRows.length > 0) {
-    await supabase.from("post_tags").insert(
-      tagRows.map((row: NamedLookupRow) => ({
-        post_id: postId,
-        tag_id: row.id,
-      })),
-    );
+  if (data && data.length > 0) {
+    throw new ContentActionError(`The slug "${slug}" is already in use.`);
   }
 }
 
@@ -184,21 +181,35 @@ async function upsertRecommendationCategory(name: string | null) {
   const supabase = createServiceRoleClient();
   const slug = slugify(name);
 
-  await supabase.from("recommendation_categories").upsert(
+  const { error: upsertError } = await supabase
+    .from("recommendation_categories")
+    .upsert(
     {
       name,
       slug,
     },
     { onConflict: "slug" },
-  );
+    );
 
-  const { data } = await supabase
+  if (upsertError) {
+    throw new ContentActionError(
+      "The recommendation category could not be saved. Please try again.",
+    );
+  }
+
+  const { data, error } = await supabase
     .from("recommendation_categories")
     .select("id")
     .eq("slug", slug)
     .maybeSingle();
 
-  return data?.id ?? null;
+  if (error || !data) {
+    throw new ContentActionError(
+      "The recommendation category could not be loaded after saving. Please retry.",
+    );
+  }
+
+  return data.id;
 }
 
 async function cleanupUploadedMediaObject(
@@ -214,69 +225,6 @@ async function cleanupUploadedMediaObject(
       objectPath,
       error: error.message,
     });
-  }
-}
-
-async function getContactNotificationRecipient(supabase = createServiceRoleClient()) {
-  const explicitRecipient = normalizeEmailAddress(process.env.CONTACT_NOTIFICATION_EMAIL);
-  if (explicitRecipient) {
-    return explicitRecipient;
-  }
-
-  const { data } = await supabase
-    .from("site_settings")
-    .select("contact_email")
-    .eq("site_key", "primary")
-    .maybeSingle();
-
-  return normalizeEmailAddress(data?.contact_email);
-}
-
-async function sendContactNotificationEmail(input: {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  spamScore: number;
-  spamFlags: string[];
-}) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.CONTACT_NOTIFICATION_FROM_EMAIL;
-
-  if (!apiKey || !fromEmail) {
-    return;
-  }
-
-  const recipient = await getContactNotificationRecipient();
-  if (!recipient) {
-    return;
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: fromEmail,
-      to: [recipient],
-      reply_to: input.email,
-      subject: `New contact message: ${input.subject}`,
-      text: [
-        `From: ${input.name} <${input.email}>`,
-        `Spam score: ${input.spamScore}`,
-        `Spam flags: ${input.spamFlags.join(", ") || "none"}`,
-        "",
-        input.message,
-      ].join("\n"),
-    }),
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Notification provider rejected the request: ${body}`);
   }
 }
 
@@ -310,53 +258,43 @@ export async function savePostAction(formData: FormData) {
         : new Date().toISOString()
       : null;
 
-  const mutation = payload.id
-    ? await supabase
-        .from("posts")
-        .update({
-          title: payload.title,
-          slug: payload.slug,
-          excerpt: payload.excerpt,
-          body_markdown: payload.bodyMarkdown,
-          status: payload.status,
-          featured: payload.featured,
-          published_at: publishedAt,
-          cover_asset_id: payload.coverAssetId,
-          meta_title: payload.metaTitle,
-          meta_description: payload.metaDescription,
-          canonical_url: payload.canonicalUrl,
-          deleted_at: null,
-        })
-        .eq("id", payload.id)
-        .select("id")
-        .single()
-    : await supabase
-        .from("posts")
-        .insert({
-          title: payload.title,
-          slug: payload.slug,
-          excerpt: payload.excerpt,
-          body_markdown: payload.bodyMarkdown,
-          status: payload.status,
-          featured: payload.featured,
-          published_at: publishedAt,
-          cover_asset_id: payload.coverAssetId,
-          meta_title: payload.metaTitle,
-          meta_description: payload.metaDescription,
-          canonical_url: payload.canonicalUrl,
-          author_profile_id: profile.id,
-        })
-        .select("id")
-        .single();
+  const postId = payload.id ?? randomUUID();
+  const { error } = await supabase.rpc("save_post_with_taxonomy", {
+    p_id: postId,
+    p_author_profile_id: profile.id,
+    p_title: payload.title,
+    p_slug: payload.slug,
+    p_excerpt: payload.excerpt ?? "",
+    p_body_markdown: payload.bodyMarkdown,
+    p_status: payload.status,
+    p_featured: payload.featured,
+    p_published_at: publishedAt ?? "",
+    p_cover_asset_id: payload.coverAssetId ?? "",
+    p_meta_title: payload.metaTitle ?? "",
+    p_meta_description: payload.metaDescription ?? "",
+    p_canonical_url: payload.canonicalUrl ?? "",
+    p_categories: payload.categories.map((name, index) => ({
+      name,
+      slug: slugify(name),
+      sort_order: index,
+    })),
+    p_tags: payload.tags.map((name) => ({
+      name,
+      slug: slugify(name),
+    })),
+  });
 
-  if (mutation.error || !mutation.data) {
-    throw new Error(mutation.error?.message ?? "Unable to save post.");
+  if (error) {
+    console.error("[admin action] atomic post save failed", {
+      code: error.code,
+    });
+    throw new ContentActionError(
+      "The post and its taxonomy could not be saved together. Please try again.",
+    );
   }
 
-  await syncPostTaxonomy(mutation.data.id, payload.categories, payload.tags);
-
   await revalidatePublicContent();
-  redirect(`/admin/content/posts?edit=${mutation.data.id}&saved=1`);
+  redirect(`/admin/content/posts?edit=${postId}&saved=1`);
 }
 
 export async function archivePostAction(formData: FormData) {
@@ -368,10 +306,14 @@ export async function archivePostAction(formData: FormData) {
   }
 
   const supabase = createServiceRoleClient();
-  await supabase
+  const { error } = await supabase
     .from("posts")
     .update({ status: "archived", deleted_at: new Date().toISOString() })
     .eq("id", id);
+
+  if (error) {
+    throw new ContentActionError("The post could not be archived. Please try again.");
+  }
 
   await revalidatePublicContent();
   redirect("/admin/content/posts?deleted=1");
@@ -462,10 +404,16 @@ export async function archiveAcademicEntryAction(formData: FormData) {
   }
 
   const supabase = createServiceRoleClient();
-  await supabase
+  const { error } = await supabase
     .from("academic_entries")
     .update({ status: "archived", deleted_at: new Date().toISOString() })
     .eq("id", id);
+
+  if (error) {
+    throw new ContentActionError(
+      "The academic entry could not be archived. Please try again.",
+    );
+  }
 
   await revalidatePublicContent();
   redirect("/admin/content/academic?deleted=1");
@@ -563,13 +511,81 @@ export async function archiveRecommendationAction(formData: FormData) {
   }
 
   const supabase = createServiceRoleClient();
-  await supabase
+  const { error } = await supabase
     .from("recommendations")
     .update({ status: "archived", deleted_at: new Date().toISOString() })
     .eq("id", id);
 
+  if (error) {
+    throw new ContentActionError(
+      "The recommendation could not be archived. Please try again.",
+    );
+  }
+
   await revalidatePublicContent();
   redirect("/admin/content/recommendations?deleted=1");
+}
+
+function hasSignature(bytes: Buffer, signature: readonly number[]) {
+  return (
+    bytes.length >= signature.length &&
+    signature.every((value, index) => bytes[index] === value)
+  );
+}
+
+function asciiAt(bytes: Buffer, offset: number, length: number) {
+  return bytes.length >= offset + length
+    ? bytes.subarray(offset, offset + length).toString("ascii")
+    : "";
+}
+
+function isAvif(bytes: Buffer) {
+  if (bytes.length < 16 || asciiAt(bytes, 4, 4) !== "ftyp") {
+    return false;
+  }
+
+  const boxSize = bytes.readUInt32BE(0);
+  const compatibleBrandsEnd =
+    boxSize >= 16 && boxSize <= bytes.length ? boxSize : Math.min(bytes.length, 64);
+  const majorBrand = asciiAt(bytes, 8, 4);
+
+  if (majorBrand === "avif" || majorBrand === "avis") {
+    return true;
+  }
+
+  for (let offset = 16; offset + 4 <= compatibleBrandsEnd; offset += 4) {
+    const brand = asciiAt(bytes, offset, 4);
+    if (brand === "avif" || brand === "avis") {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function detectSupportedMediaType(bytes: Buffer): SupportedMediaType | null {
+  if (hasSignature(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) {
+    return { contentType: "image/png", extension: "png" };
+  }
+
+  if (hasSignature(bytes, [0xff, 0xd8, 0xff])) {
+    return { contentType: "image/jpeg", extension: "jpg" };
+  }
+
+  const gifSignature = asciiAt(bytes, 0, 6);
+  if (gifSignature === "GIF87a" || gifSignature === "GIF89a") {
+    return { contentType: "image/gif", extension: "gif" };
+  }
+
+  if (asciiAt(bytes, 0, 4) === "RIFF" && asciiAt(bytes, 8, 4) === "WEBP") {
+    return { contentType: "image/webp", extension: "webp" };
+  }
+
+  if (isAvif(bytes)) {
+    return { contentType: "image/avif", extension: "avif" };
+  }
+
+  return null;
 }
 
 async function uploadMediaAsset(formData: FormData) {
@@ -592,20 +608,23 @@ async function uploadMediaAsset(formData: FormData) {
     throw new Error("Choose a valid upload bucket.");
   }
 
-  if (!ALLOWED_MEDIA_MIME_TYPES.has(file.type)) {
+  const bytes = Buffer.from(await file.arrayBuffer());
+  if (bytes.byteLength === 0 || bytes.byteLength > MAX_MEDIA_UPLOAD_BYTES) {
+    throw new Error("File is too large. Upload an asset smaller than 10 MB.");
+  }
+
+  const detectedType = detectSupportedMediaType(bytes);
+  if (!detectedType) {
     throw new Error("Unsupported file type. Upload a PNG, JPEG, WebP, AVIF, or GIF.");
   }
 
-  const extension = file.name.includes(".")
-    ? file.name.split(".").pop()?.toLowerCase()
-    : "bin";
-  const objectPath = `${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${extension}`;
+  const objectPath = `${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${detectedType.extension}`;
 
   const supabase = createServiceRoleClient();
   const { error: uploadError } = await supabase.storage
     .from(bucketName)
-    .upload(objectPath, Buffer.from(await file.arrayBuffer()), {
-      contentType: file.type,
+    .upload(objectPath, bytes, {
+      contentType: detectedType.contentType,
       upsert: false,
     });
 
@@ -619,8 +638,8 @@ async function uploadMediaAsset(formData: FormData) {
       alt_text: altText,
       bucket_name: bucketName,
       object_path: objectPath,
-      mime_type: file.type,
-      file_size: file.size,
+      mime_type: detectedType.contentType,
+      file_size: bytes.byteLength,
       uploaded_by: profile.id,
       is_public: bucketName === "site-public",
     });
@@ -697,134 +716,159 @@ export async function updateMessageStatusAction(formData: FormData) {
   redirect("/admin/messages?updated=1");
 }
 
-export async function submitContactMessage(formData: FormData, requestMeta: {
-  sourceIp: string | null;
-  userAgent: string | null;
-}) {
-  const payload = contactMessageSchema.parse({
-    name: normalizeText(formData.get("name")),
-    email: normalizeText(formData.get("email")),
-    subject: normalizeText(formData.get("subject")),
-    message: normalizeText(formData.get("message")),
-    captchaToken: optionalText(formData.get("captchaToken")),
-    honeypot: normalizeText(formData.get("company")),
-  });
+export async function deleteMediaAssetAction(formData: FormData) {
+  await requireAdminSession();
 
-  await verifyTurnstileToken(payload.captchaToken, requestMeta.sourceIp);
+  const id = optionalText(formData.get("id"));
+  if (!id) {
+    redirect("/admin/media");
+  }
 
   const supabase = createServiceRoleClient();
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const fingerprint = buildSubmissionFingerprint({
-    email: payload.email,
-    message: payload.message,
-    sourceIp: requestMeta.sourceIp,
-    userAgent: requestMeta.userAgent,
-  });
+  const { data: deletedRows, error: deleteRecordError } = await supabase.rpc(
+    "delete_media_asset_record",
+    {
+      p_asset_id: id,
+    },
+  );
+  const asset = deletedRows?.[0];
 
-  const [
-    rateLimitResult,
-    recentEmailResult,
-    duplicateMessageResult,
-    fingerprintResult,
-  ] = await Promise.all([
-    requestMeta.sourceIp
-      ? supabase
-          .from("contact_messages")
-          .select("*", { count: "exact", head: true })
-          .eq("source_ip", requestMeta.sourceIp)
-          .gte("created_at", oneHourAgo)
-      : Promise.resolve({ count: 0 as number | null }),
-    supabase
-      .from("contact_messages")
-      .select("*", { count: "exact", head: true })
-      .eq("email", payload.email)
-      .gte("created_at", oneDayAgo),
-    supabase
-      .from("contact_messages")
-      .select("*", { count: "exact", head: true })
-      .eq("email", payload.email)
-      .eq("message", payload.message)
-      .gte("created_at", oneWeekAgo),
-    requestMeta.userAgent
-      ? supabase
-          .from("contact_messages")
-          .select("email, message, source_ip, user_agent")
-          .eq("user_agent", requestMeta.userAgent)
-          .gte("created_at", oneDayAgo)
-          .limit(20)
-      : Promise.resolve({ data: null as { email: string; message: string; source_ip: string | null; user_agent: string | null }[] | null }),
-  ]);
-
-  const rateLimitCount = rateLimitResult.count ?? 0;
-  const recentEmailCount = recentEmailResult.count ?? 0;
-  const duplicateMessageCount = duplicateMessageResult.count ?? 0;
-  const fingerprintCount =
-    fingerprintResult.data?.filter((row: { email: string; message: string; source_ip: string | null; user_agent: string | null }) => {
-      const existingFingerprint = buildSubmissionFingerprint({
-        email: row.email,
-        message: row.message,
-        sourceIp: row.source_ip,
-        userAgent: row.user_agent,
-      });
-
-      return existingFingerprint === fingerprint;
-    }).length ?? 0;
-
-  if (rateLimitCount >= 5 || recentEmailCount >= 6) {
-    throw new ContactRequestError(
-      "Too many messages sent recently. Please try again later.",
-      429,
-    );
-  }
-
-  const evaluation = evaluateContactSubmission({
-    name: payload.name,
-    subject: payload.subject,
-    message: payload.message,
-    duplicateMessageCount,
-    recentEmailCount,
-    fingerprintCount,
-  });
-
-  if (evaluation.rejectReason) {
-    throw new ContactRequestError(evaluation.rejectReason, 400);
-  }
-
-  const { error } = await supabase.from("contact_messages").insert({
-    name: payload.name,
-    email: payload.email,
-    subject: payload.subject,
-    message: payload.message,
-    status: "new",
-    spam_score: evaluation.score,
-    spam_flags: evaluation.flags,
-    source_ip: requestMeta.sourceIp,
-    user_agent: requestMeta.userAgent,
-  });
-
-  if (error) {
-    console.error("Failed to store contact message", error);
-    throw new ContactRequestError(
-      "Unable to submit your message right now.",
-      500,
-      false,
-    );
-  }
-
-  if (evaluation.score < 40) {
-    try {
-      await sendContactNotificationEmail({
-        name: payload.name,
-        email: payload.email,
-        subject: payload.subject,
-        message: payload.message,
-        spamScore: evaluation.score,
-        spamFlags: evaluation.flags,
-      });
-    } catch (notificationError) {
-      console.error("Failed to send contact notification", notificationError);
+  if (deleteRecordError) {
+    if (deleteRecordError.message === "MEDIA_IN_USE") {
+      throw new ContentActionError(
+        "This media asset is still used by site content. Remove those references before deleting it.",
+      );
     }
+
+    throw new ContentActionError(
+      "The media asset could not be found or safely reserved for deletion. Refresh and try again.",
+    );
   }
+
+  if (!asset) {
+    throw new ContentActionError(
+      "The media record was not returned after deletion. Refresh the library before retrying.",
+    );
+  }
+
+  const { error: storageError } = await supabase.storage
+    .from(asset.bucket_name)
+    .remove([asset.object_path]);
+
+  if (storageError) {
+    const { error: restoreError } = await supabase
+      .from("media_assets")
+      .insert(asset);
+
+    if (restoreError) {
+      console.error("[admin action] media metadata restore failed", {
+        code: restoreError.code,
+      });
+    }
+
+    throw new ContentActionError(
+      restoreError
+        ? "The stored file and library record could not be reconciled. Check Storage and the media library before retrying."
+        : "The stored file could not be deleted. The library entry was restored.",
+    );
+  }
+
+  revalidatePath("/admin/media");
+  redirect("/admin/media?deleted=1");
+}
+
+export async function savePostFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runContentFormAction(
+    formData,
+    savePostAction,
+    "The post could not be saved. Check the form and try again.",
+  );
+}
+
+export async function archivePostFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runContentFormAction(
+    formData,
+    archivePostAction,
+    "The post could not be archived. Please try again.",
+  );
+}
+
+export async function saveAcademicEntryFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runContentFormAction(
+    formData,
+    saveAcademicEntryAction,
+    "The academic entry could not be saved. Check the form and try again.",
+  );
+}
+
+export async function archiveAcademicEntryFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runContentFormAction(
+    formData,
+    archiveAcademicEntryAction,
+    "The academic entry could not be archived. Please try again.",
+  );
+}
+
+export async function saveRecommendationFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runContentFormAction(
+    formData,
+    saveRecommendationAction,
+    "The recommendation could not be saved. Check the form and try again.",
+  );
+}
+
+export async function archiveRecommendationFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runContentFormAction(
+    formData,
+    archiveRecommendationAction,
+    "The recommendation could not be archived. Please try again.",
+  );
+}
+
+export async function updateMessageStatusFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runContentFormAction(
+    formData,
+    updateMessageStatusAction,
+    "The message status could not be updated. Please try again.",
+  );
+}
+
+export async function deleteMediaAssetFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runContentFormAction(
+    formData,
+    deleteMediaAssetAction,
+    "The media asset could not be deleted. Please try again.",
+  );
 }

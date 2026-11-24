@@ -21,12 +21,7 @@ export function ArticleCover({
     <figure className="relative mx-auto mt-14 max-w-[82rem]">
       <div
         aria-hidden
-        className="absolute inset-x-10 -inset-y-8 -z-10 overflow-hidden rounded-[3rem] opacity-35 blur-3xl"
-        style={{
-          backgroundImage: `url(${src})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+        className="absolute inset-x-10 -inset-y-8 -z-10 overflow-hidden rounded-[3rem] bg-[radial-gradient(ellipse_at_center,rgba(14,165,233,0.28),rgba(37,99,235,0.08)_48%,transparent_72%)] opacity-45 blur-3xl"
       />
       <div className="relative overflow-hidden rounded-[2.8rem] border border-border dark:border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
         <div className="relative aspect-[16/9] overflow-hidden">
@@ -34,8 +29,8 @@ export function ArticleCover({
             src={src}
             alt={alt}
             fill
-            priority={priority}
-            sizes="(max-width: 1024px) 100vw, 88vw"
+            preload={priority}
+            sizes="(max-width: 1024px) calc(100vw - 3rem), 82rem"
             className="object-cover"
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.04),rgba(2,6,23,0.2)_50%,rgba(2,6,23,0.74))]" />

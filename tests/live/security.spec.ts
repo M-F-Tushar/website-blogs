@@ -1,0 +1,1 @@
+import "../e2e/rls-policies.spec";

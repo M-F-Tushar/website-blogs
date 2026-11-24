@@ -41,7 +41,7 @@ const isDev = process.env.NODE_ENV === "development";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  // 'unsafe-inline' is required by Next.js hydration and the theme bootstrap script.
+  // Next.js emits framework hydration/bootstrap scripts without a request nonce.
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob:${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
@@ -71,6 +71,10 @@ const securityHeaders = [
     : []),
 ];
 
+const adminHeaders = [
+  { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+];
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -78,9 +82,15 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders,
       },
+      {
+        source: "/admin/:path*",
+        headers: adminHeaders,
+      },
     ];
   },
   experimental: {
+    cpus: 1,
+    webpackMemoryOptimizations: true,
     serverActions: {
       bodySizeLimit: "10mb",
       allowedOrigins: ["*.app.github.dev", "*.githubpreview.dev", "localhost:3000"],

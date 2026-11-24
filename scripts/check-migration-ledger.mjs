@@ -6,7 +6,7 @@
  * Exit codes: 0 in sync, 1 drift detected, 2 CLI/link error.
  *
  * Usage:
- *   npm run db:check           # against the linked project (requires `supabase link`)
+ *   npm run db:check           # against the linked project (requires `npx supabase link`)
  *   npm run db:check -- --local
  */
 import { execFileSync } from "node:child_process";
@@ -61,12 +61,14 @@ console.log(`Local migrations:  ${localVersions.length}`);
 console.log(`Remote applied:    ${remoteApplied.size}`);
 
 if (missingRemote.length === 0 && remoteOnly.length === 0) {
-  console.log("Ledger in sync. `supabase db push` is safe.");
+  console.log(
+    `Ledger in sync. This checks migration history only; run \`npx supabase db diff ${target} --schema public\` before pushing.`,
+  );
   process.exit(0);
 }
 
 console.log("");
-console.log("DRIFT DETECTED — do not run `supabase db push` until this is resolved.");
+console.log("DRIFT DETECTED — do not run `npx supabase db push` until this is resolved.");
 
 if (missingRemote.length > 0) {
   console.log("");

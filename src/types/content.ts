@@ -98,6 +98,8 @@ export interface PostSummary extends SeoFields {
   bodyMarkdown: string;
   status: ContentStatus;
   featured: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   publishedAt: string | null;
   coverAssetId?: string | null;
   coverUrl: string | null;
@@ -115,6 +117,8 @@ export interface AcademicEntry extends SeoFields {
   entryType: AcademicEntryType;
   status: ContentStatus;
   featured: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   startedAt: string | null;
   completedAt: string | null;
   externalUrl: string | null;
@@ -136,6 +140,8 @@ export interface Recommendation extends SeoFields {
   externalUrl: string | null;
   status: ContentStatus;
   featured: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   category: string | null;
   coverAssetId?: string | null;
   coverUrl: string | null;

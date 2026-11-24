@@ -16,6 +16,7 @@ test.describe("row level security", () => {
   const cleanupPostIds: string[] = [];
   const cleanupCategoryIds: string[] = [];
   const cleanupAssetIds: string[] = [];
+  const cleanupUserIds: string[] = [];
 
   test.beforeAll(() => {
     anon = createClient(supabaseUrl!, anonKey!, {
@@ -35,6 +36,9 @@ test.describe("row level security", () => {
     }
     if (cleanupAssetIds.length > 0) {
       await service.from("media_assets").delete().in("id", cleanupAssetIds);
+    }
+    for (const userId of cleanupUserIds) {
+      await service.auth.admin.deleteUser(userId);
     }
   });
 
@@ -124,6 +128,72 @@ test.describe("row level security", () => {
   test("anon cannot read profiles", async () => {
     const { data: anonRows } = await anon.from("profiles").select("id").limit(5);
     expect(anonRows ?? []).toEqual([]);
+  });
+
+  test("authenticated non-admin cannot change profile role", async () => {
+    const uniqueSuffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const email = `rls-profile-${uniqueSuffix}@example.test`;
+    const password = "Rls-profile-test-2026!";
+    const { data: createdUser, error: createError } = await service.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: "Disposable RLS User" },
+    });
+
+    expect(createError).toBeNull();
+    expect(createdUser.user).not.toBeNull();
+    const userId = createdUser.user!.id;
+    cleanupUserIds.push(userId);
+
+    const { data: initialProfile, error: initialProfileError } = await service
+      .from("profiles")
+      .select("id, role")
+      .eq("id", userId)
+      .single();
+
+    expect(initialProfileError).toBeNull();
+    expect(initialProfile).toEqual({ id: userId, role: "editor" });
+
+    const authenticated = createClient(supabaseUrl!, anonKey!, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { error: signInError } = await authenticated.auth.signInWithPassword({
+      email,
+      password,
+    });
+    expect(signInError).toBeNull();
+
+    const { error: roleUpdateError } = await authenticated
+      .from("profiles")
+      .update({ role: "admin" })
+      .eq("id", userId);
+    expect(roleUpdateError).not.toBeNull();
+
+    const safeFullName = `Safe Profile Update ${uniqueSuffix}`;
+    const { data: safelyUpdated, error: safeUpdateError } = await authenticated
+      .from("profiles")
+      .update({ full_name: safeFullName })
+      .eq("id", userId)
+      .select("id, full_name, role")
+      .single();
+
+    expect(safeUpdateError).toBeNull();
+    expect(safelyUpdated).toEqual({
+      id: userId,
+      full_name: safeFullName,
+      role: "editor",
+    });
+
+    const { data: servicePromoted, error: servicePromotionError } = await service
+      .from("profiles")
+      .update({ role: "admin" })
+      .eq("id", userId)
+      .select("id, role")
+      .single();
+
+    expect(servicePromotionError).toBeNull();
+    expect(servicePromoted).toEqual({ id: userId, role: "admin" });
   });
 
   test("anon cannot read contact messages", async () => {

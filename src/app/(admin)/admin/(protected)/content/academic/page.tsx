@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { MarkdownEditorField } from "@/components/admin/markdown-editor-field";
 import { MediaAssetPicker } from "@/components/admin/media-asset-picker";
+import { AdminActionForm } from "@/components/admin/admin-action-form";
 import {
   AdminCheckbox,
   AdminField,
@@ -18,8 +19,8 @@ import {
   getAdminMediaAssets,
 } from "@/lib/content/admin-queries";
 import {
-  archiveAcademicEntryAction,
-  saveAcademicEntryAction,
+  archiveAcademicEntryFormAction,
+  saveAcademicEntryFormAction,
 } from "@/features/admin/content-actions";
 
 interface AdminAcademicPageProps {
@@ -67,6 +68,22 @@ export default async function AdminAcademicPage({
           </div>
 
           <div className="mt-6 space-y-3">
+            {entries.length === 0 ? (
+              <div className="rounded-[1.25rem] border border-dashed border-border bg-white/45 p-5">
+                <h3 className="font-display text-lg font-semibold text-foreground">
+                  No academic entries yet
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Add a coursework note, experiment, project, or research record.
+                </p>
+                <Link
+                  href="/admin/content/academic"
+                  className="mt-4 inline-flex rounded-full bg-surface-dark px-4 py-2 text-sm font-medium text-white"
+                >
+                  Start an entry
+                </Link>
+              </div>
+            ) : null}
             {entries.map((entry) => (
               <Link
                 key={entry.id}
@@ -114,9 +131,9 @@ export default async function AdminAcademicPage({
             ) : null}
           </div>
 
-          <form
+          <AdminActionForm
             key={selectedEntry?.id ?? "new-academic-entry"}
-            action={saveAcademicEntryAction}
+            action={saveAcademicEntryFormAction}
             className="mt-6 grid gap-5"
           >
             <input type="hidden" name="id" defaultValue={selectedEntry?.id ?? ""} />
@@ -239,13 +256,13 @@ export default async function AdminAcademicPage({
             <div className="flex flex-wrap gap-3 pt-2">
               <SubmitButton>Save entry</SubmitButton>
             </div>
-          </form>
+          </AdminActionForm>
 
           {selectedEntry ? (
-            <form action={archiveAcademicEntryAction} className="mt-4">
+            <AdminActionForm action={archiveAcademicEntryFormAction} className="mt-4">
               <input type="hidden" name="id" value={selectedEntry.id} />
               <SubmitButton variant="danger">Archive entry</SubmitButton>
-            </form>
+            </AdminActionForm>
           ) : null}
         </AdminPanel>
       </div>

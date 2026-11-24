@@ -86,20 +86,6 @@ export function parseDelimitedList(value: FormDataEntryValue | string | null | u
   );
 }
 
-export function safeJsonParse(value: string | null | undefined) {
-  if (!value) {
-    return {};
-  }
-
-  try {
-    const parsed = JSON.parse(value);
-
-    return typeof parsed === "object" && parsed !== null ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
 export function parseJsonObject(value: string | null | undefined, fieldName = "JSON") {
   if (!value) {
     return {};

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { MarkdownEditorField } from "@/components/admin/markdown-editor-field";
 import { MediaAssetPicker } from "@/components/admin/media-asset-picker";
+import { AdminActionForm } from "@/components/admin/admin-action-form";
 import {
   AdminCheckbox,
   AdminField,
@@ -14,7 +15,10 @@ import {
   SubmitButton,
 } from "@/components/admin/primitives";
 import { getAdminMediaAssets, getAdminPosts } from "@/lib/content/admin-queries";
-import { archivePostAction, savePostAction } from "@/features/admin/content-actions";
+import {
+  archivePostFormAction,
+  savePostFormAction,
+} from "@/features/admin/content-actions";
 
 interface AdminPostsPageProps {
   searchParams: Promise<{ edit?: string }>;
@@ -58,6 +62,22 @@ export default async function AdminPostsPage({
           </div>
 
           <div className="mt-6 space-y-3">
+            {posts.length === 0 ? (
+              <div className="rounded-[1.25rem] border border-dashed border-border bg-white/45 p-5">
+                <h3 className="font-display text-lg font-semibold text-foreground">
+                  Your writing library is empty
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Start the first draft and publish it when the notes are ready.
+                </p>
+                <Link
+                  href="/admin/content/posts"
+                  className="mt-4 inline-flex rounded-full bg-surface-dark px-4 py-2 text-sm font-medium text-white"
+                >
+                  Start a post
+                </Link>
+              </div>
+            ) : null}
             {posts.map((post) => (
               <Link
                 key={post.id}
@@ -105,9 +125,9 @@ export default async function AdminPostsPage({
             ) : null}
           </div>
 
-          <form
+          <AdminActionForm
             key={selectedPost?.id ?? "new-post"}
-            action={savePostAction}
+            action={savePostFormAction}
             className="mt-6 grid gap-5"
           >
             <input type="hidden" name="id" defaultValue={selectedPost?.id ?? ""} />
@@ -212,13 +232,13 @@ export default async function AdminPostsPage({
             <div className="flex flex-wrap gap-3 pt-2">
               <SubmitButton>Save post</SubmitButton>
             </div>
-          </form>
+          </AdminActionForm>
 
           {selectedPost ? (
-            <form action={archivePostAction} className="mt-4">
+            <AdminActionForm action={archivePostFormAction} className="mt-4">
               <input type="hidden" name="id" value={selectedPost.id} />
               <SubmitButton variant="danger">Archive post</SubmitButton>
-            </form>
+            </AdminActionForm>
           ) : null}
         </AdminPanel>
       </div>

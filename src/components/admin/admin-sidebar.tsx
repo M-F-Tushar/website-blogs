@@ -19,7 +19,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { signOutAction } from "@/features/admin/actions";
+import { signOutFormAction } from "@/features/admin/actions";
+import { AdminActionForm } from "@/components/admin/admin-action-form";
 import { cn, normalizeEmailAddress } from "@/lib/utils";
 import type { SessionProfile } from "@/types/content";
 
@@ -113,9 +114,9 @@ export function AdminSidebar({ profile }: { profile: SessionProfile }) {
     <aside className="surface-panel admin-sidebar-shell flex h-full flex-col rounded-[1.75rem] p-5">
       <div className="border-b border-border pb-5">
         <p className="font-mono text-xs uppercase tracking-[0.26em] text-accent">Admin</p>
-        <h2 className="mt-4 font-display text-2xl font-semibold tracking-[-0.04em]">
+        <p className="mt-4 font-display text-2xl font-semibold tracking-[-0.04em]">
           Website control
-        </h2>
+        </p>
         <p className="mt-2 text-sm leading-6 text-muted">
           Manage pages, posts, messages, media, and settings from one place.
         </p>
@@ -124,7 +125,7 @@ export function AdminSidebar({ profile }: { profile: SessionProfile }) {
         </p>
       </div>
 
-      <div className="mt-6 flex-1 space-y-6">
+      <nav className="mt-6 flex-1 space-y-6" aria-label="Admin navigation">
         {navigationGroups.map((group) => (
           <div key={group.title}>
             <div className="flex items-end justify-between gap-3">
@@ -143,6 +144,11 @@ export function AdminSidebar({ profile }: { profile: SessionProfile }) {
                     (pathname === item.href || pathname.startsWith(`${item.href}/`)) &&
                       "admin-sidebar-link-active",
                   )}
+                  aria-current={
+                    pathname === item.href || pathname.startsWith(`${item.href}/`)
+                      ? "page"
+                      : undefined
+                  }
                 >
                   <item.icon className="h-4 w-4" />
                   <span className="min-w-0">
@@ -156,16 +162,19 @@ export function AdminSidebar({ profile }: { profile: SessionProfile }) {
             </div>
           </div>
         ))}
-      </div>
+      </nav>
 
-      <form action={signOutAction}>
+      <AdminActionForm
+        action={signOutFormAction}
+        pendingMessage="Signing out..."
+      >
         <button
           type="submit"
           className="mt-6 inline-flex w-full items-center justify-center rounded-full border border-border-strong px-5 py-3 text-sm font-medium text-foreground transition hover:bg-white/60"
         >
           Sign out
         </button>
-      </form>
+      </AdminActionForm>
     </aside>
   );
 }

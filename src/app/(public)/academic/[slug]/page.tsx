@@ -15,7 +15,10 @@ import {
   getPublishedAcademicEntries,
 } from "@/lib/content/queries";
 import { getSectionSettingString } from "@/lib/content/section-settings";
-import { buildSiteMetadata } from "@/lib/content/seo";
+import {
+  buildContentStructuredData,
+  buildSiteMetadata,
+} from "@/lib/content/seo";
 import {
   countWords,
   estimateReadingTime,
@@ -44,6 +47,7 @@ export async function generateMetadata({ params }: AcademicDetailPageProps) {
       title: "Academic entry not found",
       description: "The requested academic entry could not be found.",
       path: `/academic/${slug}`,
+      includeCanonical: false,
     });
   }
 
@@ -55,6 +59,8 @@ export async function generateMetadata({ params }: AcademicDetailPageProps) {
     canonicalUrl: entry.canonicalUrl,
     ogType: "article",
     publishedTime: entry.completedAt ?? entry.startedAt,
+    modifiedTime:
+      entry.updatedAt ?? entry.completedAt ?? entry.startedAt,
   });
 }
 
@@ -111,15 +117,18 @@ export default async function AcademicDetailPage({
   const eyebrow = entryTypeLabel || eyebrowFallback;
   const formattedWordCount = new Intl.NumberFormat("en-US").format(wordCount);
 
-  const articleJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ScholarlyArticle",
-    headline: entry.title,
-    description: entry.summary ?? entry.metaDescription ?? undefined,
-    datePublished: entry.completedAt ?? entry.startedAt ?? undefined,
-    image: entry.coverUrl ?? undefined,
+  const articleJsonLd = await buildContentStructuredData({
+    type: "ScholarlyArticle",
+    title: entry.title,
+    description: entry.summary ?? entry.metaDescription,
+    path: `/academic/${entry.slug}`,
+    canonicalUrl: entry.canonicalUrl,
+    image: entry.coverUrl,
+    datePublished: entry.completedAt ?? entry.startedAt,
+    dateModified:
+      entry.updatedAt ?? entry.completedAt ?? entry.startedAt,
     wordCount,
-  };
+  });
 
   return (
     <article className="relative">

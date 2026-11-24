@@ -53,13 +53,14 @@ export function PublicThemeToggle() {
       type="button"
       onClick={handleToggle}
       className="site-icon-button transition-all duration-300 hover:scale-110 active:scale-95"
-      aria-label="Toggle public theme"
-      title="Toggle public theme"
+      aria-label="Dark theme"
+      aria-pressed={theme === "dark"}
+      title={`Current theme: ${theme}. Switch to ${theme === "dark" ? "light" : "dark"} theme.`}
     >
       {theme === "dark" ? (
         <Sun className="h-4 w-4 text-amber-200 transition-transform duration-300 rotate-0 scale-100" />
       ) : (
-        <MoonStar className="h-4 w-4 text-indigo-900 transition-transform duration-300 rotate-0 scale-100" />
+        <MoonStar className="h-4 w-4 text-slate-100 transition-transform duration-300 rotate-0 scale-100" />
       )}
     </button>
   );

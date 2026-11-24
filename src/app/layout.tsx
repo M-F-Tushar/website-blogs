@@ -74,11 +74,13 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${displayFont.variable} ${sansFont.variable} ${monoFont.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('public-theme-mode');if(t==='midnight'||t==='eclipse'){document.documentElement.dataset.publicTheme=t;}else{document.documentElement.dataset.publicTheme='midnight';}}catch(e){document.documentElement.dataset.publicTheme='midnight';}})();`,
+            __html:
+              "(function(){try{var t=localStorage.getItem('theme-preference');document.documentElement.classList.toggle('dark',t!=='light');}catch(e){document.documentElement.classList.add('dark');}})();",
           }}
         />
       </head>

@@ -43,5 +43,6 @@ export async function buildTopLevelPageMetadata(
     description: resolvedPage?.metaDescription ?? fallback.description,
     path: resolvedPage?.slug ?? DEFAULT_TOP_LEVEL_PAGE_PATHS[pageKey],
     canonicalUrl: resolvedPage?.canonicalUrl ?? null,
+    includeCanonical: Boolean(resolvedPage),
   });
 }

@@ -1,8 +1,8 @@
 import { getAppRuntimeStage, getContactBotProtectionConfig } from "@/lib/supabase/env";
 
 export const CONTACT_THROTTLE_COOKIE = "contact-throttle";
-export const CONTACT_PROXY_THROTTLE_SECONDS = 8;
 export const CONTACT_SUCCESS_THROTTLE_SECONDS = 20;
+const VERCEL_TRUSTED_IP_HEADER = "x-vercel-forwarded-for";
 
 const textEncoder = new TextEncoder();
 const suspiciousKeywordPatterns = [
@@ -28,6 +28,21 @@ export class ContactRequestError extends Error {
     super(message);
     this.name = "ContactRequestError";
   }
+}
+
+function safeLogToken(value: unknown, fallback = "unknown") {
+  if (typeof value !== "string" || !/^[a-z0-9_-]{1,64}$/i.test(value)) {
+    return fallback;
+  }
+
+  return value;
+}
+
+export function logContactOperationFailure(operation: string, code: unknown) {
+  console.error("[contact] operation failed", {
+    operation: safeLogToken(operation),
+    code: safeLogToken(code),
+  });
 }
 
 function base64UrlEncode(bytes: Uint8Array) {
@@ -68,8 +83,25 @@ function normalizeIp(value: string | null | undefined) {
   return candidate;
 }
 
-function normalizeHeaderValue(value: string | null) {
+function normalizeHeaderValue(value: string | null | undefined) {
   return value?.trim() || null;
+}
+
+function getTrustedClientIpHeader() {
+  if (getAppRuntimeStage() === "local") {
+    return null;
+  }
+
+  const explicitHeader = normalizeHeaderValue(process.env.TRUSTED_IP_HEADER);
+  if (explicitHeader) {
+    return explicitHeader.toLowerCase();
+  }
+
+  if (normalizeHeaderValue(process.env.VERCEL_ENV)) {
+    return VERCEL_TRUSTED_IP_HEADER;
+  }
+
+  return null;
 }
 
 function getTurnstileSecretKey() {
@@ -140,17 +172,27 @@ export async function createContactThrottleCookie(secondsFromNow: number) {
 }
 
 export function extractClientIp(headers: Headers) {
-  // Trust only the header injected by the platform's edge to prevent
-  // attacker-spoofed X-Forwarded-For from defeating the rate limiter.
-  // Override per host with TRUSTED_IP_HEADER (e.g. "x-forwarded-for" behind
-  // your own trusted reverse proxy).
-  const trustedHeader = (process.env.TRUSTED_IP_HEADER ?? "x-vercel-forwarded-for").toLowerCase();
+  if (getAppRuntimeStage() === "local") {
+    return null;
+  }
+
+  const trustedHeader = getTrustedClientIpHeader();
+  if (!trustedHeader || !/^[!#$%&'*+\-.^_`|~0-9a-z]+$/i.test(trustedHeader)) {
+    throw new ContactRequestError(
+      "Trusted client IP configuration is missing or invalid.",
+      500,
+      false,
+    );
+  }
+
   const raw = normalizeHeaderValue(headers.get(trustedHeader));
   const ip = normalizeIp(raw);
 
-  if (!ip && getAppRuntimeStage() === "production") {
-    console.warn(
-      `[contact] trusted IP header "${trustedHeader}" is missing; per-IP rate limiting is inactive. Set TRUSTED_IP_HEADER for this host.`,
+  if (!ip) {
+    throw new ContactRequestError(
+      `The trusted client IP header "${trustedHeader}" is missing.`,
+      500,
+      false,
     );
   }
 

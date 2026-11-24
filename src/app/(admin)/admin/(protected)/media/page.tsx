@@ -1,4 +1,5 @@
 import { MediaUploadForm } from "@/components/admin/media-upload-form";
+import { MediaDeleteForm } from "@/components/admin/media-delete-form";
 import { AdminPageIntro, AdminPanel } from "@/components/admin/primitives";
 import { getAdminMediaAssets } from "@/lib/content/admin-queries";
 import { formatDisplayDate } from "@/lib/utils";
@@ -7,9 +8,9 @@ import type { MediaAsset } from "@/types/content";
 export default async function AdminMediaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ uploaded?: string }>;
+  searchParams: Promise<{ uploaded?: string; deleted?: string }>;
 }) {
-  const { uploaded } = await searchParams;
+  const { uploaded, deleted } = await searchParams;
 
   let assets: MediaAsset[] = [];
   let assetsError: string | null = null;
@@ -39,6 +40,11 @@ export default async function AdminMediaPage({
           {uploaded === "1" ? (
             <p className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
               Media asset uploaded successfully.
+            </p>
+          ) : null}
+          {deleted === "1" ? (
+            <p className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              Media asset deleted successfully.
             </p>
           ) : null}
           <MediaUploadForm />
@@ -77,16 +83,19 @@ export default async function AdminMediaPage({
                         {asset.bucketName} | {formatDisplayDate(asset.createdAt)}
                       </p>
                     </div>
-                    {asset.publicUrl ? (
-                      <a
-                        href={asset.publicUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sm text-accent"
-                      >
-                        Open
-                      </a>
-                    ) : null}
+                    <div className="flex items-center gap-3">
+                      {asset.publicUrl ? (
+                        <a
+                          href={asset.publicUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-accent"
+                        >
+                          Open
+                        </a>
+                      ) : null}
+                      <MediaDeleteForm assetId={asset.id} />
+                    </div>
                   </div>
                 </div>
               ))}
