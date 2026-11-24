@@ -1,40 +1,23 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Github, Linkedin, Search } from "lucide-react";
 
 import { PublicThemeToggle } from "@/components/site/public-theme-toggle";
+import {
+  SiteHeaderNavigation,
+  type HeaderNavigationItem,
+} from "@/components/site/site-header-navigation";
 import type { NavigationItem, SiteSettings } from "@/types/content";
-import { cn } from "@/lib/utils";
 
 interface SiteHeaderProps {
   siteSettings: SiteSettings;
   navigationItems: NavigationItem[];
 }
 
-function normalizeNavLabel(item: Pick<NavigationItem, "href" | "label">) {
-  if (item.href === "/blogs" && item.label.trim().toLowerCase() === "blogs") {
-    return "Blog";
-  }
-
-  return item.label;
-}
-
-function isActivePath(pathname: string, href: string) {
-  if (href === "/") {
-    return pathname === "/";
-  }
-
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
-  const pathname = usePathname();
   const configuredHeaderItems = navigationItems.filter(
     (item) => item.location === "header" && item.isVisible,
   );
-  const headerItems =
+  const headerItems: HeaderNavigationItem[] =
     configuredHeaderItems.length > 0
       ? configuredHeaderItems
       : [
@@ -53,43 +36,23 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/6 bg-[rgba(7,14,28,0.82)] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-8 px-6 py-5">
-        <Link href="/" className="font-display text-[2rem] font-semibold tracking-[-0.05em] text-foreground dark:text-white">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-6 py-5 sm:gap-8">
+        <Link
+          href="/"
+          prefetch={false}
+          className="font-display text-[1.7rem] font-semibold tracking-[-0.05em] text-foreground dark:text-white sm:text-[2rem]"
+        >
           {siteSettings.siteName}
         </Link>
 
         <div className="hidden flex-1 items-center justify-center lg:flex">
-          <nav className="flex items-center gap-8 text-[0.98rem] text-muted dark:text-slate-300">
-            {headerItems.map((item) => {
-              const isActive = !item.isExternal && isActivePath(pathname, item.href);
-
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  target={item.isExternal ? "_blank" : undefined}
-                  rel={item.isExternal ? "noreferrer" : undefined}
-                  className={cn(
-                    "relative pb-2 transition hover:text-foreground dark:text-white",
-                    isActive && "text-foreground dark:text-white",
-                  )}
-                >
-                  {normalizeNavLabel(item)}
-                  <span
-                    className={cn(
-                      "absolute inset-x-0 -bottom-0.5 h-0.5 origin-left scale-x-0 rounded-full bg-sky-400 transition-transform",
-                      isActive && "scale-x-100",
-                    )}
-                  />
-                </Link>
-              );
-            })}
-          </nav>
+          <SiteHeaderNavigation items={headerItems} variant="desktop" />
         </div>
 
-        <div className="hidden items-center gap-3 text-muted dark:text-slate-200 lg:flex">
+        <div className="flex shrink-0 items-center gap-2 text-muted dark:text-slate-200 lg:gap-3">
           <Link
             href="/blogs#search"
+            prefetch={false}
             className="site-icon-button"
             aria-label="Search articles"
             title="Search articles"
@@ -97,57 +60,38 @@ export function SiteHeader({ siteSettings, navigationItems }: SiteHeaderProps) {
             <Search className="h-4 w-4" />
           </Link>
           <PublicThemeToggle />
-          <span className="mx-1 h-8 w-px bg-black/10 dark:bg-white/10" />
-          {siteSettings.githubUrl ? (
-            <a
-              href={siteSettings.githubUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="site-icon-button"
-              aria-label="GitHub"
-              title="GitHub"
-            >
-              <Github className="h-4 w-4" />
-            </a>
-          ) : null}
-          {siteSettings.linkedinUrl ? (
-            <a
-              href={siteSettings.linkedinUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="site-icon-button"
-              aria-label="LinkedIn"
-              title="LinkedIn"
-            >
-              <Linkedin className="h-4 w-4" />
-            </a>
-          ) : null}
+          <div className="hidden items-center gap-3 lg:flex">
+            <span className="mx-1 h-8 w-px bg-black/10 dark:bg-white/10" />
+            {siteSettings.githubUrl ? (
+              <a
+                href={siteSettings.githubUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="site-icon-button"
+                aria-label="GitHub"
+                title="GitHub"
+              >
+                <Github className="h-4 w-4" />
+              </a>
+            ) : null}
+            {siteSettings.linkedinUrl ? (
+              <a
+                href={siteSettings.linkedinUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="site-icon-button"
+                aria-label="LinkedIn"
+                title="LinkedIn"
+              >
+                <Linkedin className="h-4 w-4" />
+              </a>
+            ) : null}
+          </div>
         </div>
       </div>
 
       <div className="border-t border-white/6 px-6 pb-4 pt-3 lg:hidden">
-        <nav className="grid grid-cols-2 gap-3 text-sm text-muted dark:text-slate-300 min-[430px]:grid-cols-3">
-          {headerItems.map((item) => {
-            const isActive = !item.isExternal && isActivePath(pathname, item.href);
-
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                target={item.isExternal ? "_blank" : undefined}
-                rel={item.isExternal ? "noreferrer" : undefined}
-                className={cn(
-                  "rounded-full border px-4 py-2 text-center transition",
-                  isActive
-                    ? "border-sky-400/30 bg-sky-400/10 text-foreground dark:text-white"
-                    : "border-border dark:border-white/8 bg-white/4 text-muted dark:text-slate-300",
-                )}
-              >
-                {normalizeNavLabel(item)}
-              </Link>
-            );
-          })}
-        </nav>
+        <SiteHeaderNavigation items={headerItems} variant="mobile" />
       </div>
     </header>
   );

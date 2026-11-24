@@ -109,6 +109,7 @@ function HomeCollectionRail({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className="group/item relative flex flex-col justify-center rounded-[1.25rem] border border-white/5 bg-black/[0.02] dark:bg-white/[0.02] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-sky-400/30 hover:bg-white/[0.06] hover:shadow-[0_12px_40px_rgba(14,165,233,0.15)]"
               >
                 <p className="text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted dark:text-slate-500 transition-colors duration-300 group-hover/item:text-sky-300">
@@ -133,6 +134,7 @@ function HomeCollectionRail({
         <div className="mt-8 border-t border-border dark:border-white/10 pt-5">
           <Link
             href={href}
+            prefetch={false}
             className="group/link inline-flex items-center gap-2 text-[0.9rem] font-semibold text-muted dark:text-slate-300 transition-colors duration-300 hover:text-sky-400"
           >
             {hrefLabel}
@@ -283,7 +285,8 @@ export async function HomePageContent({
             <div className="mt-10 flex flex-wrap items-center gap-5">
               <Link
                 href={primaryCtaHref}
-                className="group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-sky-500 px-9 py-4 text-[0.95rem] font-semibold text-foreground dark:text-white shadow-[0_0_40px_-10px_rgba(14,165,233,0.5)] transition-all duration-300 hover:scale-105 hover:bg-sky-400 hover:shadow-[0_0_60px_-15px_rgba(14,165,233,0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                prefetch={false}
+                className="group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-sky-500 px-9 py-4 text-[0.95rem] font-semibold !text-slate-950 shadow-[0_0_40px_-10px_rgba(14,165,233,0.5)] transition-all duration-300 hover:scale-105 hover:bg-sky-400 hover:shadow-[0_0_60px_-15px_rgba(14,165,233,0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               >
                 <span className="relative z-10 flex items-center gap-2">
                   {primaryCtaLabel}
@@ -293,7 +296,8 @@ export async function HomePageContent({
               </Link>
               <Link
                 href={secondaryCtaHref}
-                className="inline-flex items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/60 px-9 py-4 text-[0.95rem] font-semibold text-foreground dark:text-white shadow-lg backdrop-blur-xl transition-all duration-300 hover:bg-slate-700/80 hover:border-slate-500/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                prefetch={false}
+                className="inline-flex items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/60 px-9 py-4 text-[0.95rem] font-semibold !text-slate-100 shadow-lg backdrop-blur-xl transition-all duration-300 hover:bg-slate-700/80 hover:border-slate-500/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               >
                 {secondaryCtaLabel}
               </Link>
@@ -392,6 +396,7 @@ export async function HomePageContent({
               size="feature"
               actionLabel="Read Article"
               tags={featuredStory.tags}
+              headingLevel={3}
             />
           ) : (
             <div className="detail-card">
@@ -472,7 +477,11 @@ export async function HomePageContent({
                   ) || undefined
                 }
               />
-              <Link href="/blogs" className="hidden whitespace-nowrap text-sm text-sky-300 transition hover:text-foreground dark:text-white md:inline-flex">
+              <Link
+                href="/blogs"
+                prefetch={false}
+                className="hidden whitespace-nowrap text-sm text-sky-300 transition hover:text-foreground md:inline-flex dark:hover:text-white"
+              >
                 View all →
               </Link>
             </div>
@@ -492,6 +501,7 @@ export async function HomePageContent({
                   tags={post.tags}
                   actionLabel="Read Article"
                   layout="list"
+                  headingLevel={3}
                 />
               ))}
             </div>
@@ -535,7 +545,7 @@ export async function HomePageContent({
             </p>
             <div className="mx-auto mt-10 max-w-xl relative">
               <NewsletterSignup
-                className="w-full"
+                className="w-full [&_a:first-of-type]:!text-slate-950 [&_a:not(:first-of-type)]:!text-slate-100 [&_p]:!text-slate-300"
                 contactEmail={siteSettings.contactEmail}
               />
             </div>

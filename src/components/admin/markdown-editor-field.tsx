@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { Eye, FileCode2, ImageIcon, ListChecks, PencilLine, Table2 } from "lucide-react";
 
 import { Markdown } from "@/components/site/markdown";
@@ -88,6 +88,10 @@ export function MarkdownEditorField({
   variant = "post",
   required,
 }: MarkdownEditorFieldProps) {
+  const generatedId = useId();
+  const textareaId = `${generatedId}-textarea`;
+  const hintId = `${generatedId}-hint`;
+  const assetSelectId = `${generatedId}-asset`;
   const [content, setContent] = useState(defaultValue);
   const [tab, setTab] = useState<ComposerTab>("write");
   const [selectedAssetId, setSelectedAssetId] = useState("");
@@ -98,10 +102,6 @@ export function MarkdownEditorField({
   );
   const selectedAsset =
     publicAssets.find((asset) => asset.id === selectedAssetId) ?? null;
-
-  useEffect(() => {
-    setContent(defaultValue);
-  }, [defaultValue]);
 
   function updateContent(
     builder: (current: string, start: number, end: number, selected: string) => {
@@ -203,8 +203,14 @@ export function MarkdownEditorField({
     <div className="flex flex-col gap-3 text-sm text-muted">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <span className="font-medium text-foreground">{label}</span>
-          {hint ? <p className="mt-1 text-xs leading-6 text-muted">{hint}</p> : null}
+          <label htmlFor={textareaId} className="font-medium text-foreground">
+            {label}
+          </label>
+          {hint ? (
+            <p id={hintId} className="mt-1 text-xs leading-6 text-muted">
+              {hint}
+            </p>
+          ) : null}
         </div>
         <div className="admin-tab-strip">
           {([
@@ -283,6 +289,7 @@ export function MarkdownEditorField({
           <div className="space-y-4">
             {tab === "write" ? (
               <textarea
+                id={textareaId}
                 ref={textareaRef}
                 name={name}
                 value={content}
@@ -291,6 +298,7 @@ export function MarkdownEditorField({
                 placeholder={placeholder}
                 required={required}
                 spellCheck={false}
+                aria-describedby={hint ? hintId : undefined}
               />
             ) : null}
 
@@ -348,7 +356,11 @@ export function MarkdownEditorField({
                 Media embeds
               </p>
               <div className="mt-3 space-y-3">
+                <label htmlFor={assetSelectId} className="sr-only">
+                  Media asset to embed
+                </label>
                 <select
+                  id={assetSelectId}
                   value={selectedAssetId}
                   onChange={(event) => setSelectedAssetId(event.target.value)}
                   className="w-full rounded-2xl border border-border bg-white/80 px-4 py-3 text-sm text-foreground outline-none transition focus:border-accent"

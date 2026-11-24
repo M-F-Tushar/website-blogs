@@ -15,6 +15,8 @@ export interface PostRow {
   body_markdown: string | null;
   status: PostSummary["status"];
   featured: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
   published_at: string | null;
   cover_asset_id?: string | null;
   cover?: AssetRow | null;
@@ -34,6 +36,8 @@ export interface AcademicEntryRow {
   entry_type: AcademicEntry["entryType"];
   status: AcademicEntry["status"];
   featured: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
   started_at: string | null;
   completed_at: string | null;
   external_url: string | null;
@@ -61,6 +65,8 @@ export interface RecommendationRow {
   external_url: string | null;
   status: Recommendation["status"];
   featured: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
   recommendation_categories?: RecommendationCategoryRow | null;
   cover_asset_id?: string | null;
   cover?: AssetRow | null;
@@ -86,6 +92,8 @@ export function mapPost(row: PostRow): PostSummary {
     bodyMarkdown: row.body_markdown ?? "",
     status: row.status,
     featured: row.featured,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
     publishedAt: row.published_at,
     coverAssetId: row.cover_asset_id ?? null,
     coverUrl: mapAssetUrl(row.cover),
@@ -108,6 +116,8 @@ export function mapAcademicEntry(row: AcademicEntryRow): AcademicEntry {
     entryType: row.entry_type,
     status: row.status,
     featured: row.featured,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
     startedAt: row.started_at,
     completedAt: row.completed_at,
     externalUrl: row.external_url,
@@ -134,6 +144,8 @@ export function mapRecommendation(row: RecommendationRow): Recommendation {
     externalUrl: row.external_url,
     status: row.status,
     featured: row.featured,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
     category: row.recommendation_categories?.name ?? null,
     coverAssetId: row.cover_asset_id ?? null,
     coverUrl: mapAssetUrl(row.cover),

@@ -61,16 +61,16 @@ export function AdminShell({
   return (
     <div className="mx-auto grid min-h-screen max-w-[1500px] gap-6 px-6 py-8 lg:grid-cols-[320px_minmax(0,1fr)]">
       <AdminSidebar profile={profile} />
-      <div className="space-y-6">
+      <main className="space-y-6">
         <div className="surface-panel admin-topbar rounded-[1.75rem] p-5 md:p-6">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.28em] text-accent">
                 Website manager
               </p>
-              <h1 className="mt-3 font-display text-[2.35rem] font-semibold leading-none tracking-[-0.05em] text-foreground">
+              <p className="mt-3 font-display text-[2.35rem] font-semibold leading-none tracking-[-0.05em] text-foreground">
                 What do you want to change?
-              </h1>
+              </p>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">
                 Use the cards below for the most common jobs, or choose a section from the left.
                 Every public page and site setting is controlled from here.
@@ -108,7 +108,7 @@ export function AdminShell({
         </div>
 
         <div>{children}</div>
-      </div>
+      </main>
     </div>
   );
 }

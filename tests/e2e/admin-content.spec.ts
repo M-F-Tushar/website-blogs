@@ -67,10 +67,30 @@ test.describe("admin content flow", () => {
     await page.goto("/admin/login");
 
     await page.getByLabel("Email").fill(adminEmail ?? "");
+    await page.getByLabel("Password").fill("definitely-not-the-admin-password");
+    await page.getByRole("button", { name: "Sign in" }).click();
+
+    const loginAlert = page
+      .getByRole("alert")
+      .filter({ hasText: "Invalid login credentials" });
+    await expect(loginAlert).toBeVisible();
+    await expect(loginAlert).toBeFocused();
+
     await page.getByLabel("Password").fill(adminPassword ?? "");
     await page.getByRole("button", { name: "Sign in" }).click();
 
     await expect(page).toHaveURL(/\/admin\/dashboard$/);
+    const authCookies = (await page.context().cookies()).filter((cookie) =>
+      /^sb-.*-auth-token/.test(cookie.name),
+    );
+    expect(authCookies.length).toBeGreaterThan(0);
+    expect(authCookies.every((cookie) => cookie.httpOnly)).toBe(true);
+    await expect
+      .poll(() => page.evaluate(() => document.cookie))
+      .not.toMatch(/(?:^|;\s*)sb-[^=]*-auth-token/);
+    await expect(page.locator("main")).toHaveCount(1);
+    await expect(page.getByRole("navigation", { name: "Admin navigation" })).toHaveCount(1);
+    await expect(page.locator("main").getByRole("heading", { level: 1 })).toHaveCount(1);
 
     const integrations = page.getByRole("list", { name: "Integration status" });
     await expect(integrations).toBeVisible();
@@ -83,6 +103,12 @@ test.describe("admin content flow", () => {
 
     await page.goto("/admin/content/posts");
     await expect(page.getByRole("heading", { name: "Posts" })).toBeVisible();
+    await expect(
+      page.getByRole("textbox", { name: "Article markdown" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Media asset to embed" }),
+    ).toBeVisible();
 
     await page.getByRole("textbox", { name: /^Title$/ }).fill(title);
     await page.getByLabel("Slug").fill(slug);

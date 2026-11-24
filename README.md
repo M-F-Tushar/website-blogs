@@ -85,30 +85,32 @@ This repo contains the Supabase schema and seed files under `supabase/`.
 
 ### Migration Order
 
-Migrations live in `supabase/migrations/` and are applied in timestamp order by the Supabase CLI. The directory is the single source of truth; never hand-apply SQL to a hosted database. `scripts/db/` holds one-time historical scripts only and must not be re-run.
+Migrations live in `supabase/migrations/` and are applied in timestamp order by the Supabase CLI. The directory is the single source of truth; never hand-apply SQL to a hosted database. One-time June 2026 scripts were removed from the executable tree and remain only in Git history.
 
 ### Local Supabase Flow
 
 If you are using the Supabase CLI locally:
 
 ```bash
-supabase start
-supabase db reset
+npx supabase start
+npx supabase db reset
 ```
 
-`supabase db reset` will apply migrations and then run `supabase/seed.sql`.
+`npx supabase db reset` will apply migrations and then run `supabase/seed.sql`.
 
 ### Remote Supabase Flow
 
-For a hosted Supabase project, link the project, confirm the migration ledger matches, then push:
+For a hosted Supabase project, link the project, confirm both the migration ledger
+and schema match, then push:
 
 ```bash
-supabase link --project-ref <your-project-ref>
+npx supabase link --project-ref <your-project-ref>
 npm run db:check
-supabase db push
+npx supabase db diff --linked --schema public
+npx supabase db push
 ```
 
-`npm run db:check` compares `supabase/migrations/` with the remote history table and exits non-zero (with the exact `migration repair` command) if they disagree. Do not run `db push` while it reports drift; see Manual Task H in [`docs/manual-operator-guide.md`](./docs/manual-operator-guide.md).
+`npm run db:check` compares `supabase/migrations/` with the remote history table and exits non-zero (with the exact `migration repair` command) if they disagree. A matching ledger is not sufficient proof that `db push` is safe. Review `npx supabase db diff --linked --schema public` and require an empty diff before pushing; see Manual Task H in [`docs/manual-operator-guide.md`](./docs/manual-operator-guide.md).
 
 If you want starter content in the remote database, apply `supabase/seed.sql` intentionally. Do not seed production with placeholder content unless you plan to replace it immediately.
 
@@ -166,15 +168,18 @@ npm run start
 npm run bootstrap-admin -- admin@example.com strong-password "Admin Name"
 npm run db:check            # linked project ledger vs supabase/migrations
 npm run db:check -- --local
+npm run db:types            # local generated types vs src/types/database.ts
+npm run db:diff             # local public schema vs supabase/migrations
+npm run db:artifacts        # both read-only checks
 ```
 
 ## Continuous Integration
 
 CI is defined in [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) and runs on pushes to `main` and on pull requests. Three jobs:
 
-- `verify`: `npm ci`, `npm run lint`, `npm run typecheck`, `npm run build`
+- `verify`: `npm ci`, a production-dependency audit, `npm run lint`, `npm run typecheck`, `npm run build`
 - `smoke`: builds and serves the public app with no Supabase or Turnstile credentials, then runs `tests/smoke/` (public pages, real 404 status codes, anonymous admin redirect, security headers, RSS)
-- `e2e`: starts an ephemeral Supabase stack with the CLI, bootstraps an admin user, and runs `tests/e2e/` (admin publish flow with taxonomy persistence, contact flow and throttling, eight RLS invariants)
+- `e2e`: starts an ephemeral Supabase stack, checks generated database types and schema drift, bootstraps an admin user, and runs `tests/e2e/` (admin publish flow with taxonomy persistence, contact flow and throttling, eight RLS invariants)
 
 Important note:
 - All jobs run with `APP_ENV=local`. No GitHub Actions secrets or repository variables are required.
@@ -242,7 +247,7 @@ For the current improvement and rollout sequence, use:
 Recommended deployment path:
 
 1. Provision a hosted Supabase project.
-2. Link it and apply migrations with `npm run db:check` followed by `supabase db push` (see Remote Supabase Flow).
+2. Link it, require clean ledger and schema checks with `npm run db:check` and `npx supabase db diff --linked --schema public`, then run `npx supabase db push` (see Remote Supabase Flow).
 3. Set production env variables:
    - `APP_ENV=production`
    - `NEXT_PUBLIC_SITE_URL=https://tusherblog.me`

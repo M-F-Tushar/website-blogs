@@ -46,7 +46,11 @@ values
   ('Contact', '/contact', 'header', 60, true, false),
   ('GitHub', 'https://github.com/M-F-Tushar', 'social', 10, true, true),
   ('LinkedIn', 'https://www.linkedin.com/in/mahir-faysal-tusher', 'social', 20, true, true)
-on conflict do nothing;
+on conflict (location, href) do update
+set label = excluded.label,
+    sort_order = excluded.sort_order,
+    is_visible = excluded.is_visible,
+    is_external = excluded.is_external;
 
 insert into public.pages (page_key, title, slug, status, is_visible, meta_title, meta_description)
 values

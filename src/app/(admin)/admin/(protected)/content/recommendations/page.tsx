@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { MarkdownEditorField } from "@/components/admin/markdown-editor-field";
 import { MediaAssetPicker } from "@/components/admin/media-asset-picker";
+import { AdminActionForm } from "@/components/admin/admin-action-form";
 import {
   AdminCheckbox,
   AdminField,
@@ -18,8 +19,8 @@ import {
   getAdminRecommendations,
 } from "@/lib/content/admin-queries";
 import {
-  archiveRecommendationAction,
-  saveRecommendationAction,
+  archiveRecommendationFormAction,
+  saveRecommendationFormAction,
 } from "@/features/admin/content-actions";
 
 interface AdminRecommendationsPageProps {
@@ -68,6 +69,22 @@ export default async function AdminRecommendationsPage({
           </div>
 
           <div className="mt-6 space-y-3">
+            {recommendations.length === 0 ? (
+              <div className="rounded-[1.25rem] border border-dashed border-border bg-white/45 p-5">
+                <h3 className="font-display text-lg font-semibold text-foreground">
+                  No recommendations yet
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Add the first useful book, tool, course, or reference.
+                </p>
+                <Link
+                  href="/admin/content/recommendations"
+                  className="mt-4 inline-flex rounded-full bg-surface-dark px-4 py-2 text-sm font-medium text-white"
+                >
+                  Add a recommendation
+                </Link>
+              </div>
+            ) : null}
             {recommendations.map((item) => (
               <Link
                 key={item.id}
@@ -115,9 +132,9 @@ export default async function AdminRecommendationsPage({
             ) : null}
           </div>
 
-          <form
+          <AdminActionForm
             key={selectedItem?.id ?? "new-recommendation"}
-            action={saveRecommendationAction}
+            action={saveRecommendationFormAction}
             className="mt-6 grid gap-5"
           >
             <input type="hidden" name="id" defaultValue={selectedItem?.id ?? ""} />
@@ -260,13 +277,16 @@ export default async function AdminRecommendationsPage({
             <div className="flex flex-wrap gap-3 pt-2">
               <SubmitButton>Save recommendation</SubmitButton>
             </div>
-          </form>
+          </AdminActionForm>
 
           {selectedItem ? (
-            <form action={archiveRecommendationAction} className="mt-4">
+            <AdminActionForm
+              action={archiveRecommendationFormAction}
+              className="mt-4"
+            >
               <input type="hidden" name="id" value={selectedItem.id} />
               <SubmitButton variant="danger">Archive recommendation</SubmitButton>
-            </form>
+            </AdminActionForm>
           ) : null}
         </AdminPanel>
       </div>

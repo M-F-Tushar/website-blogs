@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AdminActionForm } from "@/components/admin/admin-action-form";
 import {
   AdminField,
   AdminInput,
@@ -8,7 +9,7 @@ import {
   StatusPill,
   SubmitButton,
 } from "@/components/admin/primitives";
-import { saveContactQuickLinksAction } from "@/features/admin/actions";
+import { saveContactQuickLinksFormAction } from "@/features/admin/actions";
 import { fallbackSiteSettings } from "@/lib/content/fallback-data";
 import {
   getAdminPageSections,
@@ -74,7 +75,10 @@ export default async function AdminContactPageManager() {
           </div>
         </div>
 
-        <form action={saveContactQuickLinksAction} className="mt-6 grid gap-5">
+        <AdminActionForm
+          action={saveContactQuickLinksFormAction}
+          className="mt-6 grid gap-5"
+        >
           <input type="hidden" name="returnTo" value="/admin/content/contact" />
 
           <div className="grid gap-5 xl:grid-cols-2">
@@ -136,7 +140,7 @@ export default async function AdminContactPageManager() {
           <div className="pt-2">
             <SubmitButton>Save quick contact links</SubmitButton>
           </div>
-        </form>
+        </AdminActionForm>
       </AdminPanel>
 
       <AdminPanel className="admin-panel-quiet">

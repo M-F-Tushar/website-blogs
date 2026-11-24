@@ -9,10 +9,14 @@ interface MetadataInput {
   path?: string;
   image?: string | null;
   canonicalUrl?: string | null;
+  includeCanonical?: boolean;
   absoluteTitle?: boolean;
   ogType?: "website" | "article";
   publishedTime?: string | null;
+  modifiedTime?: string | null;
 }
+
+const RSS_ALTERNATE_TYPE = "application/rss+xml";
 
 function normalizeConfiguredCanonical(
   canonicalUrl?: string | null,
@@ -73,26 +77,34 @@ export function buildMetadata({
   path = "/",
   image,
   canonicalUrl,
+  includeCanonical = true,
   absoluteTitle = false,
   ogType = "website",
   publishedTime,
+  modifiedTime,
 }: MetadataInput): Metadata {
-  const resolvedCanonicalUrl = resolveCanonicalUrl(path, canonicalUrl);
+  const resolvedCanonicalUrl = includeCanonical
+    ? resolveCanonicalUrl(path, canonicalUrl)
+    : null;
 
   return {
     title: absoluteTitle ? { absolute: title } : title,
     description,
     alternates: {
-      canonical: resolvedCanonicalUrl,
+      ...(resolvedCanonicalUrl ? { canonical: resolvedCanonicalUrl } : {}),
+      types: {
+        [RSS_ALTERNATE_TYPE]: "/feed.xml",
+      },
     },
     openGraph: {
       title,
       description,
-      url: resolvedCanonicalUrl,
+      ...(resolvedCanonicalUrl ? { url: resolvedCanonicalUrl } : {}),
       type: ogType,
       ...(ogType === "article" && publishedTime
         ? { publishedTime }
         : {}),
+      ...(ogType === "article" && modifiedTime ? { modifiedTime } : {}),
       images: image ? [{ url: image, alt: title }] : undefined,
     },
     twitter: {
@@ -107,11 +119,14 @@ export function buildMetadata({
 export async function buildSiteMetadata(input: MetadataInput): Promise<Metadata> {
   const siteSettings = await getSiteSettings();
   const path = input.path ?? "/";
-  const resolvedCanonicalUrl = resolveCanonicalUrl(
-    path,
-    input.canonicalUrl,
-    siteSettings.canonicalUrl,
-  );
+  const resolvedCanonicalUrl =
+    input.includeCanonical === false
+      ? null
+      : resolveCanonicalUrl(
+          path,
+          input.canonicalUrl,
+          siteSettings.canonicalUrl,
+        );
   const normalizedSiteName = siteSettings.siteName.trim().toLowerCase();
   const normalizedTitle = input.title.trim().toLowerCase();
   const absoluteTitle =
@@ -126,4 +141,88 @@ export async function buildSiteMetadata(input: MetadataInput): Promise<Metadata>
     canonicalUrl: resolvedCanonicalUrl,
     absoluteTitle,
   });
+}
+
+interface ContentStructuredDataInput {
+  type: "BlogPosting" | "ScholarlyArticle" | "Recommendation";
+  title: string;
+  description?: string | null;
+  path: string;
+  canonicalUrl?: string | null;
+  image?: string | null;
+  datePublished?: string | null;
+  dateModified?: string | null;
+  keywords?: string[];
+  wordCount?: number;
+  category?: string | null;
+  externalUrl?: string | null;
+}
+
+export async function buildContentStructuredData({
+  type,
+  title,
+  description,
+  path,
+  canonicalUrl,
+  image,
+  datePublished,
+  dateModified,
+  keywords = [],
+  wordCount,
+  category,
+  externalUrl,
+}: ContentStructuredDataInput) {
+  const siteSettings = await getSiteSettings();
+  const canonical = resolveCanonicalUrl(
+    path,
+    canonicalUrl,
+    siteSettings.canonicalUrl,
+  );
+  const siteUrl = resolveCanonicalUrl("/", null, siteSettings.canonicalUrl);
+  const identityName = siteSettings.siteName;
+  const personId = new URL("#author", siteUrl).toString();
+  const publisherId = new URL("#publisher", siteUrl).toString();
+  const contentImage = image ?? siteSettings.ogImageUrl ?? undefined;
+  const modified = dateModified ?? datePublished ?? undefined;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": type,
+    "@id": `${canonical}#content`,
+    ...(type === "Recommendation" ? { name: title } : { headline: title }),
+    description: description ?? undefined,
+    url: canonical,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": canonical,
+    },
+    image: contentImage ?? undefined,
+    datePublished: datePublished ?? undefined,
+    dateModified: modified,
+    author: {
+      "@type": "Person",
+      "@id": personId,
+      name: identityName,
+      url: siteUrl,
+    },
+    publisher: {
+      "@type": "Organization",
+      "@id": publisherId,
+      name: identityName,
+      url: siteUrl,
+      ...(siteSettings.ogImageUrl
+        ? {
+            logo: {
+              "@type": "ImageObject",
+              url: siteSettings.ogImageUrl,
+            },
+          }
+        : {}),
+    },
+    ...(keywords.length > 0 ? { keywords: keywords.join(", ") } : {}),
+    ...(wordCount !== undefined ? { wordCount } : {}),
+    ...(category ? { category } : {}),
+    ...(externalUrl ? { sameAs: externalUrl } : {}),
+    inLanguage: "en",
+  };
 }

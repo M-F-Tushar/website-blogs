@@ -14,7 +14,10 @@ import {
   getPublishedPosts,
 } from "@/lib/content/queries";
 import { getSectionSettingString } from "@/lib/content/section-settings";
-import { buildSiteMetadata } from "@/lib/content/seo";
+import {
+  buildContentStructuredData,
+  buildSiteMetadata,
+} from "@/lib/content/seo";
 import {
   countWords,
   estimateReadingTime,
@@ -43,6 +46,7 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
       title: "Post not found",
       description: "The requested post could not be found.",
       path: `/blogs/${slug}`,
+      includeCanonical: false,
     });
   }
 
@@ -54,6 +58,7 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
     canonicalUrl: post.canonicalUrl,
     ogType: "article",
     publishedTime: post.publishedAt,
+    modifiedTime: post.updatedAt ?? post.publishedAt,
   });
 }
 
@@ -102,16 +107,18 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const eyebrow = post.categories.join(" / ") || eyebrowFallback;
   const formattedWordCount = new Intl.NumberFormat("en-US").format(wordCount);
 
-  const articleJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: post.title,
-    description: post.excerpt ?? post.metaDescription ?? undefined,
-    datePublished: post.publishedAt ?? undefined,
-    image: post.coverUrl ?? undefined,
-    keywords: [...post.categories, ...post.tags].join(", ") || undefined,
+  const articleJsonLd = await buildContentStructuredData({
+    type: "BlogPosting",
+    title: post.title,
+    description: post.excerpt ?? post.metaDescription,
+    path: `/blogs/${post.slug}`,
+    canonicalUrl: post.canonicalUrl,
+    image: post.coverUrl,
+    datePublished: post.publishedAt,
+    dateModified: post.updatedAt ?? post.publishedAt,
+    keywords: [...post.categories, ...post.tags],
     wordCount,
-  };
+  });
 
   return (
     <article className="relative">

@@ -149,6 +149,7 @@ export type Database = {
           spam_score: number
           status: Database["public"]["Enums"]["contact_message_status"]
           subject: string
+          submission_fingerprint: string | null
           updated_at: string
           user_agent: string | null
         }
@@ -165,6 +166,7 @@ export type Database = {
           spam_score?: number
           status?: Database["public"]["Enums"]["contact_message_status"]
           subject: string
+          submission_fingerprint?: string | null
           updated_at?: string
           user_agent?: string | null
         }
@@ -181,6 +183,7 @@ export type Database = {
           spam_score?: number
           status?: Database["public"]["Enums"]["contact_message_status"]
           subject?: string
+          submission_fingerprint?: string | null
           updated_at?: string
           user_agent?: string | null
         }
@@ -807,6 +810,68 @@ export type Database = {
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      delete_media_asset_record: {
+        Args: { p_asset_id: string }
+        Returns: {
+          alt_text: string | null
+          blur_data_url: string | null
+          bucket_name: string
+          created_at: string
+          file_size: number | null
+          height: number | null
+          id: string
+          is_public: boolean
+          label: string | null
+          mime_type: string | null
+          object_path: string
+          updated_at: string
+          uploaded_by: string | null
+          width: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "media_assets"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      save_post_with_taxonomy: {
+        Args: {
+          p_author_profile_id: string
+          p_body_markdown: string
+          p_canonical_url: string
+          p_categories: Json
+          p_cover_asset_id: string
+          p_excerpt: string
+          p_featured: boolean
+          p_id: string
+          p_meta_description: string
+          p_meta_title: string
+          p_published_at: string
+          p_slug: string
+          p_status: string
+          p_tags: Json
+          p_title: string
+        }
+        Returns: string
+      }
+      submit_contact_message_atomic: {
+        Args: {
+          p_base_flags: string[]
+          p_base_score: number
+          p_email: string
+          p_fingerprint: string
+          p_message: string
+          p_name: string
+          p_source_ip: string
+          p_subject: string
+          p_user_agent: string
+        }
+        Returns: {
+          spam_flags: string[]
+          spam_score: number
+        }[]
       }
     }
     Enums: {

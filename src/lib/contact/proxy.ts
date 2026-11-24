@@ -1,10 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import {
-  CONTACT_PROXY_THROTTLE_SECONDS,
   ContactRequestError,
   CONTACT_THROTTLE_COOKIE,
-  createContactThrottleCookie,
   readSignedContactThrottleExpiry,
 } from "@/lib/contact/anti-abuse";
 
@@ -37,22 +35,9 @@ export async function enforceContactProxyThrottle(request: NextRequest) {
       );
     }
 
-    const response = NextResponse.next({
+    return NextResponse.next({
       request,
     });
-    const cookie = await createContactThrottleCookie(CONTACT_PROXY_THROTTLE_SECONDS);
-
-    response.cookies.set({
-      name: CONTACT_THROTTLE_COOKIE,
-      value: cookie.value,
-      httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      expires: new Date(cookie.expiryUnixSeconds * 1000),
-    });
-
-    return response;
   } catch (error) {
     const message =
       error instanceof ContactRequestError && error.exposeMessage

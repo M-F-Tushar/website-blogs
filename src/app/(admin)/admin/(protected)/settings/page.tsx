@@ -1,9 +1,10 @@
 import { fallbackSiteSettings } from "@/lib/content/fallback-data";
+import { AdminActionForm } from "@/components/admin/admin-action-form";
 import {
   getAdminMediaAssets,
   getAdminSiteSettings,
 } from "@/lib/content/admin-queries";
-import { saveSiteSettingsAction } from "@/features/admin/actions";
+import { saveSiteSettingsFormAction } from "@/features/admin/actions";
 import {
   AdminField,
   AdminInput,
@@ -31,7 +32,7 @@ export default async function AdminSettingsPage() {
       />
 
       <AdminPanel>
-        <form action={saveSiteSettingsAction} className="grid gap-5">
+        <AdminActionForm action={saveSiteSettingsFormAction} className="grid gap-5">
           <div className="grid gap-5 xl:grid-cols-2">
             <AdminField label="Site name">
               <AdminInput name="siteName" defaultValue={resolvedSettings.siteName} required />
@@ -138,7 +139,7 @@ export default async function AdminSettingsPage() {
           <div className="pt-2">
             <SubmitButton>Save settings</SubmitButton>
           </div>
-        </form>
+        </AdminActionForm>
       </AdminPanel>
     </div>
   );

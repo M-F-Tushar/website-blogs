@@ -14,20 +14,29 @@ export async function getOptionalSessionProfile() {
 
   const {
     data: { user },
+    error: sessionError,
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (!user && (!sessionError || sessionError.name === "AuthSessionMissingError")) {
     return null;
+  }
+
+  if (sessionError || !user) {
+    throw new Error("The authentication service could not verify this session.");
   }
 
   // Read the caller's own profile via the authenticated client. RLS already
   // restricts profiles to `id = auth.uid()` or admin, so we don't need to
   // burn the service-role client on routine page renders.
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, email, full_name, headline, role")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (profileError) {
+    throw new Error("The authenticated profile could not be loaded.");
+  }
 
   if (!profile) {
     return null;

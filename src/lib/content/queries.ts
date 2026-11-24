@@ -131,15 +131,10 @@ function failPublicContent(resource: string, reason: string, error?: unknown): n
 
 function resolveLocalFallback<T>(
   resource: string,
-  fallbackValue: T,
+  _fallbackValue: T,
   reason: string,
   error?: unknown,
-) {
-  if (canUseLocalFallbacks()) {
-    console.warn(`[content:local] using fallback for ${resource}: ${reason}`, error);
-    return fallbackValue;
-  }
-
+): never {
   return failPublicContent(resource, reason, error);
 }
 
@@ -643,12 +638,7 @@ export async function getPageContent(pageKey: PageKey) {
     fetchPageSections(pageKey),
   ]);
 
-  const page =
-    pages.find((item) => item.pageKey === pageKey) ??
-    (canUseLocalFallbacks()
-      ? fallbackPages.find((item) => item.pageKey === pageKey)
-      : null) ??
-    null;
+  const page = pages.find((item) => item.pageKey === pageKey) ?? null;
 
   return {
     page,

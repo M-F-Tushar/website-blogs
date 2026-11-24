@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { ZodError } from "zod";
 
 import { requireAdminSession } from "@/lib/auth/guards";
 import { DEFAULT_TOP_LEVEL_PAGE_PATHS } from "@/lib/content/page-routing";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { createAuthenticatedServerClient } from "@/lib/supabase/server";
+import type { AdminActionState } from "@/features/admin/action-state";
 import type { Json } from "@/types/database";
 import {
   navigationItemSchema,
@@ -21,6 +23,99 @@ import {
   parseJsonObject,
   toBoolean,
 } from "@/lib/utils";
+
+class AdminActionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AdminActionError";
+  }
+}
+
+const ADMIN_VALIDATION_LABELS: Record<string, string> = {
+  canonicalUrl: "Canonical URL",
+  githubUrl: "GitHub URL",
+  linkedinUrl: "LinkedIn URL",
+  resumeUrl: "Resume URL",
+  xUrl: "X URL",
+};
+
+function getSanitizedActionErrorCode(error: unknown) {
+  if (!error || typeof error !== "object" || !("code" in error)) {
+    return "unknown";
+  }
+
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" && /^[a-z0-9_.-]{1,32}$/i.test(code)
+    ? code
+    : "unknown";
+}
+
+function logAdminActionFailure(operation: string, error: unknown) {
+  console.error(`[admin action] ${operation} failed`, {
+    code: getSanitizedActionErrorCode(error),
+  });
+}
+
+function failAdminAction(operation: string, error: unknown): never {
+  logAdminActionFailure(operation, error);
+  throw new AdminActionError(`Unable to ${operation}. Please try again.`);
+}
+
+function isNextRedirectError(error: unknown) {
+  if (!error || typeof error !== "object" || !("digest" in error)) {
+    return false;
+  }
+
+  const digest = (error as { digest?: unknown }).digest;
+  return typeof digest === "string" && digest.startsWith("NEXT_REDIRECT");
+}
+
+function getAdminValidationMessage(error: ZodError) {
+  const issue = error.issues[0];
+  if (!issue) {
+    return "Please check the form values and try again.";
+  }
+
+  const fieldName = String(issue.path.at(-1) ?? "");
+  const fieldLabel = ADMIN_VALIDATION_LABELS[fieldName];
+  return fieldLabel ? `${fieldLabel}: ${issue.message}` : issue.message;
+}
+
+async function runAdminFormAction(
+  formData: FormData,
+  action: (input: FormData) => Promise<void>,
+  fallbackMessage: string,
+): Promise<AdminActionState> {
+  try {
+    await action(formData);
+  } catch (error) {
+    if (isNextRedirectError(error)) {
+      throw error;
+    }
+
+    if (error instanceof ZodError) {
+      return {
+        status: "error",
+        message: getAdminValidationMessage(error),
+      };
+    }
+
+    return {
+      status: "error",
+      message:
+        error instanceof AdminActionError ? error.message : fallbackMessage,
+    };
+  }
+
+  return initialActionState();
+}
+
+function initialActionState(): AdminActionState {
+  return {
+    status: "idle",
+    message: null,
+  };
+}
 
 function normalizePageSlug(slug: string | null | undefined) {
   if (!slug || slug === "/") {
@@ -52,17 +147,30 @@ async function revalidatePublicRoutes(extraPaths: string[] = []) {
     ...extraPaths.map((path) => normalizePageSlug(path)),
   ]);
 
-  try {
-    const supabase = createServiceRoleClient();
-    const { data } = await supabase.from("pages").select("slug");
+  let pageRows: Array<{ slug: string }> = [];
 
-    for (const page of data ?? []) {
-      if (page.slug) {
-        paths.add(normalizePageSlug(page.slug));
-      }
+  try {
+    const { data, error } = await createServiceRoleClient()
+      .from("pages")
+      .select("slug");
+
+    if (error) {
+      failAdminAction("load page paths for revalidation", error);
     }
-  } catch {
-    // If page lookup fails, still revalidate the known top-level routes.
+
+    pageRows = (data ?? []) as Array<{ slug: string }>;
+  } catch (error) {
+    if (error instanceof AdminActionError) {
+      throw error;
+    }
+
+    failAdminAction("load page paths for revalidation", error);
+  }
+
+  for (const page of pageRows) {
+    if (page.slug) {
+      paths.add(normalizePageSlug(page.slug));
+    }
   }
 
   revalidatePath("/", "layout");
@@ -75,7 +183,9 @@ async function revalidatePublicRoutes(extraPaths: string[] = []) {
 function assertPageSlugIsSupported(pageKey: string, slug: string) {
   const reservedSystemSlugs = new Set(["/admin", "/api"]);
   if (reservedSystemSlugs.has(slug)) {
-    throw new Error(`The slug "${slug}" is reserved by the application.`);
+    throw new AdminActionError(
+      `The slug "${slug}" is reserved by the application.`,
+    );
   }
 
   const reservedTopLevelSlugs = Object.entries(DEFAULT_TOP_LEVEL_PAGE_PATHS)
@@ -83,7 +193,7 @@ function assertPageSlugIsSupported(pageKey: string, slug: string) {
     .map(([, path]) => path);
 
   if (reservedTopLevelSlugs.includes(slug)) {
-    throw new Error(
+    throw new AdminActionError(
       `The slug "${slug}" is reserved by another top-level page route.`,
     );
   }
@@ -101,12 +211,16 @@ function normalizeOptionalUrlField(
   try {
     const url = new URL(normalized);
     if (url.protocol !== "http:" && url.protocol !== "https:") {
-      throw new Error();
+      throw new AdminActionError(
+        `${fieldName} must be a valid http or https URL.`,
+      );
     }
 
     return url.toString();
   } catch {
-    throw new Error(`${fieldName} must be a valid http or https URL.`);
+    throw new AdminActionError(
+      `${fieldName} must be a valid http or https URL.`,
+    );
   }
 }
 
@@ -123,7 +237,10 @@ export async function signOutAction() {
   const supabase = await createAuthenticatedServerClient();
 
   if (supabase) {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      failAdminAction("sign out", error);
+    }
   }
 
   redirect("/admin/login");
@@ -172,7 +289,7 @@ export async function saveSiteSettingsAction(formData: FormData) {
   );
 
   if (error) {
-    throw new Error(error.message);
+    failAdminAction("save site settings", error);
   }
 
   await revalidatePublicRoutes();
@@ -215,7 +332,7 @@ export async function saveNavigationItemAction(formData: FormData) {
       });
 
   if (error) {
-    throw new Error(error.message);
+        failAdminAction("save the navigation item", error);
   }
 
   await revalidatePublicRoutes();
@@ -234,7 +351,7 @@ export async function deleteNavigationItemAction(formData: FormData) {
   const { error } = await supabase.from("navigation_items").delete().eq("id", id);
 
   if (error) {
-    throw new Error(error.message);
+    failAdminAction("delete the navigation item", error);
   }
 
   await revalidatePublicRoutes();
@@ -260,15 +377,28 @@ export async function savePageAction(formData: FormData) {
   assertPageSlugIsSupported(payload.pageKey, lockedSlug);
 
   const supabase = createServiceRoleClient();
-  const previousSlug = payload.id
-    ? (
-        await supabase
-          .from("pages")
-          .select("slug")
-          .eq("id", payload.id)
-          .maybeSingle()
-      ).data?.slug ?? null
-    : null;
+  let previousSlug: string | null = null;
+
+  if (payload.id) {
+    const { data: existingPage, error: pageLookupError } = await supabase
+      .from("pages")
+      .select("slug")
+      .eq("id", payload.id)
+      .maybeSingle();
+
+    if (pageLookupError) {
+      failAdminAction("load the page before saving", pageLookupError);
+    }
+
+    if (!existingPage) {
+      throw new AdminActionError(
+        "This page record no longer exists. Refresh the admin page and try again.",
+      );
+    }
+
+    previousSlug = existingPage.slug;
+  }
+
   const { error } = payload.id
     ? await supabase
         .from("pages")
@@ -295,7 +425,7 @@ export async function savePageAction(formData: FormData) {
       });
 
   if (error) {
-    throw new Error(error.message);
+    failAdminAction("save the page settings", error);
   }
 
   await revalidatePublicRoutes([
@@ -329,14 +459,48 @@ export async function savePageSectionAction(formData: FormData) {
   });
 
   const supabase = createServiceRoleClient();
-  const { data: page } = await supabase
+  const { data: page, error: pageLookupError } = await supabase
     .from("pages")
     .select("id")
     .eq("page_key", payload.pageKey)
     .maybeSingle();
 
+  if (pageLookupError) {
+    failAdminAction("load the page for this section", pageLookupError);
+  }
+
   if (!page) {
-    throw new Error("Page record not found for section update.");
+    throw new AdminActionError(
+      "The page for this section no longer exists. Refresh the admin page and try again.",
+    );
+  }
+
+  if (payload.id) {
+    const { data: existingSection, error: sectionLookupError } = await supabase
+      .from("page_sections")
+      .select("id, section_type")
+      .eq("id", payload.id)
+      .eq("page_id", page.id)
+      .maybeSingle();
+
+    if (sectionLookupError) {
+      failAdminAction("load this page section", sectionLookupError);
+    }
+
+    if (!existingSection) {
+      throw new AdminActionError(
+        "This page section no longer exists. Refresh the admin page and try again.",
+      );
+    }
+
+    if (
+      existingSection.section_type === "template" &&
+      payload.sectionType !== "template"
+    ) {
+      throw new AdminActionError(
+        "This section is a consumed page template, so its type cannot be changed.",
+      );
+    }
   }
 
   const { error } = payload.id
@@ -371,7 +535,7 @@ export async function savePageSectionAction(formData: FormData) {
       });
 
   if (error) {
-    throw new Error(error.message);
+    failAdminAction("save the page section", error);
   }
 
   await revalidatePublicRoutes();
@@ -392,18 +556,24 @@ export async function saveContactQuickLinksAction(formData: FormData) {
   const locationLabel = optionalText(formData.get("locationLabel"));
 
   if (!email) {
-    throw new Error("Public email must be a valid email address.");
+    throw new AdminActionError("Public email must be a valid email address.");
   }
 
   const supabase = createServiceRoleClient();
-  const { data: page } = await supabase
+  const { data: page, error: pageLookupError } = await supabase
     .from("pages")
     .select("id")
     .eq("page_key", "contact")
     .maybeSingle();
 
+  if (pageLookupError) {
+    failAdminAction("load the contact page", pageLookupError);
+  }
+
   if (!page) {
-    throw new Error("Contact page record not found.");
+    throw new AdminActionError(
+      "The contact page record no longer exists. Restore it before editing quick links.",
+    );
   }
 
   const { data: existingSections, error: sectionsError } = await supabase
@@ -413,7 +583,7 @@ export async function saveContactQuickLinksAction(formData: FormData) {
     .in("section_key", ["email", "github", "linkedin", "location"]);
 
   if (sectionsError) {
-    throw new Error(sectionsError.message);
+    failAdminAction("load the contact quick-link sections", sectionsError);
   }
 
   const existingByKey = new Map(
@@ -515,7 +685,7 @@ export async function saveContactQuickLinksAction(formData: FormData) {
         .eq("id", existingSection.id);
 
       if (error) {
-        throw new Error(error.message);
+        failAdminAction("save the contact quick-link sections", error);
       }
 
       continue;
@@ -539,7 +709,7 @@ export async function saveContactQuickLinksAction(formData: FormData) {
     });
 
     if (error) {
-      throw new Error(error.message);
+      failAdminAction("save the contact quick-link sections", error);
     }
   }
 
@@ -554,7 +724,7 @@ export async function saveContactQuickLinksAction(formData: FormData) {
     .eq("site_key", "primary");
 
   if (settingsError) {
-    throw new Error(settingsError.message);
+    failAdminAction("save the contact details in site settings", settingsError);
   }
 
   await revalidatePublicRoutes(["/contact"]);
@@ -573,12 +743,124 @@ export async function deletePageSectionAction(formData: FormData) {
   }
 
   const supabase = createServiceRoleClient();
+  const { data: existingSection, error: sectionLookupError } = await supabase
+    .from("page_sections")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (sectionLookupError) {
+    failAdminAction("load the page section before deleting it", sectionLookupError);
+  }
+
+  if (!existingSection) {
+    throw new AdminActionError(
+      "This page section no longer exists. Refresh the admin page and try again.",
+    );
+  }
+
   const { error } = await supabase.from("page_sections").delete().eq("id", id);
 
   if (error) {
-    throw new Error(error.message);
+    failAdminAction("delete the page section", error);
   }
 
   await revalidatePublicRoutes();
   redirect(`${safeReturnTo(returnTo, `/admin/content/${pageKey}`)}?deleted=1`);
+}
+
+export async function signOutFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runAdminFormAction(
+    formData,
+    signOutAction,
+    "Unable to sign out. Please try again.",
+  );
+}
+
+export async function saveSiteSettingsFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runAdminFormAction(
+    formData,
+    saveSiteSettingsAction,
+    "The site settings could not be saved. Check the form and try again.",
+  );
+}
+
+export async function saveNavigationItemFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runAdminFormAction(
+    formData,
+    saveNavigationItemAction,
+    "The navigation item could not be saved. Check the form and try again.",
+  );
+}
+
+export async function deleteNavigationItemFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runAdminFormAction(
+    formData,
+    deleteNavigationItemAction,
+    "The navigation item could not be deleted. Please try again.",
+  );
+}
+
+export async function savePageFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runAdminFormAction(
+    formData,
+    savePageAction,
+    "The page settings could not be saved. Check the form and try again.",
+  );
+}
+
+export async function savePageSectionFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runAdminFormAction(
+    formData,
+    savePageSectionAction,
+    "The page section could not be saved. Check the form and try again.",
+  );
+}
+
+export async function saveContactQuickLinksFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runAdminFormAction(
+    formData,
+    saveContactQuickLinksAction,
+    "The contact links could not be saved. Check the form and try again.",
+  );
+}
+
+export async function deletePageSectionFormAction(
+  previousState: AdminActionState,
+  formData: FormData,
+) {
+  void previousState;
+  return runAdminFormAction(
+    formData,
+    deletePageSectionAction,
+    "The page section could not be deleted. Please try again.",
+  );
 }

@@ -169,13 +169,43 @@ export async function getIntegrationStatuses(): Promise<{
         },
   );
 
-  const trustedIpHeader = process.env.TRUSTED_IP_HEADER?.trim() || "x-vercel-forwarded-for";
-  items.push({
-    key: "client-ip",
-    label: "Per-IP rate limiting",
-    state: "ok",
-    detail: `Reads client IP from "${trustedIpHeader}". Change TRUSTED_IP_HEADER if not on Vercel.`,
-  });
+  const trustedIpHeader = process.env.TRUSTED_IP_HEADER?.trim();
+  const vercelRuntime = process.env.VERCEL_ENV?.trim();
+  const validHeaderName =
+    !trustedIpHeader ||
+    /^[!#$%&'*+\-.^_`|~0-9a-z]+$/i.test(trustedIpHeader);
+
+  items.push(
+    !hosted
+      ? {
+          key: "client-ip",
+          label: "Per-IP rate limiting",
+          state: "off",
+          detail: "Source IP is intentionally disabled on the local stage.",
+        }
+      : trustedIpHeader && validHeaderName
+        ? {
+            key: "client-ip",
+            label: "Per-IP rate limiting",
+            state: "ok",
+            detail: `Reads client IP from configured header "${trustedIpHeader.toLowerCase()}".`,
+          }
+        : !trustedIpHeader && vercelRuntime
+          ? {
+              key: "client-ip",
+              label: "Per-IP rate limiting",
+              state: "ok",
+              detail: 'Uses the Vercel-managed "x-vercel-forwarded-for" header.',
+            }
+          : {
+              key: "client-ip",
+              label: "Per-IP rate limiting",
+              state: "error",
+              detail: trustedIpHeader
+                ? "TRUSTED_IP_HEADER is not a valid HTTP header name; contact submissions fail closed."
+                : "TRUSTED_IP_HEADER is required outside Vercel; contact submissions fail closed.",
+            },
+  );
 
   const resendKey = isConfigured(process.env.RESEND_API_KEY);
   const fromEmail = isConfigured(process.env.CONTACT_NOTIFICATION_FROM_EMAIL);

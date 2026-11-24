@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/admin/login-form";
 import { getOptionalSessionProfile } from "@/lib/auth/guards";
+import { hasPublicSupabaseEnv } from "@/lib/supabase/env";
 
 export default async function AdminLoginPage() {
   const session = await getOptionalSessionProfile();
@@ -11,7 +12,7 @@ export default async function AdminLoginPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-12">
+    <main className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-12">
       <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1fr)] lg:items-center">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent">
@@ -38,9 +39,9 @@ export default async function AdminLoginPage() {
         </div>
 
         <div>
-          <LoginForm />
+          <LoginForm authAvailable={hasPublicSupabaseEnv()} />
         </div>
       </div>
-    </div>
+    </main>
   );
 }

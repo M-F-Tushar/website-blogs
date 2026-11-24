@@ -36,6 +36,10 @@ export async function updateSession(request: NextRequest) {
   });
 
   const supabase = createServerClient(config.url, config.anonKey, {
+    cookieOptions: {
+      httpOnly: true,
+      sameSite: "lax",
+    },
     cookies: {
       getAll() {
         return request.cookies.getAll();
@@ -60,7 +64,23 @@ export async function updateSession(request: NextRequest) {
   // not deferred to Server Components that cannot persist them reliably.
   const {
     data: { user },
+    error: sessionError,
   } = await supabase.auth.getUser();
+
+  if (
+    sessionError &&
+    sessionError.name !== "AuthSessionMissingError" &&
+    protectedPath
+  ) {
+    return NextResponse.json(
+      {
+        error: "Authentication is temporarily unavailable.",
+      },
+      {
+        status: 503,
+      },
+    );
+  }
 
   // Early, cheap gate: anonymous requests never reach protected admin segments.
   // Role authorization still happens server-side in requireAdminSession().

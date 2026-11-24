@@ -1,4 +1,5 @@
 import { Children, isValidElement, type ReactNode } from "react";
+import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
@@ -16,6 +17,68 @@ interface MarkdownProps {
 }
 
 const MERMAID_BLOCK_PATTERN = /(^|\n)\s*```\s*mermaid\b/;
+
+function getImageDimension(value: number | string | undefined) {
+  if (value === undefined) {
+    return null;
+  }
+
+  const dimension = Number(value);
+  return Number.isFinite(dimension) && dimension > 0 ? dimension : null;
+}
+
+function canUseNextImage(source: string) {
+  let pathname = source;
+
+  try {
+    pathname = new URL(source, "http://local.invalid").pathname;
+  } catch {
+    return false;
+  }
+
+  const lowerPath = pathname.toLowerCase();
+  if (lowerPath.endsWith(".gif") || lowerPath.endsWith(".svg")) {
+    return false;
+  }
+
+  if (source.startsWith("/") && !source.startsWith("//")) {
+    return true;
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) {
+    return false;
+  }
+
+  try {
+    const imageUrl = new URL(source);
+    const storageUrl = new URL(supabaseUrl);
+
+    return (
+      imageUrl.origin === storageUrl.origin &&
+      imageUrl.pathname.startsWith("/storage/v1/object/public/")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function canUseDirectImage(source: string) {
+  if (source.startsWith("/") && !source.startsWith("//")) {
+    return true;
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) {
+    return false;
+  }
+
+  try {
+    return new URL(source).origin === new URL(supabaseUrl).origin;
+  } catch {
+    return false;
+  }
+}
 
 function getNodeTextContent(children: ReactNode): string {
   return Children.toArray(children)
@@ -96,14 +159,58 @@ export function Markdown({ content, className }: MarkdownProps) {
       );
     },
     img(props) {
+      const source = typeof props.src === "string" ? props.src : "";
+      if (!source) {
+        return null;
+      }
+
+      const width = getImageDimension(props.width);
+      const height = getImageDimension(props.height);
+      const aspectRatio =
+        width && height ? `${width} / ${height}` : "16 / 9";
+      const imageClassName = cn(
+        "absolute inset-0 h-full w-full object-contain",
+        props.className,
+      );
+
       return (
         <span className="my-10 block">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            {...props}
-            alt={props.alt ?? ""}
-            className="w-full rounded-2xl border border-border dark:border-white/10 shadow-xl object-cover"
-          />
+          <span
+            className="relative block overflow-hidden rounded-2xl border border-border bg-slate-950/30 shadow-xl dark:border-white/10"
+            style={{ aspectRatio }}
+          >
+            {canUseNextImage(source) ? (
+              <Image
+                src={source}
+                alt={props.alt ?? ""}
+                title={props.title}
+                fill
+                sizes="(max-width: 768px) calc(100vw - 3rem), 52rem"
+                className={imageClassName}
+              />
+            ) : canUseDirectImage(source) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={source}
+                alt={props.alt ?? ""}
+                title={props.title}
+                width={width ?? undefined}
+                height={height ?? undefined}
+                loading="lazy"
+                decoding="async"
+                className={imageClassName}
+              />
+            ) : (
+              <a
+                href={source}
+                target="_blank"
+                rel="noreferrer"
+                className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm font-medium text-sky-300 underline decoration-sky-300/40 underline-offset-4"
+              >
+                Open image: {props.alt ?? source}
+              </a>
+            )}
+          </span>
           {props.alt ? (
             <span className="mt-3 block text-center text-[0.85rem] text-muted dark:text-slate-400">
               {props.alt}

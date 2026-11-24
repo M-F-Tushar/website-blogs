@@ -237,7 +237,7 @@ The June 2026 production upgrade was applied by hand with the SQL in `scripts/db
    npm run db:check
    ```
 
-   - `Ledger in sync` → you are done; skip to "How to verify".
+   - `Ledger in sync` → continue to the schema check in step 5.
    - `DRIFT DETECTED` → continue.
 
 3. The script prints the exact repair command. It will look like this (all eleven tracked versions are expected to be missing the first time):
@@ -251,14 +251,26 @@ The June 2026 production upgrade was applied by hand with the SQL in `scripts/db
 
    Only mark a version `applied` if its SQL really is already in production. If you are unsure about one, run `npx supabase db push --dry-run` and read what it would execute before deciding.
 
-4. Re-run `npm run db:check` until it reports `Ledger in sync`.
+4. Re-run `npm run db:check` until it reports `Ledger in sync`. This result only
+   confirms migration history; it does not prove schema parity.
+
+5. Compare the linked public schema with the migration baseline and review the
+   complete output:
+
+   ```bash
+   npx supabase db diff --linked --schema public
+   ```
+
+   Do not continue if the command reports any SQL changes. Investigate and
+   reconcile the schema first.
 
 ### How to verify
 - `npm run db:check` exits 0 and prints `Ledger in sync`
 - `npx supabase migration list --linked` shows every local version with a matching remote entry
+- `npx supabase db diff --linked --schema public` reports no schema changes
 
 ### After this
-- Never apply hand-written SQL to production again. Add a file in `supabase/migrations/`, verify it locally with `npx supabase db reset`, then run `npm run db:check` and `npx supabase db push`.
+- Never apply hand-written SQL to production again. Add a file in `supabase/migrations/`, verify it locally with `npx supabase db reset`, then require clean `npm run db:check` and `npx supabase db diff --linked --schema public` results before running `npx supabase db push`.
 - Do not commit `supabase/.temp/`.
 
 ---

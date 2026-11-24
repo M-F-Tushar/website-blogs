@@ -118,7 +118,37 @@ interface MessageRow {
   handled_at: string | null;
 }
 
+function getSanitizedQueryErrorCode(error: unknown) {
+  if (!error || typeof error !== "object" || !("code" in error)) {
+    return "unknown";
+  }
 
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" && /^[a-z0-9_.-]{1,32}$/i.test(code)
+    ? code
+    : "unknown";
+}
+
+function failAdminQuery(operation: string, error: unknown): never {
+  console.error(`[admin query] ${operation} failed`, {
+    code: getSanitizedQueryErrorCode(error),
+  });
+  throw new Error(`Unable to ${operation}. Please try again.`);
+}
+
+function getAdminQueryClient(operation: string) {
+  try {
+    return createServiceRoleClient();
+  } catch {
+    return failAdminQuery(operation, { code: "client_unavailable" });
+  }
+}
+
+function assertAdminQuerySucceeded(operation: string, error: unknown) {
+  if (error) {
+    failAdminQuery(operation, error);
+  }
+}
 
 function mapMediaAsset(row: MediaAssetRow): MediaAsset {
   return {
@@ -161,14 +191,17 @@ const ADMIN_POST_SELECT =
   "*, cover:media_assets!posts_cover_asset_id_fkey(bucket_name, object_path, alt_text), post_categories(categories(name)), post_tags(tags(name))";
 
 export const getAdminSiteSettings = cache(async (): Promise<SiteSettings | null> => {
-  const supabase = createServiceRoleClient();
-  const { data } = await supabase
+  const operation = "load site settings";
+  const supabase = getAdminQueryClient(operation);
+  const { data, error } = await supabase
     .from("site_settings")
     .select(
       "*, default_og_image:media_assets!site_settings_default_og_image_asset_id_fkey(bucket_name, object_path, alt_text)",
     )
     .eq("site_key", "primary")
     .maybeSingle();
+
+  assertAdminQuerySucceeded(operation, error);
 
   if (!data) {
     return null;
@@ -202,12 +235,15 @@ export const getAdminSiteSettings = cache(async (): Promise<SiteSettings | null>
 });
 
 export const getAdminNavigationItems = cache(async (): Promise<NavigationItem[]> => {
-  const supabase = createServiceRoleClient();
-  const { data } = await supabase
+  const operation = "load navigation items";
+  const supabase = getAdminQueryClient(operation);
+  const { data, error } = await supabase
     .from("navigation_items")
     .select("*")
     .order("location", { ascending: true })
     .order("sort_order", { ascending: true });
+
+  assertAdminQuerySucceeded(operation, error);
 
   return ((data ?? []) as NavigationItemRow[]).map((item) => ({
     id: item.id,
@@ -221,8 +257,11 @@ export const getAdminNavigationItems = cache(async (): Promise<NavigationItem[]>
 });
 
 export const getAdminPages = cache(async (): Promise<PageRecord[]> => {
-  const supabase = createServiceRoleClient();
-  const { data } = await supabase.from("pages").select("*").order("page_key");
+  const operation = "load page records";
+  const supabase = getAdminQueryClient(operation);
+  const { data, error } = await supabase.from("pages").select("*").order("page_key");
+
+  assertAdminQuerySucceeded(operation, error);
 
   return ((data ?? []) as PageRow[]).map((page) => ({
     id: page.id,
@@ -239,14 +278,17 @@ export const getAdminPages = cache(async (): Promise<PageRecord[]> => {
 
 export const getAdminPageSections = cache(
   async (pageKey: PageKey): Promise<PageSection[]> => {
-    const supabase = createServiceRoleClient();
-    const { data } = await supabase
+    const operation = `load ${pageKey} page sections`;
+    const supabase = getAdminQueryClient(operation);
+    const { data, error } = await supabase
       .from("page_sections")
       .select(
         "*, image:media_assets!page_sections_image_asset_id_fkey(bucket_name, object_path, alt_text), pages!inner(page_key)",
       )
       .eq("pages.page_key", pageKey)
       .order("sort_order", { ascending: true });
+
+    assertAdminQuerySucceeded(operation, error);
 
     return ((data ?? []) as PageSectionRow[]).map((section) => ({
       id: section.id,
@@ -274,11 +316,14 @@ export const getAdminPageSections = cache(
 );
 
 export const getAdminPosts = cache(async (): Promise<PostSummary[]> => {
-  const supabase = createServiceRoleClient();
-  const { data } = await supabase
+  const operation = "load posts";
+  const supabase = getAdminQueryClient(operation);
+  const { data, error } = await supabase
     .from("posts")
     .select(ADMIN_POST_SELECT)
     .order("created_at", { ascending: false });
+
+  assertAdminQuerySucceeded(operation, error);
 
   return ((data ?? []) as AdminEmbeddedPostRow[]).map((row) =>
     mapPost(flattenAdminPostRow(row)),
@@ -286,45 +331,57 @@ export const getAdminPosts = cache(async (): Promise<PostSummary[]> => {
 });
 
 export const getAdminAcademicEntries = cache(async (): Promise<AcademicEntry[]> => {
-  const supabase = createServiceRoleClient();
-  const { data } = await supabase
+  const operation = "load academic entries";
+  const supabase = getAdminQueryClient(operation);
+  const { data, error } = await supabase
     .from("academic_entries")
     .select(
       "*, cover:media_assets!academic_entries_cover_asset_id_fkey(bucket_name, object_path, alt_text)",
     )
     .order("created_at", { ascending: false });
 
+  assertAdminQuerySucceeded(operation, error);
+
   return (data ?? []).map(mapAcademicEntry);
 });
 
 export const getAdminRecommendations = cache(async (): Promise<Recommendation[]> => {
-  const supabase = createServiceRoleClient();
-  const { data } = await supabase
+  const operation = "load recommendations";
+  const supabase = getAdminQueryClient(operation);
+  const { data, error } = await supabase
     .from("recommendations")
     .select(
       "*, recommendation_categories(name), cover:media_assets!recommendations_cover_asset_id_fkey(bucket_name, object_path, alt_text)",
     )
     .order("created_at", { ascending: false });
 
+  assertAdminQuerySucceeded(operation, error);
+
   return (data ?? []).map(mapRecommendation);
 });
 
 export const getAdminMediaAssets = cache(async (): Promise<MediaAsset[]> => {
-  const supabase = createServiceRoleClient();
-  const { data } = await supabase
+  const operation = "load media assets";
+  const supabase = getAdminQueryClient(operation);
+  const { data, error } = await supabase
     .from("media_assets")
     .select("*")
     .order("created_at", { ascending: false });
+
+  assertAdminQuerySucceeded(operation, error);
 
   return (data ?? []).map(mapMediaAsset);
 });
 
 export const getAdminMessages = cache(async (): Promise<ContactMessage[]> => {
-  const supabase = createServiceRoleClient();
-  const { data } = await supabase
+  const operation = "load contact messages";
+  const supabase = getAdminQueryClient(operation);
+  const { data, error } = await supabase
     .from("contact_messages")
     .select("*")
     .order("created_at", { ascending: false });
+
+  assertAdminQuerySucceeded(operation, error);
 
   return ((data ?? []) as MessageRow[]).map((message) => ({
     id: message.id,
@@ -344,17 +401,9 @@ export const getAdminMessages = cache(async (): Promise<ContactMessage[]> => {
 
 export const getAdminDashboardSnapshot = cache(
   async (): Promise<DashboardSnapshot> => {
-    const supabase = createServiceRoleClient();
-    const [
-      { count: postsCount },
-      { count: postDraftCount },
-      { count: academicCount },
-      { count: recommendationCount },
-      { count: pageCount },
-      { count: unreadMessages },
-      { data: latestPostsData },
-      { data: latestAcademicData },
-    ] = await Promise.all([
+    const operation = "load dashboard data";
+    const supabase = getAdminQueryClient(operation);
+    const results = await Promise.all([
       supabase.from("posts").select("*", { count: "exact", head: true }),
       supabase
         .from("posts")
@@ -380,18 +429,63 @@ export const getAdminDashboardSnapshot = cache(
         .order("created_at", { ascending: false })
         .limit(4),
     ]);
+    const [
+      postsCountResult,
+      postDraftCountResult,
+      academicCountResult,
+      recommendationCountResult,
+      pageCountResult,
+      unreadMessagesResult,
+      latestPostsResult,
+      latestAcademicResult,
+    ] = results;
+
+    assertAdminQuerySucceeded(
+      "count posts for the dashboard",
+      postsCountResult.error,
+    );
+    assertAdminQuerySucceeded(
+      "count draft posts for the dashboard",
+      postDraftCountResult.error,
+    );
+    assertAdminQuerySucceeded(
+      "count academic entries for the dashboard",
+      academicCountResult.error,
+    );
+    assertAdminQuerySucceeded(
+      "count recommendations for the dashboard",
+      recommendationCountResult.error,
+    );
+    assertAdminQuerySucceeded(
+      "count pages for the dashboard",
+      pageCountResult.error,
+    );
+    assertAdminQuerySucceeded(
+      "count unread messages for the dashboard",
+      unreadMessagesResult.error,
+    );
+    assertAdminQuerySucceeded(
+      "load recent posts for the dashboard",
+      latestPostsResult.error,
+    );
+    assertAdminQuerySucceeded(
+      "load recent academic entries for the dashboard",
+      latestAcademicResult.error,
+    );
 
     return {
-      postsCount: postsCount ?? 0,
-      postDraftCount: postDraftCount ?? 0,
-      academicCount: academicCount ?? 0,
-      recommendationCount: recommendationCount ?? 0,
-      pageCount: pageCount ?? 0,
-      unreadMessages: unreadMessages ?? 0,
-      latestPosts: ((latestPostsData ?? []) as AdminEmbeddedPostRow[]).map((row) =>
-        mapPost(flattenAdminPostRow(row)),
+      postsCount: postsCountResult.count ?? 0,
+      postDraftCount: postDraftCountResult.count ?? 0,
+      academicCount: academicCountResult.count ?? 0,
+      recommendationCount: recommendationCountResult.count ?? 0,
+      pageCount: pageCountResult.count ?? 0,
+      unreadMessages: unreadMessagesResult.count ?? 0,
+      latestPosts: (
+        (latestPostsResult.data ?? []) as AdminEmbeddedPostRow[]
+      ).map((row) => mapPost(flattenAdminPostRow(row))),
+      latestAcademicEntries: (latestAcademicResult.data ?? []).map(
+        mapAcademicEntry,
       ),
-      latestAcademicEntries: (latestAcademicData ?? []).map(mapAcademicEntry),
     };
   },
 );

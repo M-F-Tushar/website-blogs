@@ -30,6 +30,10 @@ export async function createAuthenticatedServerClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(config.url, config.anonKey, {
+    cookieOptions: {
+      httpOnly: true,
+      sameSite: "lax",
+    },
     cookies: {
       getAll() {
         return cookieStore.getAll();

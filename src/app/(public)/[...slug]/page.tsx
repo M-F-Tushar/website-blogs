@@ -61,6 +61,7 @@ export async function generateMetadata({ params }: DynamicTopLevelPageProps) {
       title: "Page not found",
       description: "The requested page could not be found.",
       path: normalizeTopLevelSlugFromSegments(slug),
+      includeCanonical: false,
     });
   }
 

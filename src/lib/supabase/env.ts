@@ -38,6 +38,16 @@ export function getAppRuntimeStage(): AppRuntimeStage {
   }
 
   if (explicitStage === "local" || explicitStage === "development") {
+    if (
+      process.env.NODE_ENV === "production" &&
+      process.env.NEXT_PUBLIC_SITE_URL &&
+      !isLocalSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)
+    ) {
+      throw new Error(
+        "APP_ENV=local is not valid for a hosted production URL. Set APP_ENV to staging or production.",
+      );
+    }
+
     return "local";
   }
 

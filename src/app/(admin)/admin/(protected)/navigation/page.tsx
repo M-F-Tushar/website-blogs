@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AdminActionForm } from "@/components/admin/admin-action-form";
 import {
   AdminCheckbox,
   AdminField,
@@ -12,8 +13,8 @@ import {
 } from "@/components/admin/primitives";
 import { getAdminNavigationItems } from "@/lib/content/admin-queries";
 import {
-  deleteNavigationItemAction,
-  saveNavigationItemAction,
+  deleteNavigationItemFormAction,
+  saveNavigationItemFormAction,
 } from "@/features/admin/actions";
 
 interface AdminNavigationPageProps {
@@ -55,6 +56,22 @@ export default async function AdminNavigationPage({
           </div>
 
           <div className="mt-6 space-y-3">
+            {items.length === 0 ? (
+              <div className="rounded-[1.25rem] border border-dashed border-border bg-white/45 p-5">
+                <h3 className="font-display text-lg font-semibold text-foreground">
+                  No navigation items yet
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Add the first link to give visitors a clear path through the site.
+                </p>
+                <Link
+                  href="/admin/navigation"
+                  className="mt-4 inline-flex rounded-full bg-surface-dark px-4 py-2 text-sm font-medium text-white"
+                >
+                  Create navigation item
+                </Link>
+              </div>
+            ) : null}
             {items.map((item) => (
               <Link
                 key={item.id}
@@ -81,7 +98,10 @@ export default async function AdminNavigationPage({
           <h2 className="font-display text-2xl font-semibold tracking-[-0.04em]">
             {selectedItem ? "Edit navigation item" : "Create navigation item"}
           </h2>
-          <form action={saveNavigationItemAction} className="mt-6 grid gap-5">
+          <AdminActionForm
+            action={saveNavigationItemFormAction}
+            className="mt-6 grid gap-5"
+          >
             <input type="hidden" name="id" defaultValue={selectedItem?.id ?? ""} />
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -129,13 +149,13 @@ export default async function AdminNavigationPage({
             <div className="pt-2">
               <SubmitButton>Save item</SubmitButton>
             </div>
-          </form>
+          </AdminActionForm>
 
           {selectedItem ? (
-            <form action={deleteNavigationItemAction} className="mt-3">
+            <AdminActionForm action={deleteNavigationItemFormAction} className="mt-3">
               <input type="hidden" name="id" value={selectedItem.id} />
               <SubmitButton variant="danger">Delete item</SubmitButton>
-            </form>
+            </AdminActionForm>
           ) : null}
         </AdminPanel>
       </div>

@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
@@ -28,8 +26,9 @@ export function NewsletterSignup({
       >
         <Link
           href="/contact"
+          prefetch={false}
           className={cn(
-            "group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-sky-500 px-8 py-3.5 text-sm font-semibold text-foreground dark:text-white shadow-[0_0_30px_-10px_rgba(14,165,233,0.5)] transition-all duration-300 hover:scale-105 hover:bg-sky-400 hover:shadow-[0_0_40px_-15px_rgba(14,165,233,0.7)]",
+            "group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-sky-500 px-8 py-3.5 text-sm font-semibold !text-slate-950 shadow-[0_0_30px_-10px_rgba(14,165,233,0.5)] transition-all duration-300 hover:scale-105 hover:bg-sky-400 hover:shadow-[0_0_40px_-15px_rgba(14,165,233,0.7)]",
             compact && "w-full",
           )}
         >
@@ -38,8 +37,9 @@ export function NewsletterSignup({
         </Link>
         <Link
           href="/blogs"
+          prefetch={false}
           className={cn(
-            "inline-flex items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/60 px-8 py-3.5 text-sm font-semibold text-foreground dark:text-white shadow-lg backdrop-blur-xl transition-all duration-300 hover:bg-slate-700/80 hover:border-slate-500/80",
+            "inline-flex items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/60 px-8 py-3.5 text-sm font-semibold !text-slate-100 shadow-lg backdrop-blur-xl transition-all duration-300 hover:bg-slate-700/80 hover:border-slate-500/80",
             compact && "w-full text-center",
           )}
         >
@@ -49,7 +49,7 @@ export function NewsletterSignup({
           <a
             href={`mailto:${contactEmail}`}
             className={cn(
-              "inline-flex items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/60 px-8 py-3.5 text-sm font-semibold text-foreground dark:text-white shadow-lg backdrop-blur-xl transition-all duration-300 hover:bg-slate-700/80 hover:border-slate-500/80",
+              "inline-flex items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/60 px-8 py-3.5 text-sm font-semibold !text-slate-100 shadow-lg backdrop-blur-xl transition-all duration-300 hover:bg-slate-700/80 hover:border-slate-500/80",
               compact && "w-full text-center",
             )}
           >

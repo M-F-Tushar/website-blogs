@@ -16,7 +16,10 @@ import {
   getRecommendationBySlug,
 } from "@/lib/content/queries";
 import { getSectionSettingString } from "@/lib/content/section-settings";
-import { buildSiteMetadata } from "@/lib/content/seo";
+import {
+  buildContentStructuredData,
+  buildSiteMetadata,
+} from "@/lib/content/seo";
 import { serializeJsonLd } from "@/lib/utils";
 
 export const revalidate = 300;
@@ -42,6 +45,7 @@ export async function generateMetadata({
       title: "Recommendation not found",
       description: "The requested recommendation could not be found.",
       path: `/recommendations/${slug}`,
+      includeCanonical: false,
     });
   }
 
@@ -52,6 +56,8 @@ export async function generateMetadata({
     image: item.coverUrl,
     canonicalUrl: item.canonicalUrl,
     ogType: "article",
+    publishedTime: item.createdAt,
+    modifiedTime: item.updatedAt ?? item.createdAt,
   });
 }
 
@@ -126,15 +132,18 @@ export default async function RecommendationDetailPage({
     { icon: Layers3, label: "How it helps in practice", value: useCase },
   ];
 
-  const recommendationJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Recommendation",
-    name: item.title,
-    description: item.summary ?? item.metaDescription ?? undefined,
-    url: item.externalUrl ?? undefined,
-    image: item.coverUrl ?? undefined,
-    category: item.category ?? undefined,
-  };
+  const recommendationJsonLd = await buildContentStructuredData({
+    type: "Recommendation",
+    title: item.title,
+    description: item.summary ?? item.metaDescription,
+    path: `/recommendations/${item.slug}`,
+    canonicalUrl: item.canonicalUrl,
+    image: item.coverUrl,
+    datePublished: item.createdAt,
+    dateModified: item.updatedAt ?? item.createdAt,
+    category: item.category,
+    externalUrl: item.externalUrl,
+  });
 
   return (
     <article className="relative">
